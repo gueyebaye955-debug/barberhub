@@ -501,6 +501,7 @@
       applyFilters();
     }
 
+    applyFilters(); // Show local barbers immediately while API loads
     (async function initBarbersPage() {
       try {
         await loadApiBarbers();

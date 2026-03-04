@@ -133,16 +133,11 @@ function renderNav(currentPage) {
               <button class="lang-opt ${cur==='FCFA'?'active':''}" onclick="setCurrency('FCFA')"> FCFA</button>
             </div>
           </div>
-          <!-- Language switcher -->
-          <div class="lang-switcher" id="langSwitcher">
-            <button class="lang-btn" onclick="toggleLangMenu()" aria-label="Language">
-              ${langLabels[lang]} <span style="font-size:0.6rem;opacity:0.6"></span>
-            </button>
-            <div class="lang-menu" id="langMenu">
-              <button class="lang-opt ${lang==='en'?'active':''}" onclick="setLang('en')"> English</button>
-              <button class="lang-opt ${lang==='fr'?'active':''}" onclick="setLang('fr')"> Franais</button>
-              <button class="lang-opt ${lang==='wo'?'active':''}" onclick="setLang('wo')"> Wolof</button>
-            </div>
+          <!-- Language pills (always visible) -->
+          <div style="display:flex;gap:0.25rem;align-items:center">
+            <button onclick="setLang('en')" class="mobile-pill ${lang==='en'?'active':''}" style="font-size:0.72rem;padding:0.2rem 0.5rem">EN</button>
+            <button onclick="setLang('fr')" class="mobile-pill ${lang==='fr'?'active':''}" style="font-size:0.72rem;padding:0.2rem 0.5rem">FR</button>
+            <button onclick="setLang('wo')" class="mobile-pill ${lang==='wo'?'active':''}" style="font-size:0.72rem;padding:0.2rem 0.5rem">WO</button>
           </div>
           <!-- Theme toggle -->
           <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
