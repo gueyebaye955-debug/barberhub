@@ -1,0 +1,506 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment  BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .book-layout { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
+    .book-sidebar { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: sticky; top: 80px; height: fit-content; }
+    .book-barber  { display: flex; align-items: center; gap: 0.75rem; padding: 1.1rem; background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+    .book-barber-ava { width: 46px; height: 46px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; flex-shrink: 0; }
+    .book-steps { padding: 1.1rem; border-bottom: 1px solid var(--border); }
+    .bstep { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0; font-size: 0.875rem; color: var(--text-muted); }
+    .bstep.active { color: var(--text); font-weight: 600; }
+    .bstep.done   { color: var(--green); }
+    .bstep-num { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+    .bstep.active .bstep-num { background: var(--primary); border-color: var(--primary); color: white; }
+    .bstep.done   .bstep-num { background: rgba(16,185,129,0.2); border-color: var(--green); color: var(--green); }
+    .book-summary { padding: 1.1rem; }
+    .book-summary h4 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.75rem; }
+    .sum-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.45rem; }
+    .sum-row span { color: var(--text-muted); }
+    .sum-total { font-size: 1rem; border-top: 1px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem; }
+    .book-main { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+    .book-main h2 { margin-bottom: 0.25rem; }
+    .book-main .sub { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.75rem; }
+    .svc-pick-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .svc-pick { display: flex; align-items: center; gap: 1rem; padding: 1.1rem; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--bg-elevated); transition: all 0.2s; }
+    .svc-pick:hover   { border-color: var(--primary); }
+    .svc-pick.selected{ border-color: var(--primary); background: rgba(233,69,96,0.05); }
+    .svc-pick-info { flex: 1; }
+    .svc-pick-info strong { display: block; }
+    .svc-pick-info span   { color: var(--text-muted); font-size: 0.8rem; }
+    .svc-pick-price { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+    .svc-check { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0; }
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(88px,1fr)); gap: 0.45rem; }
+    .slot-btn { padding: 0.55rem; text-align: center; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-muted); font-size: 0.82rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .slot-btn:hover:not(.taken)  { border-color: var(--primary); color: var(--primary); }
+    .slot-btn.selected { border-color: var(--primary); background: rgba(233,69,96,0.1); color: var(--primary); font-weight: 700; }
+    .slot-btn.taken    { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; }
+    .confirm-table { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .confirm-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .confirm-row:last-child { border-bottom: none; }
+    .confirm-row span { color: var(--text-muted); }
+    .book-nav { display: flex; justify-content: space-between; margin-top: 1.75rem; }
+    @media (max-width: 768px) { .book-layout { grid-template-columns: 1fr; } .book-sidebar { position: static; } }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main>
+    <div class="container" id="bookContainer">
+      <div class="loading-box" style="padding:5rem"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    renderNav('book');
+    renderFooter();
+    applyI18n();
+
+    const user = Auth.getUser();
+    if (!user || user.role !== 'customer') {
+      window.location.href = 'login.html';
+      throw new Error('redirect');
+    }
+
+    const params     = new URLSearchParams(location.search);
+    const barberId   = parseInt(params.get('barber'), 10);
+    const preService = parseInt(params.get('service'), 10);
+
+    let barber = null;
+    let calendarPrefs = { ...DEFAULT_CALENDAR_PREFS };
+    let remoteBookedSlots = new Set();
+    let lastCreatedBooking = null;
+
+    let step = 0;
+    let sel  = { service: null, date: todayStr(), slot: null, notes: '', recurring: 'once' };
+    let calYear, calMonth;
+    const now = new Date();
+    calYear  = now.getFullYear();
+    calMonth = now.getMonth();
+
+    function applyPreselectedService() {
+      if (!preService || !barber) return;
+      sel.service = barber.services.find((s) => s.id === preService) || null;
+      if (sel.service) step = 1;
+    }
+
+    function calendarRulesHint() {
+      const bits = [];
+      if (calendarPrefs.buffer_before > 0) bits.push(`${calendarPrefs.buffer_before}m pre-buffer`);
+      if (calendarPrefs.buffer_after > 0) bits.push(`${calendarPrefs.buffer_after}m cleanup`);
+      if (calendarPrefs.travel_buffer > 0) bits.push(`${calendarPrefs.travel_buffer}m travel`);
+      if (calendarPrefs.lunch_enabled) bits.push(`Lunch ${calendarPrefs.lunch_start}-${calendarPrefs.lunch_end}`);
+      return bits.length ? bits.join(' | ') : 'No extra scheduling buffers';
+    }
+
+    function todayStr() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function isRemoteSlotTaken(timeValue) {
+      const key = String(timeValue || '').slice(0, 5);
+      return remoteBookedSlots.has(key);
+    }
+
+    async function refreshBookedSlots() {
+      remoteBookedSlots = new Set();
+      if (!window.BH_API || !barber || !sel.date) return;
+      try {
+        const times = await window.BH_API.getBookedSlots(barber.id, sel.date);
+        const normalized = Array.isArray(times)
+          ? times.map((time) => String(time).slice(0, 5))
+          : [];
+        remoteBookedSlots = new Set(normalized);
+      } catch (err) {
+        console.warn('Unable to refresh booked slots:', err.message);
+      }
+    }
+
+    async function initBookingPage() {
+      barber = await loadApiBarberById(barberId) || getBarber(barberId);
+      if (!barber) {
+        window.location.href = 'barbers.html';
+        return;
+      }
+
+      calendarPrefs = getBarberCalendarPrefs(barber.id);
+      applyPreselectedService();
+
+      if (typeof Analytics !== 'undefined') {
+        Analytics.track('booking_start', { barber_id: barberId, preselected_service: !!preService });
+      }
+
+      if (step === 1) await refreshBookedSlots();
+      render();
+    }
+
+    function render() {
+      const stepLabels = [t('book_step_service'), t('book_step_datetime'), t('book_step_confirm')];
+      const html = `
+        <div style="margin: 1.25rem 0 0">
+          <a href="profile.html?id=${barber.id}" style="color:var(--text-muted);font-size:0.85rem">${t('book_back_profile')}</a>
+        </div>
+        <div class="book-layout">
+          <div class="book-sidebar">
+            <div class="book-barber">
+              <div class="book-barber-ava">${barber.first_name[0]}${barber.last_name[0]}</div>
+              <div>
+                <strong style="font-size:0.9rem">${barber.shop_name || barber.first_name + ' ' + barber.last_name}</strong>
+                <p class="text-muted text-sm"> ${barber.city}</p>
+              </div>
+            </div>
+            <div class="book-steps">
+              ${stepLabels.map((s,i) => `
+                <div class="bstep ${i === step ? 'active' : ''} ${i < step ? 'done' : ''}">
+                  <div class="bstep-num">${i < step ? '' : i+1}</div>
+                  <span>${s}</span>
+                </div>`).join('')}
+            </div>
+            <div class="book-summary">
+              <h4>${t('book_summary')}</h4>
+              ${sel.service ? `<div class="sum-row"><span>${t('book_service_label')}</span><strong>${sel.service.name}</strong></div>
+                               <div class="sum-row"><span>${t('book_duration_label')}</span><strong>${fmtDur(sel.service.duration)}</strong></div>` : ''}
+              ${sel.date ? `<div class="sum-row"><span>${t('book_date_label')}</span><strong>${sel.date}</strong></div>` : ''}
+              ${sel.slot ? `<div class="sum-row"><span>${t('book_time_label')}</span><strong>${sel.slot}</strong></div>` : ''}
+              ${sel.service ? `<div class="sum-row sum-total"><span>${t('book_total_label')}</span><strong class="text-primary">${fmtPrice(sel.service.price)}</strong></div>` : `<p class="text-muted text-sm">${t('book_select_service')}</p>`}
+            </div>
+          </div>
+          <div class="book-main" id="stepContent"></div>
+        </div>`;
+
+      document.getElementById('bookContainer').innerHTML = html;
+      renderStep();
+    }
+
+    function renderStep() {
+      const el = document.getElementById('stepContent');
+
+      if (step === 0) {
+        el.innerHTML = `
+          <h2>${t('step0_title')}</h2>
+          <p class="sub">${t('step0_sub')}</p>
+          <div class="svc-pick-list">
+            ${barber.services.map(s => `
+              <div class="svc-pick ${sel.service?.id === s.id ? 'selected' : ''}" onclick="selectService(${s.id})">
+                <div class="svc-pick-info">
+                  <strong>${s.name}</strong>
+                  ${s.desc ? `<span>${s.desc}</span><br>` : ''}
+                  <span> ${fmtDur(s.duration)}</span>
+                </div>
+                <span class="svc-pick-price">${fmtPrice(s.price)}</span>
+                ${sel.service?.id === s.id ? '<div class="svc-check"></div>' : ''}
+              </div>`).join('')}
+          </div>
+          <div class="book-nav">
+            <span></span>
+            <button class="btn btn-primary" ${!sel.service ? 'disabled' : ''} onclick="nextStep()">${t('btn_continue')}</button>
+          </div>`;
+
+      } else if (step === 1) {
+        const slots = generateSlots();
+        const allTaken = slots.length > 0 && slots.every(s => s.taken);
+        el.innerHTML = `
+          <h2>${t('step1_title')}</h2>
+          <p class="sub">${t('step1_sub')}</p>
+          <div class="form-group">
+            <label class="form-label">${t('step1_date_label')}</label>
+            <div class="cal-wrap" id="calWrap"></div>
+            <div class="cal-legend">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--primary)"></span> ${t('cal_legend_selected')}</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold)"></span> ${t('cal_legend_today')}</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;opacity:0.3;background:var(--text)"></span> ${t('cal_legend_closed')}</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">${t('step1_repeat')}</label>
+            <div class="recurring-opts">
+              <button class="recur-btn ${sel.recurring==='once'?'active':''}" onclick="setRecurring('once')">${t('recur_once')}</button>
+              <button class="recur-btn ${sel.recurring==='2w'?'active':''}" onclick="setRecurring('2w')">${t('recur_2w')}</button>
+              <button class="recur-btn ${sel.recurring==='4w'?'active':''}" onclick="setRecurring('4w')">${t('recur_4w')}</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">${t('step1_slots_label')}</label>
+            ${slots.length === 0
+              ? `<p class="text-muted text-sm">${t('step1_closed')}</p>`
+              : allTaken
+                ? `<p class="text-muted text-sm" style="margin-bottom:0.75rem">${t('step1_all_taken')}</p>
+                   <div class="waitlist-box">
+                     <h4>${t('waitlist_title')}</h4>
+                     <p>${t('waitlist_sub')} ${sel.date}.</p>
+                     <button class="btn btn-primary btn-sm" onclick="joinWaitlist()">${t('waitlist_btn')}</button>
+                   </div>`
+                : `<div class="slots-grid">
+                     ${slots.map(s => `<button class="slot-btn ${s.taken?'taken':''} ${sel.slot===s.time?'selected':''}" ${s.taken?'disabled':''} onclick="selectSlot('${s.time}')">${s.time}</button>`).join('')}
+                   </div>`
+            }
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem">
+            Scheduling rules: ${calendarRulesHint()}
+          </div>
+          <div class="book-nav">
+            <button class="btn btn-ghost" onclick="prevStep()">${t('btn_back')}</button>
+            <button class="btn btn-primary" ${!sel.slot ? 'disabled' : ''} onclick="nextStep()">${t('btn_continue')}</button>
+          </div>`;
+        renderCalendar();
+
+      } else if (step === 2) {
+        const recurLabel = {
+          once: t('recur_once'),
+          '2w': t('recur_2w'),
+          '4w': t('recur_4w')
+        }[sel.recurring] || t('recur_once');
+        el.innerHTML = `
+          <h2>${t('step2_title')}</h2>
+          <p class="sub">${t('step2_sub')}</p>
+          <div class="confirm-table">
+            <div class="confirm-row"><span>${t('confirm_barber')}</span><strong>${barber.shop_name || barber.first_name + ' ' + barber.last_name}</strong></div>
+            <div class="confirm-row"><span>${t('confirm_service')}</span><strong>${sel.service.name}</strong></div>
+            <div class="confirm-row"><span>${t('confirm_date')}</span><strong>${sel.date}</strong></div>
+            <div class="confirm-row"><span>${t('confirm_time')}</span><strong>${sel.slot}</strong></div>
+            <div class="confirm-row"><span>${t('confirm_duration')}</span><strong>${fmtDur(sel.service.duration)}</strong></div>
+            <div class="confirm-row"><span>${t('confirm_repeat')}</span><strong>${recurLabel}</strong></div>
+            ${barber.cancellation_hours ? `<div class="confirm-row"><span>${t('confirm_cancel')}</span><strong style="color:var(--text-muted);font-size:0.85rem">${t('confirm_cancel')} ${barber.cancellation_hours}${t('confirm_cancel_unit')}</strong></div>` : ''}
+            <div class="confirm-row" style="background:rgba(233,69,96,0.05)"><span>${t('confirm_total')}</span><strong class="text-primary" style="font-size:1.1rem">${fmtPrice(sel.service.price)}</strong></div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">${t('notes_label')}</label>
+            <textarea class="form-control" placeholder="${t('notes_ph')}" rows="3" id="notesInput" onchange="sel.notes=this.value">${sel.notes}</textarea>
+          </div>
+          <div id="bookAlert"></div>
+          <div class="book-nav">
+            <button class="btn btn-ghost" onclick="prevStep()">${t('btn_back')}</button>
+            <div style="display:flex;gap:0.5rem;align-items:center">
+              <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Print confirmation"> ${t('btn_print') || 'Print'}</button>
+              <button class="btn btn-primary btn-lg" onclick="confirmBooking()">${t('btn_confirm')}</button>
+            </div>
+          </div>`;
+      }
+    }
+
+    function generateSlots() {
+      const dur = sel.service?.duration || 60;
+      return getDaySlots(barber, sel.date, dur).map((slot) => ({
+        ...slot,
+        taken: slot.taken || isRemoteSlotTaken(slot.time)
+      }));
+    }
+
+    function renderCalendar() {
+      const wrap = document.getElementById('calWrap');
+      if (!wrap) return;
+      const DAYS_SHORT = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+      const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const today      = new Date(); today.setHours(0,0,0,0);
+      const firstDay   = new Date(calYear, calMonth, 1).getDay();
+      const daysInMonth= new Date(calYear, calMonth+1, 0).getDate();
+      const selD       = new Date(sel.date + 'T00:00:00');
+
+      let cells = '';
+      for (let i = 0; i < firstDay; i++) cells += '<div class="cal-day cal-day--empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dt  = new Date(calYear, calMonth, d);
+        const dow = dt.getDay();
+        const avail = barber.availability.find(a => a.day === dow);
+        const isPast   = dt < today;
+        const isClosed = !avail || !avail.open;
+        const isToday  = dt.getTime() === today.getTime();
+        const isSel    = dt.getTime() === selD.getTime();
+        const dateStr  = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const bookings = Bookings.getAll().filter(b => b.barber_id === barber.id && b.date === dateStr && b.status !== 'cancelled');
+        const isBusyRemoteDay = dateStr === sel.date && remoteBookedSlots.size >= 3;
+        const isBusy   = bookings.length >= 3 || isBusyRemoteDay;
+        const classes  = [
+          'cal-day',
+          isToday  ? 'cal-day--today'    : '',
+          isSel    ? 'cal-day--selected' : '',
+          isPast   ? 'cal-day--disabled' : '',
+          isClosed && !isPast ? 'cal-day--closed' : '',
+          isBusy && !isSel ? 'cal-day--busy' : ''
+        ].filter(Boolean).join(' ');
+        const clickable = !isPast && !isClosed;
+        cells += `<div class="${classes}" ${clickable ? `onclick="changeDate('${dateStr}')"` : ''}>${d}</div>`;
+      }
+      wrap.innerHTML = `
+        <div class="cal-header">
+          <button class="cal-nav-btn" onclick="calNav(-1)"></button>
+          <strong>${MONTHS[calMonth]} ${calYear}</strong>
+          <button class="cal-nav-btn" onclick="calNav(1)"></button>
+        </div>
+        <div class="cal-grid">
+          ${DAYS_SHORT.map(d => `<div class="cal-dow">${d}</div>`).join('')}
+          ${cells}
+        </div>`;
+    }
+
+    function calNav(dir) {
+      calMonth += dir;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0)  { calMonth = 11; calYear--; }
+      renderCalendar();
+    }
+
+    function setRecurring(val) {
+      sel.recurring = val;
+      document.querySelectorAll('.recur-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    function joinWaitlist() {
+      Notifs.add(user.id, {
+        title: 'Waitlist Joined! ',
+        message: `You've joined the waitlist for ${barber.shop_name || barber.first_name} on ${sel.date}.`,
+        type: 'info'
+      });
+      alert(` You're on the waitlist for ${sel.date}. We'll notify you if a slot opens up!`);
+    }
+
+    function selectService(id) { sel.service = barber.services.find(s => s.id === id); render(); }
+    async function changeDate(val) {
+      sel.date = val;
+      sel.slot = null;
+      await refreshBookedSlots();
+      renderStep();
+    }
+    function selectSlot(time)  { sel.slot = time; renderStep(); }
+    async function nextStep() {
+      if (step < 2) {
+        step++;
+        if (step === 1) await refreshBookedSlots();
+        render();
+      }
+    }
+    function prevStep() { if (step > 0) { step--; render(); } }
+
+    async function confirmBooking() {
+      // Re-check slot availability at submission time (prevents double-booking across tabs)
+      const toMins = mn => { const [h,m] = mn.split(':').map(Number); return h*60+m; };
+      const dur = sel.service?.duration || 60;
+      const slotMn = toMins(sel.slot);
+      await refreshBookedSlots();
+      const availableNow = isSlotAvailable(barber, sel.date, slotMn, dur) && !isRemoteSlotTaken(sel.slot);
+      if (!availableNow) {
+        alert('Sorry, this time slot was just booked. Please pick a different time.');
+        sel.slot = null;
+        renderStep();
+        return;
+      }
+
+      let booking = null;
+      try {
+        if (window.BH_API) {
+          const created = await window.BH_API.createBooking({
+            barber_id: barber.id,
+            service_id: sel.service.id,
+            date: sel.date,
+            time: sel.slot,
+            notes: sel.notes
+          });
+          booking = created?.booking || null;
+        }
+      } catch (err) {
+        alert(err.message || 'Unable to confirm booking.');
+        return;
+      }
+
+      if (!booking) {
+        booking = Bookings.add({
+          customer_id:  user.id,
+          barber_id:    barber.id,
+          barber_name:  barber.shop_name || `${barber.first_name} ${barber.last_name}`,
+          service_name: sel.service.name,
+          price:        sel.service.price,
+          date:         sel.date,
+          time:         sel.slot,
+          duration_minutes: dur,
+          notes:        sel.notes
+        });
+      }
+
+      lastCreatedBooking = booking;
+
+      Notifs.add(user.id, {
+        title:   'Booking Sent!',
+        message: `Your appointment for ${sel.service.name} on ${sel.date} at ${sel.slot} has been requested. Ref #${booking.id}.`,
+        type:    'booking'
+      });
+      if (typeof ReminderEngine !== 'undefined') {
+        ReminderEngine.scheduleForBooking(booking, user, barber.shop_name || `${barber.first_name} ${barber.last_name}`, sel.service.name);
+      }
+      if (typeof Analytics !== 'undefined') {
+        Analytics.track('booking_complete', { barber_id: barber.id, booking_id: booking.id, price: sel.service.price });
+      }
+
+      // Show success + WhatsApp payment screen
+      const barberName = barber.shop_name || `${barber.first_name} ${barber.last_name}`;
+      const barberPhone = (() => {
+        if (barber.phone) return barber.phone;
+        const accs = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
+        const acc = accs.find(a => a.barber_id === barber.id || a.id === barber.id);
+        return acc?.phone || '';
+      })();
+      const cleanPhone = barberPhone.replace(/\D/g, '');
+      const waMsg = encodeURIComponent(
+        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via BarberHub`
+      );
+
+      document.getElementById('bookContainer').innerHTML = `
+        <div style="max-width:480px;margin:4rem auto;text-align:center;padding:2rem">
+          <div style="font-size:3.5rem;margin-bottom:1rem"></div>
+          <h2 style="margin-bottom:0.5rem">Booking Confirmed!</h2>
+          <p style="color:var(--text-muted);margin-bottom:2rem">
+            Your appointment with <strong>${barberName}</strong> for <strong>${sel.service.name}</strong>
+            on <strong>${sel.date}</strong> at <strong>${sel.slot}</strong> has been requested.
+          </p>
+          <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.25rem">
+            <button class="btn btn-primary btn-sm" onclick="addBookingToGoogleCalendar()">Add to Google Calendar</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadBookingICS()">Download .ics</button>
+          </div>
+          ${cleanPhone ? `
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem">
+            <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">
+               Pay via Wave or cash  contact the barber directly:
+            </p>
+            <a href="https://wa.me/${cleanPhone}?text=${waMsg}" target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:0.6rem;background:#25d366;color:white;padding:0.75rem 1.5rem;border-radius:var(--radius);font-weight:700;text-decoration:none;font-size:1rem">
+               Pay via Wave or WhatsApp
+            </a>
+          </div>` : ''}
+          <a href="dashboard.html" style="color:var(--text-muted);font-size:0.875rem">
+            Go to Dashboard 
+          </a>
+        </div>`;
+    }
+
+    function addBookingToGoogleCalendar() {
+      const booking = lastCreatedBooking;
+      if (!booking) return;
+      openBookingInGoogleCalendar(booking, barber);
+    }
+
+    function downloadBookingICS() {
+      const booking = lastCreatedBooking;
+      if (!booking) return;
+      const ev = getBookingCalendarEvent(booking, barber);
+      downloadICS(`barberhub-booking-${booking.id}.ics`, [ev]);
+    }
+
+    initBookingPage();
+  </script>
+</body>
+</html>
+
+

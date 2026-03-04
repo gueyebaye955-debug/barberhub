@@ -1,0 +1,561 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barber Dashboard  BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .dash-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
+    .dash-sidebar { height: fit-content; position: sticky; top: 80px; }
+    .dash-user { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; margin-bottom: 1rem; }
+    .dash-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; margin: 0 auto 0.75rem; }
+    .dash-user h3 { font-size: 1rem; margin-bottom: 0.1rem; }
+    .dash-user p  { color: var(--text-muted); font-size: 0.8rem; }
+    .dash-nav { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .dash-nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; font-size: 0.875rem; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-muted); transition: all 0.15s; }
+    .dash-nav-item:last-child { border-bottom: none; }
+    .dash-nav-item:hover { background: var(--bg-elevated); color: var(--text); }
+    .dash-nav-item.active { background: rgba(233,69,96,0.08); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+    .dash-panel { display: none; }
+    .dash-panel.active { display: block; }
+    .dash-panel h2 { margin-bottom: 0.25rem; }
+    .dash-panel .sub { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; }
+    .stat-card .val { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat-card .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--bg-elevated); padding: 0.7rem 1rem; text-align: left; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    td { padding: 0.75rem 1rem; border-top: 1px solid var(--border); font-size: 0.875rem; }
+    .status-badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .status-pending   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-confirmed { background: rgba(16,185,129,0.15); color: var(--green); }
+    .status-completed { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .status-cancelled { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .svc-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
+    .svc-info { flex: 1; }
+    .svc-info strong { display: block; font-size: 0.95rem; }
+    .svc-info span   { font-size: 0.8rem; color: var(--text-muted); }
+    .svc-price { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-right: 0.75rem; }
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; width: 100%; max-width: 440px; }
+    .modal-box h3 { margin-bottom: 1.25rem; }
+    .schedule-row { display: grid; grid-template-columns: 100px 60px 1fr; gap: 0.75rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .schedule-row:last-child { border-bottom: none; }
+    @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main>
+    <div class="container">
+      <div class="dash-layout" id="dashLayout">
+        <div class="loading-box" style="padding:5rem;grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Service modal -->
+  <div class="modal-bg" id="svcModal">
+    <div class="modal-box">
+      <h3 id="svcModalTitle"></h3>
+      <div class="form-group">
+        <label class="form-label" data-i18n="svc_name_label">Service Name</label>
+        <input class="form-control" id="svcName" placeholder="e.g. Haircut">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="svc_desc_label">Description (optional)</label>
+        <input class="form-control" id="svcDesc" placeholder="Short description">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label" data-i18n="svc_price_label">Price ($)</label>
+          <input class="form-control" type="number" id="svcPrice" placeholder="30" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="svc_dur_label">Duration (min)</label>
+          <input class="form-control" type="number" id="svcDur" placeholder="45" min="15" step="15">
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem">
+        <button class="btn btn-ghost" onclick="closeSvcModal()" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn btn-primary" id="svcSaveBtn" onclick="saveService()" data-i18n="btn_save">Save Service</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    renderNav('barber-dashboard');
+    renderFooter();
+    applyI18n();
+
+    const user = Auth.require('barber');
+    if (!user) throw new Error('redirect');
+
+    let barber = user.barber_id ? getBarber(user.barber_id) : getAllBarbers()[0];
+    if (!barber) barber = getAllBarbers()[0];
+
+    let activeTab = 'overview';
+    let editingSvcId = null;
+
+    const SVC_KEY = `bh_services_${barber.id}`;
+    function getServices() {
+      const stored = localStorage.getItem(SVC_KEY);
+      return stored ? JSON.parse(stored) : [...barber.services];
+    }
+    function saveServices(svcs) { localStorage.setItem(SVC_KEY, JSON.stringify(svcs)); }
+
+    const SCHED_KEY = `bh_schedule_${barber.id}`;
+    function getSchedule() {
+      const stored = localStorage.getItem(SCHED_KEY);
+      return stored ? JSON.parse(stored) : [...barber.availability];
+    }
+    function saveSchedule(sched) { localStorage.setItem(SCHED_KEY, JSON.stringify(sched)); }
+
+    const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    function render() {
+      const bookings  = Bookings.getForBarber(barber.id);
+      const services  = getServices();
+      const schedule  = getSchedule();
+      const calPrefs  = getBarberCalendarPrefs(barber.id);
+      const pending   = bookings.filter(b => b.status === 'pending');
+      const confirmed = bookings.filter(b => b.status === 'confirmed');
+      const completed = bookings.filter(b => b.status === 'completed');
+      const revenue   = bookings.filter(b => b.status === 'completed').reduce((s,b) => s + parseFloat(b.price||0), 0);
+      const custIds   = [...new Set(bookings.map(b => b.customer_id))];
+      const pBadge    = pending.length ? ` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${pending.length}</span>` : '';
+
+      document.getElementById('dashLayout').innerHTML = `
+        <!-- Sidebar -->
+        <div class="dash-sidebar">
+          <div class="dash-user">
+            <div class="dash-avatar" style="overflow:hidden">${getBarberAvatar(barber) ? `<img src="${getBarberAvatar(barber)}" alt="${escapeHTML(barber.first_name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : escapeHTML(barber.first_name[0]+barber.last_name[0])}</div>
+            <h3>${escapeHTML(barber.shop_name || barber.first_name + ' ' + barber.last_name)}</h3>
+            <p style="margin-bottom:0.35rem">${escapeHTML(barber.city)}</p>
+            ${barber.verified ? '<span style="font-size:0.72rem;background:rgba(245,158,11,0.2);color:#f59e0b;padding:0.1rem 0.5rem;border-radius:10px"> Verified</span>' : ''}
+          </div>
+          <nav class="dash-nav">
+            <div class="dash-nav-item ${activeTab==='overview'?'active':''}" onclick="switchTab('overview')"> ${t('bdash_overview')}</div>
+            <div class="dash-nav-item ${activeTab==='bookings'?'active':''}" onclick="switchTab('bookings')"> ${t('bdash_all_bookings')}${pBadge}</div>
+            <div class="dash-nav-item ${activeTab==='services'?'active':''}" onclick="switchTab('services')"> ${t('bdash_services')}</div>
+            <div class="dash-nav-item ${activeTab==='schedule'?'active':''}" onclick="switchTab('schedule')"> ${t('bdash_schedule')}</div>
+            <div class="dash-nav-item ${activeTab==='customers'?'active':''}" onclick="switchTab('customers')"> ${t('bdash_customers')}</div>
+            <div class="dash-nav-item ${activeTab==='profile'?'active':''}" onclick="switchTab('profile')"> ${t('dash_profile')}</div>
+            <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
+          </nav>
+        </div>
+
+        <!-- Panels -->
+        <div>
+          <!-- Overview -->
+          <div class="dash-panel ${activeTab==='overview'?'active':''}" id="panel-overview">
+            <h2>${t('bdash_overview')}</h2>
+            <p class="sub">${t('bdash_welcome')} ${escapeHTML(barber.first_name)}!</p>
+            <div class="stat-grid">
+              <div class="stat-card"><div class="val">${pending.length}</div><div class="lbl">${t('bdash_pending_req')}</div></div>
+              <div class="stat-card"><div class="val">${confirmed.length}</div><div class="lbl">${t('bdash_confirmed')}</div></div>
+              <div class="stat-card"><div class="val">${completed.length}</div><div class="lbl">${t('bdash_completed')}</div></div>
+              <div class="stat-card"><div class="val">${fmtPrice(revenue)}</div><div class="lbl">${t('bdash_revenue')}</div></div>
+            </div>
+            ${pending.length > 0 ? `
+              <h3 style="margin-bottom:1rem">${t('bdash_pending_req')} (${pending.length})</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Customer</th><th>Service</th><th>Date</th><th>Time</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    ${pending.map(b => `<tr>
+                      <td><strong>Customer #${b.customer_id}</strong></td>
+                      <td>${escapeHTML(b.service_name)}</td>
+                      <td>${b.date}</td>
+                      <td>${b.time}</td>
+                      <td style="display:flex;gap:0.4rem">
+                        <button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="updateStatus(${b.id},'confirmed')">${t('bdash_confirm_btn')}</button>
+                        <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="updateStatus(${b.id},'cancelled')">${t('bdash_decline_btn')}</button>
+                      </td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>` : `<div style="text-align:center;padding:2rem;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+                <div style="font-size:2rem;margin-bottom:0.5rem"></div>
+                <p>No pending requests.</p>
+              </div>`}
+          </div>
+
+          <!-- Bookings -->
+          <div class="dash-panel ${activeTab==='bookings'?'active':''}" id="panel-bookings">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;flex-wrap:wrap">
+              <h2>${t('bdash_all_bookings')}</h2>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="exportConfirmedCalendar()">Export Confirmed (.ics)</button>
+                <button class="btn btn-primary btn-sm" onclick="syncNextBookingToGoogle()">Sync Next to Google</button>
+              </div>
+            </div>
+            <p class="sub">Manage all your appointments</p>
+            ${bookings.length === 0 ? `<div style="text-align:center;padding:3rem;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:1rem"></div><p>${t('no_bookings')}</p></div>` : `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Customer</th><th>Service</th><th>Date & Time</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  ${[...bookings].reverse().map(b => `<tr>
+                    <td>Customer #${b.customer_id}</td>
+                    <td>${escapeHTML(b.service_name)}</td>
+                    <td>${b.date}<br><span style="color:var(--text-muted);font-size:0.8rem">${b.time}</span></td>
+                    <td>${fmtPrice(b.price)}</td>
+                    <td><span class="status-badge status-${b.status}">${b.status}</span></td>
+                    <td>
+                      ${b.status==='pending'?`<button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="updateStatus(${b.id},'confirmed')">${t('bdash_confirm_btn')}</button>`:''}
+                      ${b.status==='confirmed'?`<button class="btn btn-sm" style="background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)" onclick="updateStatus(${b.id},'completed')">${t('bdash_complete_btn')}</button>`:''}
+                      ${b.status==='pending'||b.status==='confirmed'?`<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);margin-left:0.3rem" onclick="updateStatus(${b.id},'cancelled')">${t('bdash_decline_btn')}</button>`:''}
+                    </td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>`}
+          </div>
+
+          <!-- Services -->
+          <div class="dash-panel ${activeTab==='services'?'active':''}" id="panel-services">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem">
+              <h2>${t('bdash_services')}</h2>
+              <button class="btn btn-primary btn-sm" onclick="openSvcModal(null)">${t('bdash_add_service')}</button>
+            </div>
+            <p class="sub">${t('bdash_services_sub')}</p>
+            ${getServices().map(s => `
+              <div class="svc-item">
+                <div class="svc-info">
+                  <strong>${escapeHTML(s.name)}</strong>
+                  <span>${escapeHTML(s.desc || '')} &nbsp;&nbsp;  ${fmtDur(s.duration)}</span>
+                </div>
+                <span class="svc-price">${fmtPrice(s.price)}</span>
+                <button class="btn btn-sm btn-ghost" onclick="openSvcModal(${s.id})">Edit</button>
+                <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);margin-left:0.3rem" onclick="deleteService(${s.id})">Delete</button>
+              </div>`).join('')}
+          </div>
+
+          <!-- Schedule -->
+          <div class="dash-panel ${activeTab==='schedule'?'active':''}" id="panel-schedule">
+            <h2>${t('bdash_schedule')}</h2>
+            <p class="sub">${t('bdash_schedule_sub')}</p>
+            <div id="scheduleAlert"></div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;max-width:520px">
+              <div style="display:grid;grid-template-columns:100px 60px 1fr;gap:0.75rem;margin-bottom:0.5rem">
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Day</span>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Open</span>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;text-transform:uppercase">Hours</span>
+              </div>
+              ${getSchedule().map(a => `
+                <div class="schedule-row">
+                  <strong>${DAYS[a.day]}</strong>
+                  <label style="display:flex;align-items:center;cursor:pointer">
+                    <input type="checkbox" ${a.open?'checked':''} onchange="toggleDay(${a.day},this.checked)" style="width:16px;height:16px;cursor:pointer">
+                  </label>
+                  <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem">
+                    <input type="time" value="${a.start||'09:00'}" ${!a.open?'disabled':''} onchange="updateHours(${a.day},'start',this.value)" class="form-control" style="padding:0.3rem 0.5rem;width:auto">
+                    <span></span>
+                    <input type="time" value="${a.end||'18:00'}" ${!a.open?'disabled':''} onchange="updateHours(${a.day},'end',this.value)" class="form-control" style="padding:0.3rem 0.5rem;width:auto">
+                  </div>
+                </div>`).join('')}
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;max-width:520px;margin-top:1rem">
+              <h3 style="font-size:0.9rem;margin-bottom:0.9rem">Calendar Rules</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Buffer Before (min)</label>
+                  <input class="form-control" type="number" min="0" step="5" id="prefBufferBefore" value="${calPrefs.buffer_before}">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Cleanup Buffer (min)</label>
+                  <input class="form-control" type="number" min="0" step="5" id="prefBufferAfter" value="${calPrefs.buffer_after}">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Travel Time (min)</label>
+                  <input class="form-control" type="number" min="0" step="5" id="prefTravelBuffer" value="${calPrefs.travel_buffer}">
+                </div>
+                <div class="form-group" style="margin-bottom:0;display:flex;align-items:flex-end">
+                  <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer">
+                    <input type="checkbox" id="prefLunchEnabled" ${calPrefs.lunch_enabled ? 'checked' : ''}>
+                    Enable lunch break
+                  </label>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Lunch Start</label>
+                  <input class="form-control" type="time" id="prefLunchStart" value="${calPrefs.lunch_start}">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">Lunch End</label>
+                  <input class="form-control" type="time" id="prefLunchEnd" value="${calPrefs.lunch_end}">
+                </div>
+              </div>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.8rem">These rules apply automatically when customers pick slots and when your next available time is shown.</p>
+            </div>
+            <button class="btn btn-primary" style="margin-top:1.25rem" onclick="saveScheduleBtn()">${t('bdash_save_schedule')}</button>
+          </div>
+
+          <!-- Customers -->
+          <div class="dash-panel ${activeTab==='customers'?'active':''}" id="panel-customers">
+            <h2>${t('bdash_customers')}</h2>
+            <p class="sub">People who have booked with you (${custIds.length} total)</p>
+            ${custIds.length === 0 ? `<div style="text-align:center;padding:3rem;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:1rem"></div><p>No customers yet.</p></div>` : `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Customer ID</th><th>Bookings</th><th>Last Visit</th><th>Revenue</th></tr></thead>
+                <tbody>
+                  ${custIds.map(cId => {
+                    const cBookings = bookings.filter(b => b.customer_id === cId && b.status !== 'cancelled');
+                    const lastDate = cBookings.map(b => b.date).sort().reverse()[0] || '';
+                    const rev = cBookings.filter(b=>b.status==='completed').reduce((s,b)=>s+parseFloat(b.price||0),0);
+                    return `<tr>
+                      <td><strong>Customer #${cId}</strong></td>
+                      <td>${cBookings.length}</td>
+                      <td>${lastDate}</td>
+                      <td>${fmtPrice(rev)}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`}
+          </div>
+
+          <!-- Profile / Avatar -->
+          <div class="dash-panel ${activeTab==='profile'?'active':''}" id="panel-profile">
+            <h2>${t('dash_profile')}</h2>
+            <p class="sub">Update your public photo and profile details</p>
+            <div id="bdashProfileAlert"></div>
+
+            <!-- Avatar -->
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:520px;margin-bottom:1.25rem">
+              <h3 style="font-size:0.95rem;margin-bottom:1rem"> Profile Photo</h3>
+              <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem">
+                <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:white;flex-shrink:0">
+                  ${getBarberAvatar(barber) ? `<img src="${getBarberAvatar(barber)}" alt="${barber.first_name}" style="width:100%;height:100%;object-fit:cover">` : barber.first_name[0] + barber.last_name[0]}
+                </div>
+                <div style="flex:1">
+                  <input class="form-control" id="avatarUrlInput" placeholder="https://example.com/photo.jpg" value="${getBarberAvatar(barber)||''}" style="margin-bottom:0.4rem">
+                  <p style="font-size:0.75rem;color:var(--text-muted)">Paste a direct image URL</p>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveAvatar()"> Save Photo</button>
+              ${getBarberAvatar(barber) ? `<button class="btn btn-ghost btn-sm" style="margin-left:0.5rem" onclick="removeAvatar()">Remove</button>` : ''}
+              <a class="btn btn-ghost btn-sm" style="margin-left:0.5rem" href="https://www.google.com/business/" target="_blank" rel="noopener">Manage Google Business Profile</a>
+            </div>
+
+            <!-- Shop info (only editable for dynamic barbers) -->
+            ${barber._dynamic ? `
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;max-width:520px">
+              <h3 style="font-size:0.95rem;margin-bottom:1rem"> Shop Information</h3>
+              <div class="form-group">
+                <label class="form-label">Shop Name</label>
+                <input class="form-control" id="pShopName" value="${barber.shop_name||''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bio</label>
+                <textarea class="form-control" id="pBio" rows="3" placeholder="Tell customers about yourself...">${barber.bio||''}</textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="form-group">
+                  <label class="form-label">City</label>
+                  <input class="form-control" id="pCity" value="${barber.city||''}">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Years Experience</label>
+                  <input class="form-control" type="number" id="pExp" min="0" value="${barber.years_experience||0}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Full Address</label>
+                <input class="form-control" id="pLocation" value="${barber.location||''}" placeholder="Street, City, State">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cancellation Notice (hours)</label>
+                <input class="form-control" type="number" id="pCancel" min="0" value="${barber.cancellation_hours||24}">
+              </div>
+              <button class="btn btn-primary" onclick="saveShopInfo()"> Save Shop Info</button>
+            </div>` : `
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;max-width:520px;color:var(--text-muted);font-size:0.875rem">
+               This is a demo barber profile. Shop details are managed in data.js.
+            </div>`}
+          </div>
+        </div>`;
+    }
+
+    function switchTab(tab) { activeTab = tab; render(); }
+
+    function saveAvatar() {
+      const url = document.getElementById('avatarUrlInput')?.value.trim();
+      if (url) {
+        localStorage.setItem('bh_avatar_' + barber.id, url);
+        // Also persist to dynamic profile if applicable
+        if (barber._dynamic) {
+          const profiles = JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
+          if (profiles[barber.id]) { profiles[barber.id].avatar = url; localStorage.setItem('bh_barber_profiles', JSON.stringify(profiles)); }
+        }
+        showProfileAlert('Photo saved!');
+        setTimeout(render, 1200);
+      }
+    }
+
+    function removeAvatar() {
+      localStorage.removeItem('bh_avatar_' + barber.id);
+      render();
+    }
+
+    function saveShopInfo() {
+      if (!barber._dynamic) return;
+      const profiles = JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
+      if (!profiles[barber.id]) return;
+      profiles[barber.id].shop_name         = document.getElementById('pShopName')?.value.trim() || barber.shop_name;
+      profiles[barber.id].bio               = document.getElementById('pBio')?.value.trim()      || '';
+      profiles[barber.id].city              = document.getElementById('pCity')?.value.trim()      || barber.city;
+      profiles[barber.id].location          = document.getElementById('pLocation')?.value.trim()  || barber.city;
+      profiles[barber.id].years_experience  = parseInt(document.getElementById('pExp')?.value)    || 0;
+      profiles[barber.id].cancellation_hours= parseInt(document.getElementById('pCancel')?.value) || 24;
+      localStorage.setItem('bh_barber_profiles', JSON.stringify(profiles));
+      // Refresh local barber object
+      barber = getDynamicBarber(barber.id);
+      showProfileAlert('Shop info saved! Customers can now see your updated profile.');
+      setTimeout(render, 1800);
+    }
+
+    function showProfileAlert(msg) {
+      const el = document.getElementById('bdashProfileAlert');
+      if (el) el.innerHTML = `<div class="alert alert-success">${msg}</div>`;
+      setTimeout(() => { const e = document.getElementById('bdashProfileAlert'); if(e) e.innerHTML=''; }, 2500);
+    }
+
+    function updateStatus(id, status) {
+      Bookings.update(id, { status });
+      const booking = Bookings.getAll().find(b => b.id === id);
+      if (booking) {
+        const msgs = {
+          confirmed: `Your appointment on ${booking.date} at ${booking.time} has been confirmed!`,
+          cancelled: `Your appointment on ${booking.date} at ${booking.time} was declined by the barber.`,
+          completed: `Your appointment on ${booking.date} at ${booking.time} is now marked complete.`
+        };
+        Notifs.add(booking.customer_id, {
+          title: status.charAt(0).toUpperCase() + status.slice(1),
+          message: msgs[status] || '',
+          type: 'booking'
+        });
+      }
+      render();
+    }
+
+    function openSvcModal(id) {
+      editingSvcId = id;
+      const services = getServices();
+      const s = id ? services.find(x => x.id === id) : null;
+      document.getElementById('svcModalTitle').textContent = s ? t('svc_modal_edit') : t('svc_modal_add');
+      document.getElementById('svcName').value  = s ? s.name  : '';
+      document.getElementById('svcDesc').value  = s ? (s.desc||'') : '';
+      document.getElementById('svcPrice').value = s ? s.price : '';
+      document.getElementById('svcDur').value   = s ? s.duration : '';
+      document.getElementById('svcModal').classList.add('open');
+    }
+    function closeSvcModal() {
+      document.getElementById('svcModal').classList.remove('open');
+      editingSvcId = null;
+    }
+    function saveService() {
+      const name  = document.getElementById('svcName').value.trim();
+      const desc  = document.getElementById('svcDesc').value.trim();
+      const price = parseFloat(document.getElementById('svcPrice').value);
+      const dur   = parseInt(document.getElementById('svcDur').value);
+      if (!name || isNaN(price) || isNaN(dur)) { alert('Please fill all required fields.'); return; }
+      const services = getServices();
+      if (editingSvcId) {
+        const idx = services.findIndex(s => s.id === editingSvcId);
+        if (idx !== -1) services[idx] = { ...services[idx], name, desc, price, duration: dur };
+      } else {
+        services.push({ id: Date.now(), name, desc, price, duration: dur });
+      }
+      saveServices(services);
+      closeSvcModal();
+      render();
+    }
+    function deleteService(id) {
+      if (!confirm('Delete this service?')) return;
+      saveServices(getServices().filter(s => s.id !== id));
+      render();
+    }
+
+    function exportConfirmedCalendar() {
+      const now = new Date();
+      const events = Bookings.getForBarber(barber.id)
+        .filter(b => b.status === 'confirmed' || b.status === 'pending')
+        .filter(b => new Date(`${b.date}T${b.time}:00`) >= now)
+        .sort((a, b) => new Date(`${a.date}T${a.time}:00`) - new Date(`${b.date}T${b.time}:00`))
+        .map(b => getBookingCalendarEvent(b, barber));
+
+      if (!events.length) {
+        alert('No upcoming bookings to export.');
+        return;
+      }
+      downloadICS(`barberhub-${barber.id}-calendar.ics`, events);
+    }
+
+    function syncNextBookingToGoogle() {
+      const next = Bookings.getForBarber(barber.id)
+        .filter(b => b.status === 'confirmed' || b.status === 'pending')
+        .filter(b => new Date(`${b.date}T${b.time}:00`) >= new Date())
+        .sort((a, b) => new Date(`${a.date}T${a.time}:00`) - new Date(`${b.date}T${b.time}:00`))[0];
+      if (!next) {
+        alert('No upcoming booking to sync.');
+        return;
+      }
+      openBookingInGoogleCalendar(next, barber);
+    }
+
+    function toggleDay(day, open) {
+      const sched = getSchedule();
+      const idx = sched.findIndex(a => a.day === day);
+      if (idx !== -1) sched[idx].open = open;
+      saveSchedule(sched);
+      render();
+    }
+    function updateHours(day, field, val) {
+      const sched = getSchedule();
+      const idx = sched.findIndex(a => a.day === day);
+      if (idx !== -1) sched[idx][field] = val;
+      saveSchedule(sched);
+    }
+    function saveScheduleBtn() {
+      const prefs = {
+        buffer_before: parseInt(document.getElementById('prefBufferBefore')?.value, 10) || 0,
+        buffer_after: parseInt(document.getElementById('prefBufferAfter')?.value, 10) || 0,
+        travel_buffer: parseInt(document.getElementById('prefTravelBuffer')?.value, 10) || 0,
+        lunch_enabled: !!document.getElementById('prefLunchEnabled')?.checked,
+        lunch_start: document.getElementById('prefLunchStart')?.value || '13:00',
+        lunch_end: document.getElementById('prefLunchEnd')?.value || '14:00'
+      };
+      if (prefs.lunch_enabled && prefs.lunch_start >= prefs.lunch_end) {
+        alert('Lunch end time must be after lunch start time.');
+        return;
+      }
+      setBarberCalendarPrefs(barber.id, prefs);
+      document.getElementById('scheduleAlert').innerHTML = `<div class="alert alert-success">${t('bdash_schedule_saved')}</div>`;
+      setTimeout(() => { document.getElementById('scheduleAlert').innerHTML = ''; }, 3000);
+    }
+
+    document.getElementById('svcModal').addEventListener('click', function(e) {
+      if (e.target === this) closeSvcModal();
+    });
+
+    render();
+  </script>
+</body>
+</html>
+

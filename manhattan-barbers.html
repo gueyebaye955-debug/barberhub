@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Discover top-rated barbers in Manhattan, NY. Book haircuts with real-time schedule visibility.">
+  <meta name="keywords" content="Manhattan barber, barbershop Manhattan, haircut Manhattan, NYC barber booking">
+  <link rel="canonical" href="/manhattan-barbers.html">
+  <meta property="og:title" content="Best Barbers in Manhattan, NY | BarberHub">
+  <meta property="og:description" content="Find trusted Manhattan barbers, compare reviews, and book online in minutes.">
+  <meta property="og:type" content="website">
+  <title>Best Barbers in Manhattan, NY | BarberHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .local-wrap { padding: 2rem 0 4rem; }
+    .local-links { display: flex; gap: 0.45rem; flex-wrap: wrap; margin: 1rem 0 1.25rem; }
+    .local-links a { text-decoration: none; }
+  </style>
+</head>
+<body class="page-wrap" data-city="Manhattan" data-city-slug="manhattan-barbers">
+  <nav class="navbar" id="navbar"></nav>
+
+  <div class="page-header">
+    <div class="container">
+      <h1 id="cityTitle">Best Barbers in Manhattan</h1>
+      <p id="cityCount"></p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container local-wrap">
+      <p id="cityIntro" class="text-muted"></p>
+      <div class="local-links">
+        <a class="btn btn-ghost btn-sm" href="new-york-barbers.html">New York</a>
+        <a class="btn btn-ghost btn-sm" href="brooklyn-barbers.html">Brooklyn</a>
+        <a class="btn btn-ghost btn-sm" href="queens-barbers.html">Queens</a>
+        <a class="btn btn-ghost btn-sm" href="bronx-barbers.html">Bronx</a>
+      </div>
+
+      <div id="cityBarbersGrid" class="grid-3"></div>
+      <div id="cityEmpty" class="empty-state" style="display:none">
+        <div class="icon"></div>
+        <h3>No barbers found</h3>
+        <p>Try another city page.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+  <script id="citySchema" type="application/ld+json"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/city-page.js"></script>
+</body>
+</html>
+

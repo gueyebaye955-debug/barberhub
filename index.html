@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Book trusted barbers in New York, Brooklyn, Manhattan, Queens, and Bronx. Compare ratings, pricing, and real-time availability.">
+  <meta name="keywords" content="barber booking NYC, haircut near me, Brooklyn barber, Manhattan barber, Queens barber, Bronx barber">
+  <link rel="canonical" href="/index.html">
+  <meta property="og:title" content="BarberHub - Find and Book Top Barbers">
+  <meta property="og:description" content="Discover and book top-rated local barbers with transparent pricing and real availability.">
+  <meta property="og:type" content="website">
+  <title>BarberHub - Find and Book Top Barbers</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="preconnect" href="https://i.pravatar.cc" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <style>
+    .hero {
+      position: relative;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(233, 69, 96, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 80% 100%, rgba(99, 102, 241, 0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero__content {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      padding: 4rem 0 3rem;
+    }
+
+    .hero__tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(233, 69, 96, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(233, 69, 96, 0.25);
+      border-radius: 50px;
+      padding: 0.3rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 1.4rem;
+      letter-spacing: 0.03em;
+    }
+
+    .hero__title {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.1rem;
+    }
+
+    .hero__accent {
+      background: linear-gradient(135deg, var(--primary) 0%, #ff8fa3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero__sub {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      max-width: 500px;
+      line-height: 1.7;
+    }
+
+    .hero__search {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      max-width: 680px;
+    }
+
+    .hero__search-row {
+      display: flex;
+      gap: 0;
+    }
+
+    .hero__field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      padding: 0 0.75rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .hero__field:last-of-type { border-right: none; }
+
+    .hero__field input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 0.7rem 0;
+      font-family: inherit;
+    }
+
+    .hero__field input::placeholder { color: var(--text-muted); }
+    .hero__search .btn { border-radius: 10px; flex-shrink: 0; }
+
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.35rem 0.5rem 0;
+    }
+
+    .quick-tag {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .quick-tag:hover { border-color: var(--primary); color: var(--primary); }
+
+    .hero__stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .hero__stat { display: flex; flex-direction: column; }
+    .hero__stat strong { font-size: 1.35rem; font-weight: 800; }
+    .hero__stat span { font-size: 0.78rem; color: var(--text-muted); }
+    .hero__stat-div { width: 1px; height: 36px; background: var(--border); }
+
+    .hiw { background: var(--bg-card); }
+    .hiw-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+
+    .hiw-step {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .hiw-icon { font-size: 2.2rem; margin-bottom: 0.5rem; }
+
+    .hiw-num {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .hiw-step h3 { margin-bottom: 0.4rem; font-size: 1rem; }
+    .hiw-step p { color: var(--text-muted); font-size: 0.85rem; }
+
+    .cta-box {
+      background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .cta-box__text h2 { font-size: 1.85rem; font-weight: 800; margin-bottom: 0.75rem; }
+
+    .cta-box__text p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      max-width: 420px;
+      line-height: 1.7;
+    }
+
+    .cta-box__btns { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .cta-box__icon { font-size: 4rem; opacity: 0.2; }
+
+    .local-city-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+    }
+
+    .local-city-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .local-city-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .local-city-card strong { display: block; margin-bottom: 0.2rem; }
+    .local-city-card span { color: var(--text-muted); font-size: 0.82rem; }
+
+    @media (max-width: 768px) {
+      .hero__search-row { flex-direction: column; }
+      .hero__field { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero__field:last-of-type { border-bottom: none; }
+      .hiw-steps { grid-template-columns: 1fr; }
+      .cta-box { flex-direction: column; }
+      .cta-box__icon { display: none; }
+      .local-city-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero__content fade-in">
+          <div class="hero__tag">Professional Barber Marketplace</div>
+          <h1 class="hero__title">
+            Find Your Perfect<br>
+            <span class="hero__accent">Barber Today</span>
+          </h1>
+          <p class="hero__sub">Discover top-rated barbers near you, book appointments online, and get the cut you deserve.</p>
+
+          <div class="hero__search">
+            <div class="hero__search-row">
+              <div class="hero__field">
+                <span>Search</span>
+                <input type="text" id="searchInput" placeholder="Search barbers, styles, services...">
+              </div>
+              <div class="hero__field" style="max-width: 200px;">
+                <span>City</span>
+                <input type="text" id="cityInput" placeholder="City">
+              </div>
+              <button class="btn btn-primary btn-lg" onclick="doSearch()">Search</button>
+            </div>
+            <div class="quick-tags">
+              <button class="quick-tag" onclick="quickSearch('Fade')">Fade</button>
+              <button class="quick-tag" onclick="quickSearch('Beard Trim')">Beard Trim</button>
+              <button class="quick-tag" onclick="quickSearch('Lineup')">Lineup</button>
+              <button class="quick-tag" onclick="quickSearch('Kids Cut')">Kids Cut</button>
+              <button class="quick-tag" onclick="quickSearch('Hot Shave')">Hot Shave</button>
+            </div>
+          </div>
+
+          <div class="hero__stats">
+            <div class="hero__stat"><strong>500+</strong><span>Barbers</span></div>
+            <div class="hero__stat-div"></div>
+            <div class="hero__stat"><strong>10k+</strong><span>Bookings</span></div>
+            <div class="hero__stat-div"></div>
+            <div class="hero__stat"><strong>4.9/5</strong><span>Avg Rating</span></div>
+          </div>
+
+          <div style="margin-top:2rem">
+            <h2 style="font-size:1.05rem;margin-bottom:0.35rem">Explore by NYC Area</h2>
+            <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:0.8rem">Local city pages for New York borough search intent</p>
+            <div class="local-city-grid">
+              <a class="local-city-card" href="new-york-barbers.html"><strong>New York</strong><span>City-wide barbers</span></a>
+              <a class="local-city-card" href="brooklyn-barbers.html"><strong>Brooklyn</strong><span>Top rated picks</span></a>
+              <a class="local-city-card" href="manhattan-barbers.html"><strong>Manhattan</strong><span>Popular shops</span></a>
+              <a class="local-city-card" href="queens-barbers.html"><strong>Queens</strong><span>Neighborhood cuts</span></a>
+              <a class="local-city-card" href="bronx-barbers.html"><strong>Bronx</strong><span>Book near you</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="recommendedSection" style="padding-top: 0; display: none;">
+      <div class="container">
+        <div class="section-header">
+          <h2>Recommended For You</h2>
+          <p>Personalized picks based on your location and preferences</p>
+        </div>
+        <div class="grid-4" id="recommendedGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top: 0;">
+      <div class="container">
+        <div class="section-header">
+          <h2>Featured Barbers</h2>
+          <p>Consistently top-rated professionals</p>
+        </div>
+        <div class="grid-4" id="featuredGrid"></div>
+        <div class="text-center mt-3">
+          <a href="barbers.html" class="btn btn-outline btn-lg">View All Barbers</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top: 0;">
+      <div class="container">
+        <div class="section-header">
+          <h2>Trending Barbers</h2>
+          <p>Most booked this month</p>
+        </div>
+        <div class="grid-4" id="trendingGrid"></div>
+      </div>
+    </section>
+
+    <section class="section hiw" style="padding-top: 0;">
+      <div class="container">
+        <div class="section-header">
+          <h2>How It Works</h2>
+          <p>Book your next haircut in 3 simple steps</p>
+        </div>
+        <div class="hiw-steps">
+          <div class="hiw-step">
+            <div class="hiw-icon">1</div>
+            <div class="hiw-num">Step 01</div>
+            <h3>Find a Barber</h3>
+            <p>Browse profiles, compare ratings, and read verified reviews.</p>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-icon">2</div>
+            <div class="hiw-num">Step 02</div>
+            <h3>Book Online</h3>
+            <p>Choose your service, pick a time, and confirm instantly.</p>
+          </div>
+          <div class="hiw-step">
+            <div class="hiw-icon">3</div>
+            <div class="hiw-num">Step 03</div>
+            <h3>Get Fresh</h3>
+            <p>Show up and enjoy your professional cut.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top: 0;">
+      <div class="container">
+        <div class="cta-box">
+          <div class="cta-box__text">
+            <h2>Are you a Barber?</h2>
+            <p>Join BarberHub and grow your business. Manage bookings, showcase your work, and reach more customers.</p>
+            <div class="cta-box__btns">
+              <a href="signup.html?role=barber" class="btn btn-primary btn-lg">Join as a Barber</a>
+              <a href="barbers.html" class="btn btn-outline btn-lg">Explore Barbers</a>
+            </div>
+          </div>
+          <div class="cta-box__icon">BH</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+  <script id="homeSchema" type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "BarberHub",
+      "url": "/index.html",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "/barbers.html?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  </script>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    window.__currentNavPage = 'index';
+    renderNav('index');
+    renderFooter();
+    applyI18n();
+    if (typeof Analytics !== 'undefined') Analytics.track('homepage_view');
+
+    function doSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      const city = document.getElementById('cityInput').value.trim();
+      if (typeof Analytics !== 'undefined') Analytics.track('barber_search', { source: 'homepage_search', query: q, city });
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (city) params.set('city', city);
+      window.location.href = 'barbers.html?' + params.toString();
+    }
+
+    function quickSearch(term) {
+      if (typeof Analytics !== 'undefined') Analytics.track('barber_search', { source: 'homepage_quick_tag', query: term });
+      window.location.href = 'barbers.html?q=' + encodeURIComponent(term);
+    }
+
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    (async function renderHome() {
+      await loadApiBarbers();
+
+      const allBarbers = getAllBarbers();
+      const featured = [...allBarbers].sort((a, b) => b.rating - a.rating);
+      const trending = [...allBarbers].sort((a, b) => b.total_bookings - a.total_bookings);
+
+      document.getElementById('featuredGrid').innerHTML = featured.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+      document.getElementById('trendingGrid').innerHTML = trending.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+
+      const user = Auth.getUser();
+      if (user && user.role === 'customer') {
+        document.getElementById('recommendedSection').style.display = 'block';
+
+        const recommended = [...allBarbers].sort((a, b) => {
+          const aCityMatch = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+          const bCityMatch = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+          if (bCityMatch !== aCityMatch) return bCityMatch - aCityMatch;
+          return b.rating - a.rating;
+        });
+
+        document.getElementById('recommendedGrid').innerHTML = recommended.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+      }
+    })();
+  </script>
+</body>
+</html>

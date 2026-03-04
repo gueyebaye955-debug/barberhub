@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BarberHub support center for account, booking, and platform help.">
+  <link rel="canonical" href="/support.html">
+  <title>Help & Contact | BarberHub</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .support-wrap { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .support-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; }
+    .support-card p, .support-card li { color: var(--text-muted); font-size: 0.9rem; line-height: 1.7; }
+    @media (max-width: 768px) { .support-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+  <div class="page-header">
+    <div class="container">
+      <h1>Help Center & Contact</h1>
+      <p>Get support for bookings, accounts, and barber onboarding.</p>
+    </div>
+  </div>
+  <main>
+    <section class="support-wrap">
+      <div class="support-grid">
+        <article class="support-card">
+          <h3>Booking Help</h3>
+          <ul>
+            <li>Use your dashboard to cancel or review appointments.</li>
+            <li>Check each barber profile for cancellation windows.</li>
+            <li>Use booking reference IDs for faster support.</li>
+          </ul>
+        </article>
+        <article class="support-card">
+          <h3>Barber Onboarding</h3>
+          <ul>
+            <li>Complete profile photo, schedule, and service list.</li>
+            <li>Connect your notifications in admin settings.</li>
+            <li>Set up your Google Business Profile for local visibility.</li>
+          </ul>
+          <a class="btn btn-ghost btn-sm" href="https://www.google.com/business/" target="_blank" rel="noopener">Open Google Business Profile</a>
+        </article>
+      </div>
+
+      <article class="support-card" id="contact" style="margin-top:1rem">
+        <h3>Contact Support</h3>
+        <p>Email us anytime for technical or booking issues.</p>
+        <p><a href="mailto:support@barberhub.local">support@barberhub.local</a></p>
+      </article>
+    </section>
+  </main>
+  <footer class="footer" id="footer"></footer>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    renderNav('support');
+    renderFooter();
+    applyI18n();
+  </script>
+</body>
+</html>

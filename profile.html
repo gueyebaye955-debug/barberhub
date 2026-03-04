@@ -1,0 +1,436 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barber Profile  BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .profile-hero { background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%); border-bottom: 1px solid var(--border); padding: 2.5rem 0; }
+    .profile-header { display: grid; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: start; }
+    .profile-ava { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--primary); background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; color: white; overflow: hidden; flex-shrink: 0; }
+    .profile-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 800; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
+    .profile-sub  { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.65rem; }
+    .profile-meta { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.65rem; }
+    .profile-bio  { color: var(--text-muted); line-height: 1.7; max-width: 580px; font-size: 0.9rem; margin-top: 0.75rem; }
+    .profile-cta  { min-width: 180px; }
+    .svc-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .svc-item { padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .svc-item h4 { margin-bottom: 0.15rem; font-size: 0.95rem; }
+    .svc-item p  { color: var(--text-muted); font-size: 0.82rem; }
+    .svc-item span{ font-size: 0.78rem; color: var(--text-muted); }
+    .svc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
+    .svc-price { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
+    .portfolio-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; }
+    .review-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; }
+    .review-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
+    .review-ava  { width: 38px; height: 38px; border-radius: 50%; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 0.85rem; flex-shrink: 0; }
+    .avail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+    .avail-row:last-child { border-bottom: none; }
+    .avail-row.closed { opacity: 0.5; }
+    .avail-day  { min-width: 110px; font-weight: 500; }
+    .avail-time { color: var(--text-muted); }
+    .rating-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; font-size: 0.82rem; }
+    .rating-bar-track { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+    .rating-bar-fill  { height: 100%; background: var(--gold); border-radius: 3px; }
+    .rating-bar-label { min-width: 24px; color: var(--text-muted); }
+    @media (max-width: 768px) {
+      .profile-header { grid-template-columns: 1fr; text-align: center; }
+      .profile-meta { justify-content: center; }
+      .profile-cta  { width: 100%; }
+      .portfolio-grid { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main id="main">
+    <div class="loading-box" style="padding:5rem"><div class="spinner"></div><p>Loading profile...</p></div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <!-- Review Modal -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal">
+      <h3 data-i18n="write_review"> Write a Review</h3>
+      <p class="sub">Rate your experience</p>
+      <div class="form-group">
+        <label class="form-label">Rating</label>
+        <div id="starPicker" style="display:flex;gap:6px;font-size:1.8rem;cursor:pointer">
+          <span data-v="1"></span><span data-v="2"></span><span data-v="3"></span><span data-v="4"></span><span data-v="5"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comment (optional)</label>
+        <textarea class="form-control" id="reviewComment" placeholder="Share your experience..." rows="3"></textarea>
+      </div>
+      <div id="reviewAlert"></div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeReviewModal()" data-i18n="btn_cancel">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightbox" onclick="lightboxBgClick(event)">
+    <button class="lightbox-close" onclick="closeLightbox()"></button>
+    <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)"></button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)"></button>
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+    <div class="lightbox-counter" id="lightboxCounter"></div>
+  </div>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    window.__currentNavPage = 'profile';
+    renderNav('profile');
+    renderFooter();
+    applyI18n();
+
+    const params   = new URLSearchParams(location.search);
+    const barberId = parseInt(params.get('id'), 10);
+    const user     = Auth.getUser();
+    let barber = null;
+
+    let currentTab   = 'services';
+    let reviewRating = 5;
+
+    // Lightbox state
+    let lbPhotos = [];
+    let lbIndex  = 0;
+
+    (async function initProfilePage() {
+      barber = await loadApiBarberById(barberId) || getBarber(barberId);
+      if (!barber) {
+        document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Barber not found</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
+        return;
+      }
+
+      if (user && window.BH_API) {
+        try {
+          const favRows = await window.BH_API.getFavorites();
+          const favoriteIds = Array.isArray(favRows) ? favRows.map((f) => parseInt(f.id, 10)).filter(Number.isFinite) : [];
+          const allFavs = JSON.parse(localStorage.getItem('bh_favorites') || '{}');
+          allFavs[user.id] = favoriteIds;
+          localStorage.setItem('bh_favorites', JSON.stringify(allFavs));
+        } catch (err) {
+          console.warn('Unable to sync favorites:', err.message);
+        }
+      }
+
+      document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name}  BarberHub`;
+      if (typeof Analytics !== 'undefined') Analytics.track('profile_view', { barber_id: barber.id, city: barber.city });
+      renderProfile();
+
+      if (params.get('review') === '1') {
+        setTimeout(() => {
+          document.querySelectorAll('.tab-btn')[2]?.click();
+          openReviewModal();
+        }, 400);
+      }
+    }());
+
+    function renderProfile() {
+      const isFav    = user ? Favorites.isFav(user.id, barber.id) : false;
+      const minPrice = Math.min(...barber.services.map(s => s.price));
+      const initials = barber.first_name[0] + barber.last_name[0];
+      const isCustomer = user && user.role === 'customer';
+
+      document.getElementById('main').innerHTML = `
+        <div class="profile-hero">
+          <div class="container">
+            <div style="margin-bottom:0.75rem"><a href="barbers.html" style="color:var(--text-muted);font-size:0.85rem">${t('back_to_barbers')}</a></div>
+            <div class="profile-header fade-in">
+              <div class="profile-ava">${getBarberAvatar(barber) ? `<img src="${getBarberAvatar(barber)}" alt="${escapeHTML(barber.first_name)}">` : initials}</div>
+              <div>
+                <div class="profile-name">
+                  ${escapeHTML(barber.shop_name || barber.first_name + ' ' + barber.last_name)}
+                  ${barber.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
+                </div>
+                <div class="profile-sub">by ${escapeHTML(barber.first_name)} ${escapeHTML(barber.last_name)}</div>
+                <div class="profile-meta">
+                  <span> ${escapeHTML(barber.location)}</span>
+                  ${barber.years_experience ? `<span> ${barber.years_experience} ${t('profile_exp')}</span>` : ''}
+                  <span> ${barber.total_bookings} ${t('profile_bookings')}</span>
+                  ${barber.cancellation_hours ? `<span> ${barber.cancellation_hours}h ${t('profile_cancel')}</span>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                  ${starsHTML(barber.rating, '1.05rem')}
+                  <strong>${barber.rating.toFixed(1)}</strong>
+                  <span class="text-muted text-sm">(${barber.total_reviews} ${t('reviews_count')})</span>
+                  ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:50px;font-weight:700"> ${barber.booked_today} ${t('card_booked_today')}</span>` : ''}
+                  ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" style="margin-left:0.5rem" onclick="toggleFav()">${isFav ? t('profile_saved') : t('profile_save')}</button>` : ''}
+                </div>
+                ${barber.bio ? `<div class="profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
+              </div>
+              <div class="profile-cta">
+                ${isCustomer
+                  ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
+                  : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`}
+                <a href="${getGoogleBusinessLink(barber)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.5rem">View on Google</a>
+                <p class="text-muted text-sm text-center mt-1">${t('profile_from')} ${fmtPrice(minPrice)}</p>
+                <p class="text-muted text-sm text-center" style="font-size:0.72rem">${t('profile_next')} <strong style="color:var(--green)">${getNextAvailable(barber)}</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container" style="margin-top:2rem">
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('services',this)">${t('tab_services')}</button>
+            <button class="tab-btn" onclick="switchTab('portfolio',this)">${t('tab_portfolio')}${barber.portfolio.length ? ` (${barber.portfolio.length})` : ''}</button>
+            <button class="tab-btn" onclick="switchTab('reviews',this)">${t('tab_reviews')}</button>
+            <button class="tab-btn" onclick="switchTab('availability',this)">${t('tab_schedule')}</button>
+          </div>
+          <div id="tabContent" style="padding-bottom:3rem"></div>
+        </div>`;
+
+      renderTab('services');
+    }
+
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = tab;
+      renderTab(tab);
+    }
+
+    const CAT_ICONS = { Cuts: '', Beard: '', Kids: '', Specialty: '' };
+
+    function renderTab(tab) {
+      const isCustomer = user && user.role === 'customer';
+      const isBarber   = user && user.role === 'barber' && user.barber_id === barber.id;
+      const el = document.getElementById('tabContent');
+
+      if (tab === 'services') {
+        const grouped = {};
+        barber.services.forEach(s => {
+          if (!grouped[s.category]) grouped[s.category] = [];
+          grouped[s.category].push(s);
+        });
+        const cats = Object.keys(grouped);
+
+        const renderServices = (filter) => {
+          const services = filter === 'all' ? barber.services : (grouped[filter] || []);
+          return services.map(s => `
+            <div class="svc-item card">
+              <div>
+                <h4>${escapeHTML(s.name)} <span style="font-size:0.72rem;background:var(--bg-elevated);padding:0.1rem 0.45rem;border-radius:50px;color:var(--text-muted);font-weight:500">${CAT_ICONS[s.category]||''} ${escapeHTML(s.category)}</span></h4>
+                ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
+                <span> ${fmtDur(s.duration)}</span>
+              </div>
+              <div class="svc-right">
+                <span class="svc-price">${fmtPrice(s.price)}</span>
+                ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
+              </div>
+            </div>`).join('');
+        };
+
+        el.innerHTML = `
+          <div class="fade-in">
+            <div class="cat-filter-bar" id="catFilterBar">
+              <button class="cat-chip active" onclick="filterCat('all',this)">${t('all_services')} (${barber.services.length})</button>
+              ${cats.map(c => `<button class="cat-chip" onclick="filterCat('${c}',this)">${CAT_ICONS[c]||''} ${c} (${grouped[c].length})</button>`).join('')}
+            </div>
+            <div class="svc-list" id="svcList">${renderServices('all')}</div>
+          </div>`;
+
+        window.filterCat = (cat, btn) => {
+          document.querySelectorAll('#catFilterBar .cat-chip').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('svcList').innerHTML = renderServices(cat);
+        };
+
+      } else if (tab === 'portfolio') {
+        if (!barber.portfolio.length) {
+          el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>${t('no_portfolio')}</p></div>`;
+        } else {
+          lbPhotos = barber.portfolio;
+          el.innerHTML = `
+            <div class="fade-in">
+              <p class="text-muted text-sm" style="margin-bottom:1rem">${t('click_to_view')}</p>
+              <div class="portfolio-grid">
+                ${barber.portfolio.map((p, i) => `
+                  <img class="portfolio-thumb" src="${p.url}" alt="${p.caption}" loading="lazy" onclick="openLightbox(${i})" title="${p.caption}">`
+                ).join('')}
+              </div>
+            </div>`;
+        }
+
+      } else if (tab === 'reviews') {
+        const userReviews = Reviews.get(barber.id);
+        const allReviews  = [...barber.reviews, ...userReviews];
+        const avg = allReviews.reduce((s,r) => s + r.rating, 0) / (allReviews.length || 1);
+        const counts = [5,4,3,2,1].map(n => ({
+          n, cnt: allReviews.filter(r => r.rating === n).length
+        }));
+
+        const reviewHTML = allReviews.map(r => {
+          const replyKey  = `bh_reply_${barber.id}_${r.id}`;
+          const savedReply = localStorage.getItem(replyKey);
+          const replyText  = savedReply || r.reply || null;
+          return `
+          <div class="review-card" id="rev-${r.id}">
+            <div class="review-head">
+              <div class="review-ava">${escapeHTML(r.name[0])}</div>
+              <div>
+                <strong style="font-size:0.9rem">${escapeHTML(r.name)}</strong>
+                <div style="display:flex;align-items:center;gap:0.35rem">
+                  ${starsHTML(r.rating, '0.82rem')}
+                  <span class="text-muted text-sm">${r.date}</span>
+                </div>
+              </div>
+            </div>
+            ${r.comment ? `<p style="color:var(--text-muted);font-size:0.875rem;line-height:1.6">${escapeHTML(r.comment)}</p>` : ''}
+            ${replyText
+              ? `<div class="review-reply"><strong> ${escapeHTML(barber.first_name)} replied:</strong> ${escapeHTML(replyText)}</div>`
+              : (isBarber ? `
+                <button class="btn btn-sm btn-ghost" style="margin-top:0.5rem;font-size:0.78rem" onclick="toggleReplyForm('${r.id}')">${t('reply_label')}</button>
+                <div class="review-reply-form" id="reply-${r.id}">
+                  <textarea class="form-control" rows="2" placeholder="Write a reply..." id="replyText-${r.id}" style="margin-top:0.5rem;font-size:0.82rem"></textarea>
+                  <button class="btn btn-sm btn-primary" style="margin-top:0.4rem" onclick="saveReply('${r.id}','${replyKey}')">${t('reply_post')}</button>
+                </div>` : '')
+            }
+          </div>`;
+        }).join('');
+
+        el.innerHTML = `
+          <div class="fade-in">
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center;margin-bottom:1.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem">
+              <div style="text-align:center">
+                <div style="font-size:3.5rem;font-weight:800;line-height:1;color:var(--primary)">${avg.toFixed(1)}</div>
+                <div style="margin:0.35rem 0">${starsHTML(avg, '1.2rem')}</div>
+                <p class="text-muted text-sm">${allReviews.length} ${t('reviews_count')}</p>
+              </div>
+              <div>
+                ${counts.map(({n,cnt}) => `
+                  <div class="rating-bar-row">
+                    <span class="rating-bar-label">${n}</span>
+                    <div class="rating-bar-track"><div class="rating-bar-fill" style="width:${allReviews.length ? (cnt/allReviews.length*100) : 0}%"></div></div>
+                    <span style="font-size:0.78rem;color:var(--text-muted);min-width:20px">${cnt}</span>
+                  </div>`).join('')}
+              </div>
+            </div>
+            ${isCustomer ? `<button class="btn btn-outline btn-sm" style="margin-bottom:1.25rem" onclick="openReviewModal()">${t('write_review')}</button>` : ''}
+            <div style="display:flex;flex-direction:column;gap:0.75rem">
+              ${reviewHTML || `<div class="empty-state"><p>${t('no_reviews')}</p></div>`}
+            </div>
+          </div>`;
+
+      } else if (tab === 'availability') {
+        const rows = barber.availability.map(a => `
+          <div class="avail-row ${!a.open ? 'closed' : ''}">
+            <span class="avail-day">${a.label}</span>
+            <span class="avail-time">${a.open ? `${a.start}  ${a.end}` : t('closed_day')}</span>
+          </div>`).join('');
+        el.innerHTML = `<div class="card fade-in" style="overflow:hidden">${rows}</div>`;
+      }
+    }
+
+    async function toggleFav() {
+      if (!user) { window.location.href = 'login.html'; return; }
+      try {
+        if (window.BH_API) {
+          const currentlyFav = Favorites.isFav(user.id, barber.id);
+          if (currentlyFav) await window.BH_API.removeFavorite(barber.id);
+          else await window.BH_API.addFavorite(barber.id);
+        }
+      } catch (err) {
+        console.warn('Favorite sync failed:', err.message);
+      }
+      Favorites.toggle(user.id, barber.id);
+      renderProfile();
+    }
+
+    function openReviewModal() {
+      reviewRating = 5;
+      updateStars(5);
+      document.getElementById('reviewComment').value = '';
+      document.getElementById('reviewAlert').innerHTML = '';
+      document.getElementById('reviewModal').classList.add('open');
+    }
+    function closeReviewModal() { document.getElementById('reviewModal').classList.remove('open'); }
+
+    function updateStars(val) {
+      document.querySelectorAll('#starPicker span').forEach(s => {
+        s.style.color = parseInt(s.dataset.v) <= val ? 'var(--gold)' : '#4a5568';
+      });
+    }
+    document.getElementById('starPicker').addEventListener('click', e => {
+      const s = e.target.closest('span');
+      if (!s) return;
+      reviewRating = parseInt(s.dataset.v);
+      updateStars(reviewRating);
+    });
+    document.getElementById('reviewModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('reviewModal')) closeReviewModal();
+    });
+
+    async function submitReview() {
+      if (!user) return;
+      const comment = document.getElementById('reviewComment').value.trim();
+      try {
+        if (window.BH_API) {
+          await window.BH_API.addReview(barber.id, reviewRating, comment);
+          barber = await loadApiBarberById(barber.id) || barber;
+        } else {
+          Reviews.add(barber.id, { id: 'u'+Date.now(), name: user.first_name + ' ' + user.last_name[0] + '.', rating: reviewRating, comment, date: new Date().toISOString().split('T')[0], reply: null });
+        }
+      } catch (err) {
+        document.getElementById('reviewAlert').innerHTML = `<div class="alert alert-danger">${err.message || 'Unable to submit review.'}</div>`;
+        return;
+      }
+      closeReviewModal();
+      document.querySelectorAll('.tab-btn')[2].click();
+    }
+
+    function toggleReplyForm(revId) {
+      document.getElementById(`reply-${revId}`).classList.toggle('open');
+    }
+    function saveReply(revId, key) {
+      const text = document.getElementById(`replyText-${revId}`).value.trim();
+      if (!text) return;
+      localStorage.setItem(key, text);
+      renderTab('reviews');
+    }
+
+    function openLightbox(idx) {
+      lbIndex = idx;
+      updateLightbox();
+      document.getElementById('lightbox').classList.add('open');
+    }
+    function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+    function lightboxBgClick(e) { if (e.target === document.getElementById('lightbox')) closeLightbox(); }
+    function lightboxNav(dir) {
+      lbIndex = (lbIndex + dir + lbPhotos.length) % lbPhotos.length;
+      updateLightbox();
+    }
+    function updateLightbox() {
+      const p = lbPhotos[lbIndex];
+      document.getElementById('lightboxImg').src = p.url;
+      document.getElementById('lightboxCaption').textContent = p.caption || '';
+      document.getElementById('lightboxCounter').textContent = `${lbIndex+1} / ${lbPhotos.length}`;
+    }
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('lightbox').classList.contains('open')) return;
+      if (e.key === 'Escape')     closeLightbox();
+      if (e.key === 'ArrowLeft')  lightboxNav(-1);
+      if (e.key === 'ArrowRight') lightboxNav(1);
+    });
+
+    updateStars(5);
+  </script>
+</body>
+</html>
+
+

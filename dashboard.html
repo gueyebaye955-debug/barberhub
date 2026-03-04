@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard  BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .dash-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
+    .dash-sidebar { height: fit-content; position: sticky; top: 80px; }
+    .dash-user { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; margin-bottom: 1rem; }
+    .dash-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; color: white; margin: 0 auto 0.75rem; }
+    .dash-user h3 { font-size: 1rem; margin-bottom: 0.1rem; }
+    .dash-user p { color: var(--text-muted); font-size: 0.8rem; }
+    .dash-nav { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .dash-nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; font-size: 0.875rem; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-muted); transition: all 0.15s; }
+    .dash-nav-item:last-child { border-bottom: none; }
+    .dash-nav-item:hover { background: var(--bg-elevated); color: var(--text); }
+    .dash-nav-item.active { background: rgba(233,69,96,0.08); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+    .dash-panel { display: none; }
+    .dash-panel.active { display: block; }
+    .dash-panel h2 { margin-bottom: 0.25rem; }
+    .dash-panel .sub { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .booking-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
+    .booking-top { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+    .booking-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap; }
+    .booking-meta span { display: flex; align-items: center; gap: 0.3rem; }
+    .booking-actions { display: flex; gap: 0.5rem; flex-direction: column; }
+    .status-badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .status-pending   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-confirmed { background: rgba(16,185,129,0.15); color: var(--green); }
+    .status-completed { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .status-cancelled { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .favs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .notif-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 0.5rem; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .notif-item.unread { border-left: 3px solid var(--primary); background: rgba(233,69,96,0.04); }
+    .notif-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .notif-title { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.15rem; }
+    .notif-msg { font-size: 0.8rem; color: var(--text-muted); }
+    .notif-time { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; }
+    .profile-form { max-width: 480px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .stat-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+    .stat-mini .val { font-size: 1.75rem; font-weight: 800; color: var(--primary); }
+    .stat-mini .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } .stat-mini-grid { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main>
+    <div class="container">
+      <div class="dash-layout" id="dashLayout">
+        <div class="loading-box" style="padding:5rem;grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    renderNav('dashboard');
+    renderFooter();
+    applyI18n();
+
+    const user = Auth.require('customer');
+    if (!user) throw new Error('redirect');
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('booked') === '1') {
+      Notifs.add(user.id, {
+        title: 'Booking received!',
+        message: 'Your appointment request has been sent to the barber.',
+        type: 'booking'
+      });
+    }
+
+    let activeTab = 'bookings';
+    let dashboardBookings = [];
+
+    async function syncDashboardData() {
+      try {
+        if (window.BH_API) {
+          dashboardBookings = await window.BH_API.getBookings();
+          localStorage.setItem('bh_bookings', JSON.stringify(dashboardBookings));
+          await loadApiBarbers();
+        } else {
+          dashboardBookings = Bookings.getForUser(user.id);
+        }
+      } catch (err) {
+        console.warn('Unable to sync dashboard data:', err.message);
+        dashboardBookings = Bookings.getForUser(user.id);
+      }
+    }
+
+    function iconFor(type) {
+      const map = { booking: '', info: '', review: '', promo: '' };
+      return map[type] || '';
+    }
+
+    function timeAgo(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1)   return 'just now';
+      if (mins < 60)  return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24)   return `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function render() {
+      const bookings   = dashboardBookings.length ? dashboardBookings : Bookings.getForUser(user.id);
+      const favIds     = Favorites.get(user.id);
+      const notifs     = Notifs.get(user.id);
+      const unread     = notifs.filter(n => !n.is_read).length;
+      const favBarbers = getAllBarbers().filter(b => favIds.includes(b.id));
+
+      const badge = (n) => n ? ` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${n}</span>` : '';
+
+      document.getElementById('dashLayout').innerHTML = `
+        <!-- Sidebar -->
+        <div class="dash-sidebar">
+          <div class="dash-user">
+            <div class="dash-avatar">${escapeHTML(user.first_name[0])}${escapeHTML(user.last_name[0])}</div>
+            <h3>${escapeHTML(user.first_name)} ${escapeHTML(user.last_name)}</h3>
+            <p>${user.email}</p>
+          </div>
+          <nav class="dash-nav">
+            <div class="dash-nav-item ${activeTab==='bookings'?'active':''}" onclick="switchTab('bookings')"> ${t('dash_my_bookings')}${badge(bookings.length)}</div>
+            <div class="dash-nav-item ${activeTab==='favorites'?'active':''}" onclick="switchTab('favorites')"> ${t('dash_favorites')}${badge(favBarbers.length)}</div>
+            <div class="dash-nav-item ${activeTab==='notifications'?'active':''}" onclick="switchTab('notifications')"> ${t('dash_notifications')}${badge(unread)}</div>
+            <div class="dash-nav-item ${activeTab==='profile'?'active':''}" onclick="switchTab('profile')"> ${t('dash_profile')}</div>
+            <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
+          </nav>
+        </div>
+
+        <!-- Main panels -->
+        <div>
+          <!-- Bookings -->
+          <div class="dash-panel ${activeTab==='bookings'?'active':''}" id="panel-bookings">
+            <h2>${t('dash_my_bookings')}</h2>
+            <p class="sub">${t('dash_my_bookings_sub')}</p>
+            <div class="stat-mini-grid">
+              <div class="stat-mini"><div class="val">${bookings.filter(b=>b.status==='pending').length}</div><div class="lbl">${t('dash_pending')}</div></div>
+              <div class="stat-mini"><div class="val">${bookings.filter(b=>b.status==='confirmed').length}</div><div class="lbl">${t('dash_confirmed')}</div></div>
+              <div class="stat-mini"><div class="val">${bookings.filter(b=>b.status==='completed').length}</div><div class="lbl">${t('dash_completed')}</div></div>
+            </div>
+            ${bookings.length === 0 ? `
+              <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+                <div style="font-size:3rem;margin-bottom:1rem"></div>
+                <p>${t('no_bookings')}</p>
+                <a href="barbers.html" class="btn btn-primary" style="margin-top:1rem">${t('find_barber_btn')}</a>
+              </div>` :
+              [...bookings].reverse().map(b => `
+                <div class="booking-card">
+                  <div>
+                    <div class="booking-top">
+                      <strong>${escapeHTML(b.barber_name)}</strong>
+                      <span class="status-badge status-${b.status}">${b.status}</span>
+                    </div>
+                    <div style="font-weight:600;margin-bottom:0.35rem">${escapeHTML(b.service_name)}</div>
+                    <div class="booking-meta">
+                      <span> ${b.date}</span>
+                      <span> ${b.time}</span>
+                      <span> ${fmtPrice(b.price)}</span>
+                    </div>
+                    ${b.notes ? `<p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">Note: ${escapeHTML(b.notes)}</p>` : ''}
+                  </div>
+                  <div class="booking-actions">
+                    ${b.status === 'pending' || b.status === 'confirmed' ? `<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="cancelBooking(${b.id})">${t('cancel_booking')}</button>` : ''}
+                    ${b.status === 'completed' ? `
+                      <a href="profile.html?id=${b.barber_id}&review=1" class="btn btn-sm btn-ghost">${t('leave_review')}</a>
+                      <a href="${(() => {
+                        const rb = getBarber(b.barber_id);
+                        const svc = rb?.services?.find(s => s.name === b.service_name);
+                        const svcParam = svc ? `&service=${svc.id}` : '';
+                        return `book.html?barber=${b.barber_id}${svcParam}`;
+                      })()}" class="btn btn-sm btn-primary">Book Again</a>
+                    ` : ''}
+                  </div>
+                </div>`).join('')
+            }
+          </div>
+
+          <!-- Favorites -->
+          <div class="dash-panel ${activeTab==='favorites'?'active':''}" id="panel-favorites">
+            <h2>${t('dash_favorites')}</h2>
+            <p class="sub">${t('dash_favorites_sub')}</p>
+            ${favBarbers.length === 0 ? `
+              <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+                <div style="font-size:3rem;margin-bottom:1rem"></div>
+                <p>${t('no_favs')}</p>
+                <a href="barbers.html" class="btn btn-primary" style="margin-top:1rem">${t('browse_barbers_btn')}</a>
+              </div>` :
+              `<div class="favs-grid">${favBarbers.map(b => barberCardHTML(b)).join('')}</div>`
+            }
+          </div>
+
+          <!-- Notifications -->
+          <div class="dash-panel ${activeTab==='notifications'?'active':''}" id="panel-notifications">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <h2>${t('dash_notifications')}</h2>
+              ${unread ? `<button class="btn btn-sm btn-ghost" onclick="markAllRead()">${t('mark_all_read')}</button>` : ''}
+            </div>
+            <p class="sub">${t('dash_notifs_sub')}</p>
+            ${notifs.length === 0 ? `
+              <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+                <div style="font-size:3rem;margin-bottom:1rem"></div>
+                <p>${t('no_notifs')}</p>
+              </div>` :
+              notifs.map(n => `
+                <div class="notif-item ${!n.is_read ? 'unread' : ''}">
+                  <div class="notif-icon">${iconFor(n.type)}</div>
+                  <div>
+                    <div class="notif-title">${escapeHTML(n.title)}</div>
+                    <div class="notif-msg">${escapeHTML(n.message)}</div>
+                    <div class="notif-time">${timeAgo(n.created_at)}</div>
+                  </div>
+                </div>`).join('')
+            }
+          </div>
+
+          <!-- Profile -->
+          <div class="dash-panel ${activeTab==='profile'?'active':''}" id="panel-profile">
+            <h2>${t('dash_profile')}</h2>
+            <p class="sub">${t('dash_profile_sub')}</p>
+            <div id="profileAlert"></div>
+            <form class="profile-form" id="profileForm">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label">${t('signup_first_name')}</label>
+                  <input class="form-control" id="pFirst" value="${user.first_name}" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">${t('signup_last_name')}</label>
+                  <input class="form-control" id="pLast" value="${user.last_name}" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">${t('signup_email')}</label>
+                <input class="form-control" type="email" id="pEmail" value="${user.email}" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">${t('signup_phone')}</label>
+                <input class="form-control" id="pPhone" value="${user.phone || ''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">${t('signup_city')}</label>
+                <input class="form-control" id="pCity" value="${user.city || ''}">
+              </div>
+              <button type="submit" class="btn btn-primary">${t('save_changes')}</button>
+            </form>
+          </div>
+        </div>`;
+
+      document.getElementById('profileForm')?.addEventListener('submit', saveProfile);
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      if (tab === 'notifications') {
+        Notifs.markAllRead(user.id);
+        renderNav('dashboard');
+      }
+      render();
+    }
+
+    async function cancelBooking(id) {
+      if (!confirm('Cancel this appointment?')) return;
+      try {
+        if (window.BH_API) {
+          await window.BH_API.updateBookingStatus(id, 'cancelled');
+          dashboardBookings = dashboardBookings.map((booking) => (
+            booking.id === id ? { ...booking, status: 'cancelled' } : booking
+          ));
+        } else {
+          Bookings.update(id, { status: 'cancelled' });
+        }
+      } catch (err) {
+        alert(err.message || 'Unable to cancel booking.');
+        return;
+      }
+      Notifs.add(user.id, {
+        title: 'Booking Cancelled',
+        message: 'Your appointment has been cancelled.',
+        type: 'info'
+      });
+      render();
+    }
+
+    function markAllRead() {
+      Notifs.markAllRead(user.id);
+      render();
+    }
+
+    async function saveProfile(e) {
+      e.preventDefault();
+      const payload = {
+        first_name: document.getElementById('pFirst').value.trim(),
+        last_name:  document.getElementById('pLast').value.trim(),
+        email:      document.getElementById('pEmail').value.trim(),
+        phone:      document.getElementById('pPhone').value.trim(),
+        city:       document.getElementById('pCity').value.trim()
+      };
+
+      try {
+        if (window.BH_API) await window.BH_API.updateMe(payload);
+        Auth.updateUser(payload);
+        Object.assign(user, payload);
+      } catch (err) {
+        document.getElementById('profileAlert').innerHTML = `<div class="alert alert-danger">${err.message || 'Unable to update profile.'}</div>`;
+        return;
+      }
+
+      document.getElementById('profileAlert').innerHTML = `<div class="alert alert-success">${t('profile_updated')}</div>`;
+      setTimeout(() => { document.getElementById('profileAlert').innerHTML = ''; }, 3000);
+    }
+
+    (async function initDashboard() {
+      await syncDashboardData();
+      render();
+    }());
+  </script>
+</body>
+</html>
+

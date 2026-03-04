@@ -1,0 +1,597 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel  BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .dash-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
+    .dash-sidebar { height: fit-content; position: sticky; top: 80px; }
+    .dash-user { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; text-align: center; margin-bottom: 1rem; }
+    .dash-avatar { width: 64px; height: 64px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; color: white; margin: 0 auto 0.75rem; }
+    .dash-user h3 { font-size: 1rem; margin-bottom: 0.1rem; }
+    .dash-user p  { color: var(--text-muted); font-size: 0.8rem; }
+    .dash-nav { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .dash-nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1rem; font-size: 0.875rem; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--text-muted); transition: all 0.15s; }
+    .dash-nav-item:last-child { border-bottom: none; }
+    .dash-nav-item:hover { background: var(--bg-elevated); color: var(--text); }
+    .dash-nav-item.active { background: rgba(245,158,11,0.08); color: #f59e0b; font-weight: 600; border-left: 3px solid #f59e0b; }
+    .dash-panel { display: none; }
+    .dash-panel.active { display: block; }
+    .dash-panel h2 { margin-bottom: 0.25rem; }
+    .dash-panel .sub { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+    .stat-card .val { font-size: 2.25rem; font-weight: 800; }
+    .stat-card .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .stat-card.primary .val { color: var(--primary); }
+    .stat-card.green   .val { color: var(--green); }
+    .stat-card.blue    .val { color: #60a5fa; }
+    .stat-card.amber   .val { color: #f59e0b; }
+    .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+    .table-header { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg-elevated); }
+    .table-header h3 { font-size: 0.95rem; margin: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 0.65rem 1rem; text-align: left; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; background: var(--bg-elevated); }
+    td { padding: 0.75rem 1rem; border-top: 1px solid var(--border); font-size: 0.875rem; vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .status-badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .badge-customer  { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .badge-barber    { background: rgba(233,69,96,0.15); color: var(--primary); }
+    .badge-admin     { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-pending   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .badge-approved  { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge-verified  { background: rgba(245,158,11,0.2); color: #f59e0b; }
+    .status-pending   { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .status-confirmed { background: rgba(16,185,129,0.15); color: var(--green); }
+    .status-completed { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .status-cancelled { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .filter-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-bar input { flex: 1; min-width: 200px; }
+    @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } }
+    /* Notification modal */
+    .notif-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem; }
+    .notif-modal { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:420px;width:100%;position:relative; }
+    .notif-modal h3 { margin-bottom:0.4rem; }
+    .notif-modal p  { color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem; }
+    .notif-modal .wa-btn  { background:#25d366;border-color:#25d366;color:#fff; }
+    .notif-modal .wa-btn:hover { background:#1da851; }
+    .ejs-setup { background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius);padding:1rem 1.25rem;font-size:0.83rem;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6; }
+    .ejs-setup code { background:var(--bg-elevated);padding:0.1rem 0.4rem;border-radius:4px;font-size:0.8rem; }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <main>
+    <div class="container">
+      <div class="dash-layout" id="dashLayout">
+        <div class="loading-box" style="padding:5rem;grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <!-- Notification modal (static  shown/hidden by JS) -->
+  <div id="notifModal" class="notif-modal-overlay" style="display:none">
+    <div class="notif-modal">
+      <h3 id="notifModalTitle">Notify User</h3>
+      <p id="notifModalSub"></p>
+      <div style="display:flex;flex-direction:column;gap:0.65rem">
+        <a id="notifWaBtn" href="#" target="_blank" class="btn wa-btn" style="text-align:center"> Send via WhatsApp</a>
+        <a id="notifMailBtn" href="#" class="btn btn-outline" style="text-align:center"> Open in Email App</a>
+        <button onclick="closeNotifModal()" class="btn btn-ghost"> Done</button>
+      </div>
+      <button onclick="closeNotifModal()" style="position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.1rem;line-height:1"></button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    renderNav('admin');
+    renderFooter();
+    applyI18n();
+
+    const user = Auth.require('admin');
+    if (!user) throw new Error('redirect');
+
+    let activeTab = 'stats';
+    let userFilter = '';
+    let bookingFilter = '';
+
+    function render() {
+      const allAccounts = Auth.getAccounts();
+      const allBookings = Bookings.getAll();
+      const allBarbers  = getAllBarbers();
+
+      const customers = allAccounts.filter(a => a.role === 'customer');
+      const barbers   = allAccounts.filter(a => a.role === 'barber');
+      const pending   = barbers.filter(b => b.approved === false);
+      const totalRev  = allBookings.filter(b => b.status === 'completed').reduce((s,b) => s + parseFloat(b.price||0), 0);
+      const registered = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
+      const pBadge    = pending.length ? ` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${pending.length}</span>` : '';
+      const weeklyFunnel = (typeof Analytics !== 'undefined')
+        ? Analytics.getWeeklyFunnel()
+        : {
+            counts: { homepage_view: 0, barber_search: 0, profile_view: 0, booking_start: 0, booking_complete: 0 },
+            conversion: { barber_search: 0, profile_view: 0, booking_start: 0, booking_complete: 0 }
+          };
+      const uptimeSummary = (typeof Monitoring !== 'undefined')
+        ? Monitoring.getUptimeSummary(24)
+        : { total: 0, success: 0, failure: 0, rate: 0, avgLatency: 0, checks: [] };
+      const recentErrors = (typeof Monitoring !== 'undefined')
+        ? Monitoring.getRecentErrors(12)
+        : [];
+
+      document.getElementById('dashLayout').innerHTML = `
+        <!-- Sidebar -->
+        <div class="dash-sidebar">
+          <div class="dash-user">
+            <div class="dash-avatar"></div>
+            <h3>${user.first_name} ${user.last_name}</h3>
+            <p>Platform Administrator</p>
+          </div>
+          <nav class="dash-nav">
+            <div class="dash-nav-item ${activeTab==='stats'?'active':''}" onclick="switchTab('stats')"> ${t('admin_stats')}</div>
+            <div class="dash-nav-item ${activeTab==='barbers'?'active':''}" onclick="switchTab('barbers')"> ${t('admin_barbers')}${pBadge}</div>
+            <div class="dash-nav-item ${activeTab==='users'?'active':''}" onclick="switchTab('users')"> ${t('admin_users')}</div>
+            <div class="dash-nav-item ${activeTab==='bookings'?'active':''}" onclick="switchTab('bookings')"> ${t('admin_bookings')}</div>
+            <div class="dash-nav-item ${activeTab==='settings'?'active':''}" onclick="switchTab('settings')"> Notifications</div>
+            <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
+          </nav>
+        </div>
+
+        <!-- Panels -->
+        <div>
+          <!-- Stats -->
+          <div class="dash-panel ${activeTab==='stats'?'active':''}" id="panel-stats">
+            <h2>${t('admin_stats')}</h2>
+            <p class="sub">${t('admin_stats_sub')}</p>
+            <div class="stat-grid">
+              <div class="stat-card primary"><div class="val">${customers.length}</div><div class="lbl">${t('total_customers')}</div></div>
+              <div class="stat-card amber"><div class="val">${allBarbers.length}</div><div class="lbl">${t('total_barbers')}</div></div>
+              <div class="stat-card green"><div class="val">${allBookings.length}</div><div class="lbl">${t('total_bookings_stat')}</div></div>
+              <div class="stat-card blue"><div class="val">${fmtPrice(totalRev)}</div><div class="lbl">${t('total_revenue')}</div></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+              <div class="table-wrap">
+                <div class="table-header"><h3>${t('booking_breakdown')}</h3></div>
+                <table>
+                  <tbody>
+                    ${['pending','confirmed','completed','cancelled'].map(s => {
+                      const cnt = allBookings.filter(b => b.status === s).length;
+                      return `<tr><td>${s.charAt(0).toUpperCase()+s.slice(1)}</td><td><span class="status-badge status-${s}">${cnt}</span></td></tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-wrap">
+                <div class="table-header"><h3>${t('top_barbers')}</h3></div>
+                <table>
+                  <thead><tr><th>Barber</th><th>Bookings</th></tr></thead>
+                  <tbody>
+                    ${allBarbers.map(b => ({
+                      b,
+                      cnt: allBookings.filter(bk => bk.barber_id === b.id).length
+                    })).sort((a,c) => c.cnt - a.cnt).slice(0,5).map(({b,cnt}) => `
+                      <tr><td>${escapeHTML(b.shop_name || b.first_name+' '+b.last_name)}</td><td><strong>${cnt}</strong></td></tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="table-wrap" style="margin-top:1.5rem">
+              <div class="table-header"><h3>Weekly Funnel (Last 7 Days)</h3></div>
+              <table>
+                <thead><tr><th>Step</th><th>Events</th><th>Conv. From Prev</th></tr></thead>
+                <tbody>
+                  <tr><td>Homepage views</td><td><strong>${weeklyFunnel.counts.homepage_view}</strong></td><td>-</td></tr>
+                  <tr><td>Search intent</td><td><strong>${weeklyFunnel.counts.barber_search}</strong></td><td>${weeklyFunnel.conversion.barber_search.toFixed(1)}%</td></tr>
+                  <tr><td>Profile views</td><td><strong>${weeklyFunnel.counts.profile_view}</strong></td><td>${weeklyFunnel.conversion.profile_view.toFixed(1)}%</td></tr>
+                  <tr><td>Booking starts</td><td><strong>${weeklyFunnel.counts.booking_start}</strong></td><td>${weeklyFunnel.conversion.booking_start.toFixed(1)}%</td></tr>
+                  <tr><td>Booking completes</td><td><strong>${weeklyFunnel.counts.booking_complete}</strong></td><td>${weeklyFunnel.conversion.booking_complete.toFixed(1)}%</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-wrap" style="margin-top:1.5rem">
+              <div class="table-header" style="flex-wrap:wrap;gap:0.6rem">
+                <h3>Monitoring (Errors + Uptime, Last 24h)</h3>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                  <button class="btn btn-sm btn-primary" onclick="runUptimeChecksNow()">Run Uptime Checks</button>
+                  <button class="btn btn-sm btn-ghost" onclick="clearMonitoringData()">Clear Monitoring Data</button>
+                </div>
+              </div>
+              <div style="padding:1rem;display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:0.75rem">
+                <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.rate.toFixed(1)}%</div><div class="lbl">Uptime Success</div></div>
+                <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.avgLatency}ms</div><div class="lbl">Avg Latency</div></div>
+                <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.total}</div><div class="lbl">Checks</div></div>
+                <div class="stat-card"><div class="val" style="font-size:1.5rem">${recentErrors.length}</div><div class="lbl">Recent Errors</div></div>
+              </div>
+              <table>
+                <thead><tr><th>Latest Checks</th><th>Status</th><th>Latency</th><th>When</th></tr></thead>
+                <tbody>
+                  ${uptimeSummary.checks.slice(0, 8).map(c => `
+                    <tr>
+                      <td>${escapeHTML(c.url)}</td>
+                      <td>${c.ok ? '<span class="status-badge status-confirmed">UP</span>' : '<span class="status-badge status-cancelled">DOWN</span>'}</td>
+                      <td>${c.latency} ms</td>
+                      <td>${new Date(c.at).toLocaleString()}</td>
+                    </tr>
+                  `).join('') || `<tr><td colspan="4" style="color:var(--text-muted)">No checks yet. Click "Run Uptime Checks".</td></tr>`}
+                </tbody>
+              </table>
+              <table>
+                <thead><tr><th>Recent JS Errors</th><th>Page</th><th>When</th></tr></thead>
+                <tbody>
+                  ${recentErrors.map(e => `
+                    <tr>
+                      <td>${escapeHTML(e.message)}</td>
+                      <td>${escapeHTML(e.page || 'unknown')}</td>
+                      <td>${new Date(e.at).toLocaleString()}</td>
+                    </tr>
+                  `).join('') || `<tr><td colspan="3" style="color:var(--text-muted)">No client errors captured.</td></tr>`}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-wrap" style="margin-top:1.5rem">
+              <div class="table-header"><h3>${t('new_registrations')} (${registered.length})</h3></div>
+              ${registered.length === 0
+                ? `<p style="padding:1rem;color:var(--text-muted);text-align:center">No new registrations yet.</p>`
+                : `<table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>City</th></tr></thead>
+                    <tbody>
+                      ${registered.map(a => `<tr>
+                        <td>${escapeHTML(a.first_name)} ${escapeHTML(a.last_name)}</td>
+                        <td>${escapeHTML(a.email)}</td>
+                        <td><span class="status-badge badge-${escapeHTML(a.role)}">${escapeHTML(a.role)}</span></td>
+                        <td>${escapeHTML(a.city||'')}</td>
+                      </tr>`).join('')}
+                    </tbody>
+                  </table>`}
+            </div>
+          </div>
+
+          <!-- Barbers management -->
+          <div class="dash-panel ${activeTab==='barbers'?'active':''}" id="panel-barbers">
+            <h2>${t('admin_barbers')}</h2>
+            <p class="sub">Approve new barbers and grant verification badges</p>
+
+            ${pending.length > 0 ? `
+              <div class="table-wrap" style="margin-bottom:1.5rem">
+                <div class="table-header"><h3>${t('admin_pending_label')} (${pending.length})</h3></div>
+                <table>
+                  <thead><tr><th>Name</th><th>Email</th><th>City</th><th>Actions</th></tr></thead>
+                  <tbody>
+                    ${pending.map(b => `<tr>
+                      <td><strong>${escapeHTML(b.first_name)} ${escapeHTML(b.last_name)}</strong></td>
+                      <td>${escapeHTML(b.email)}</td>
+                      <td>${escapeHTML(b.city||'')}</td>
+                      <td style="display:flex;gap:0.4rem">
+                        <button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="approveBarber('${b.email}',true)">${t('admin_approve')}</button>
+                        <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="approveBarber('${b.email}',false)">${t('admin_reject')}</button>
+                      </td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>` : ''}
+
+            <div class="table-wrap">
+              <div class="table-header"><h3>All Barbers (${allBarbers.length})</h3></div>
+              <table>
+                <thead><tr><th>Shop / Name</th><th>City</th><th>Rating</th><th>Bookings</th><th>Verified</th><th>Actions</th></tr></thead>
+                <tbody>
+                  ${allBarbers.map(b => {
+                    const bkCnt = allBookings.filter(bk => bk.barber_id === b.id).length;
+                    return `<tr>
+                      <td><strong>${escapeHTML(b.shop_name || b.first_name+' '+b.last_name)}</strong><br><span style="color:var(--text-muted);font-size:0.78rem">${escapeHTML(b.first_name)} ${escapeHTML(b.last_name)}</span></td>
+                      <td>${escapeHTML(b.city)}</td>
+                      <td> ${b.rating.toFixed(1)}</td>
+                      <td>${bkCnt}</td>
+                      <td>${b.verified ? '<span class="status-badge badge-verified"> Verified</span>' : '<span style="color:var(--text-muted);font-size:0.8rem"></span>'}</td>
+                      <td><a href="profile.html?id=${b.id}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a></td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Users -->
+          <div class="dash-panel ${activeTab==='users'?'active':''}" id="panel-users">
+            <h2>${t('admin_users')}</h2>
+            <p class="sub">All accounts on the platform</p>
+            <div class="filter-bar">
+              <input class="form-control" placeholder="${t('admin_search_user')}" value="${userFilter}" oninput="userFilter=this.value;render()">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>City</th><th>Actions</th></tr></thead>
+                <tbody>
+                  ${allAccounts.filter(a => {
+                    if (!userFilter) return true;
+                    const q = userFilter.toLowerCase();
+                    return (a.first_name+' '+a.last_name).toLowerCase().includes(q) || a.email.toLowerCase().includes(q);
+                  }).map(a => `<tr>
+                    <td><strong>${escapeHTML(a.first_name)} ${escapeHTML(a.last_name)}</strong></td>
+                    <td>${escapeHTML(a.email)}</td>
+                    <td><span class="status-badge badge-${escapeHTML(a.role)}">${escapeHTML(a.role)}</span></td>
+                    <td>${escapeHTML(a.city||'')}</td>
+                    <td>
+                      ${a.role === 'barber' ? `<a href="profile.html?id=${a.barber_id||1}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a>` : ''}
+                      ${a.role !== 'admin' ? `<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);margin-left:0.3rem" onclick="deleteUser('${a.email}')">${t('admin_remove')}</button>` : ''}
+                    </td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bookings -->
+          <div class="dash-panel ${activeTab==='bookings'?'active':''}" id="panel-bookings">
+            <h2>${t('admin_bookings')}</h2>
+            <p class="sub">Monitor every appointment on the platform</p>
+            <div class="filter-bar">
+              <input class="form-control" placeholder="${t('admin_search_booking')}" value="${bookingFilter}" oninput="bookingFilter=this.value;render()">
+            </div>
+            ${(() => { const ejsCfg = JSON.parse(localStorage.getItem('bh_emailjs') || '{}'); return `
+          <div class="dash-panel ${activeTab==='settings'?'active':''}" id="panel-settings">
+            <h2> Notification Settings</h2>
+            <p class="sub">Configure auto-email via EmailJS (free) + one-click WhatsApp for approvals & bookings.</p>
+
+            <div class="ejs-setup">
+              <strong>EmailJS setup (2 minutes, free):</strong><br>
+              1. Sign up at <a href="https://www.emailjs.com" target="_blank" style="color:var(--primary)">emailjs.com</a>  connect your Gmail or any email service.<br>
+              2. Create an email template. Add variables: <code>{{to_name}}</code>, <code>{{subject}}</code>, <code>{{message}}</code>. Set <em>To Email</em> to <code>{{to_email}}</code>.<br>
+              3. Copy your <strong>Public Key</strong>, <strong>Service ID</strong> and <strong>Template ID</strong> below.
+            </div>
+
+            <div style="max-width:500px">
+              <div class="form-group">
+                <label class="form-label">EmailJS Public Key</label>
+                <input class="form-control" id="ejs-pubkey" placeholder="e.g. abc123XYZ_xxxxxxxx" value="${ejsCfg.publicKey||''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Service ID</label>
+                <input class="form-control" id="ejs-service" placeholder="e.g. service_xxxxxxx" value="${ejsCfg.serviceId||''}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Template ID</label>
+                <input class="form-control" id="ejs-template" placeholder="e.g. template_xxxxxxx" value="${ejsCfg.templateId||''}">
+              </div>
+              <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="saveEjsConfig()"> Save Settings</button>
+                <button class="btn btn-ghost" onclick="testEmail()"> Send Test Email to Me</button>
+              </div>
+              ${ejsCfg.publicKey ? '<p style="margin-top:0.75rem;color:var(--green);font-size:0.83rem"> EmailJS configured  emails will send automatically on approval & booking confirmation.</p>' : '<p style="margin-top:0.75rem;color:var(--text-muted);font-size:0.83rem">No EmailJS config yet  WhatsApp & mailto links will still appear after each action.</p>'}
+            </div>
+          </div>`; })()}
+
+          ${allBookings.length === 0 ? `<div style="text-align:center;padding:3rem;color:var(--text-muted)"><div style="font-size:3rem;margin-bottom:1rem"></div><p>${t('no_bookings')}</p></div>` : `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Barber</th><th>Customer</th><th>Service</th><th>Date & Time</th><th>Price</th><th>Status & Actions</th></tr></thead>
+                <tbody>
+                  ${[...allBookings].reverse().filter(b => {
+                    if (!bookingFilter) return true;
+                    const q = bookingFilter.toLowerCase();
+                    return b.barber_name?.toLowerCase().includes(q) || b.service_name?.toLowerCase().includes(q);
+                  }).map(b => {
+                    const cust = allAccounts.find(a => a.id === b.customer_id);
+                    return `<tr>
+                      <td><strong>${escapeHTML(b.barber_name||'')}</strong></td>
+                      <td>${cust ? escapeHTML(cust.first_name+' '+cust.last_name) : ''}</td>
+                      <td>${escapeHTML(b.service_name)}</td>
+                      <td>${b.date}<br><span style="color:var(--text-muted);font-size:0.8rem">${b.time}</span></td>
+                      <td>${fmtPrice(b.price)}</td>
+                      <td style="white-space:nowrap">
+                        <span class="status-badge status-${escapeHTML(b.status)}">${escapeHTML(b.status)}</span>
+                        ${b.status==='pending'   ? `<button class="btn btn-sm" style="margin-left:0.35rem;background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="updateBookingStatus(${b.id},'confirmed')"> Confirm</button>` : ''}
+                        ${b.status==='confirmed' ? `<button class="btn btn-sm" style="margin-left:0.35rem;background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)"  onclick="updateBookingStatus(${b.id},'completed')"> Done</button>` : ''}
+                        ${b.status!=='cancelled'&&b.status!=='completed' ? `<button class="btn btn-sm" style="margin-left:0.35rem;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="updateBookingStatus(${b.id},'cancelled')"></button>` : ''}
+                      </td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>`}
+          </div>
+        </div>`;
+    }
+
+    function switchTab(tab) { activeTab = tab; render(); }
+
+    async function runUptimeChecksNow() {
+      if (typeof Monitoring === 'undefined') {
+        alert('Monitoring module unavailable.');
+        return;
+      }
+      await Monitoring.runDefaultUptimeChecks();
+      render();
+    }
+
+    function clearMonitoringData() {
+      if (typeof Monitoring === 'undefined') return;
+      Monitoring.clear();
+      render();
+    }
+
+    async function approveBarber(email, approve) {
+      const stored = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
+      const idx = stored.findIndex(a => a.email === email);
+      if (idx !== -1) {
+        const account = stored[idx];
+        if (approve) {
+          stored[idx].approved = true;
+          localStorage.setItem('bh_accounts', JSON.stringify(stored));
+          render(); // re-render first so the pending list updates
+
+          const subject = ' Your BarberHub application is approved!';
+          const message = `Hi ${account.first_name}!\n\nGreat news  your barber profile on BarberHub has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The BarberHub Team`;
+          const sent = await sendEmailJS(account.email, account.first_name, subject, message);
+          showNotifModal(
+            'Notify Barber ',
+            sent
+              ? ` Email sent to ${account.email}. Also notify via WhatsApp or email app:`
+              : `No EmailJS config yet. Notify ${account.first_name} manually:`,
+            account.phone,
+            message
+          );
+        } else {
+          stored.splice(idx, 1);
+          localStorage.setItem('bh_accounts', JSON.stringify(stored));
+          render();
+        }
+      }
+    }
+
+    function deleteUser(email) {
+      if (!confirm(`Remove user ${email}?`)) return;
+      const stored = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
+      localStorage.setItem('bh_accounts', JSON.stringify(stored.filter(a => a.email !== email)));
+      render();
+    }
+
+    //  EmailJS helpers 
+    function getEjsCfg() {
+      return JSON.parse(localStorage.getItem('bh_emailjs') || '{}');
+    }
+
+    function saveEjsConfig() {
+      const cfg = {
+        publicKey:  document.getElementById('ejs-pubkey').value.trim(),
+        serviceId:  document.getElementById('ejs-service').value.trim(),
+        templateId: document.getElementById('ejs-template').value.trim()
+      };
+      if (!cfg.publicKey || !cfg.serviceId || !cfg.templateId) {
+        alert('Please fill in all three fields before saving.');
+        return;
+      }
+      localStorage.setItem('bh_emailjs', JSON.stringify(cfg));
+      alert(' Settings saved! Emails will now be sent automatically.');
+      render();
+    }
+
+    async function sendEmailJS(toEmail, toName, subject, message) {
+      const cfg = getEjsCfg();
+      if (!cfg.publicKey || !cfg.serviceId || !cfg.templateId) return false;
+      try {
+        emailjs.init({ publicKey: cfg.publicKey });
+        await emailjs.send(cfg.serviceId, cfg.templateId, {
+          to_email: toEmail,
+          to_name:  toName,
+          subject,
+          message
+        });
+        return true;
+      } catch (e) {
+        console.error('EmailJS error:', e);
+        return false;
+      }
+    }
+
+    async function testEmail() {
+      const cfg = getEjsCfg();
+      if (!cfg.publicKey) { alert('Save your EmailJS settings first.'); return; }
+      const sent = await sendEmailJS(
+        user.email, user.first_name,
+        'BarberHub Email Test ',
+        `Hi ${user.first_name}! This is a test from your BarberHub admin panel.\n\nEmail notifications are working correctly. `
+      );
+      alert(sent ? ' Test email sent  check your inbox!' : ' Send failed. Double-check your EmailJS keys.');
+    }
+
+    //  Notification modal 
+    function showNotifModal(title, sub, phone, message) {
+      const cleanPhone = (phone || '').replace(/\D/g, '');
+      const encoded    = encodeURIComponent(message);
+      document.getElementById('notifModalTitle').textContent = title;
+      document.getElementById('notifModalSub').textContent   = sub;
+      const waBtn = document.getElementById('notifWaBtn');
+      if (cleanPhone) {
+        waBtn.href = `https://wa.me/${cleanPhone}?text=${encoded}`;
+        waBtn.style.opacity = '1';
+        waBtn.style.pointerEvents = 'auto';
+      } else {
+        waBtn.href = '#';
+        waBtn.style.opacity = '0.4';
+        waBtn.style.pointerEvents = 'none';
+        waBtn.title = 'No phone number on file';
+      }
+      document.getElementById('notifMailBtn').href = `mailto:?body=${encoded}`;
+      document.getElementById('notifModal').style.display = 'flex';
+    }
+
+    function closeNotifModal() {
+      document.getElementById('notifModal').style.display = 'none';
+    }
+
+    //  Booking status management (admin) 
+    async function updateBookingStatus(bookingId, newStatus) {
+      Bookings.update(bookingId, { status: newStatus });
+      render();
+
+      const booking  = Bookings.getAll().find(b => b.id === bookingId);
+      const customer = Auth.getAccounts().find(a => a.id === booking?.customer_id);
+      if (!booking || !customer) return;
+
+      if (newStatus === 'confirmed') {
+        const subject = `Booking Confirmed with ${booking.barber_name}`;
+        const message = `Hi ${customer.first_name}!\n\nYour appointment is confirmed:\n- Service: ${booking.service_name}\n- Barber: ${booking.barber_name}\n- Date: ${booking.date}\n- Time: ${booking.time}\n- Price: ${booking.price}\n\nSee you then!\n- BarberHub`;
+        const sent = await sendEmailJS(customer.email, customer.first_name, subject, message);
+
+        Notifs.add(customer.id, {
+          title: 'Appointment Confirmed',
+          message: `${booking.service_name} with ${booking.barber_name} on ${booking.date} at ${booking.time} is confirmed.`,
+          type: 'booking'
+        });
+
+        if (typeof ReminderEngine !== 'undefined') {
+          ReminderEngine.scheduleForBooking(booking, customer, booking.barber_name, booking.service_name);
+        }
+
+        showNotifModal(
+          'Notify Customer',
+          sent
+            ? `Email sent to ${customer.email}. Also notify via WhatsApp:`
+            : `Notify ${customer.first_name} about their confirmed appointment:`,
+          customer.phone,
+          message
+        );
+      }
+
+      if (newStatus === 'completed') {
+        Notifs.add(customer.id, {
+          title: 'Appointment Completed',
+          message: `Thanks for visiting ${booking.barber_name}. Ready for your next cut? Rebook from your dashboard.`,
+          type: 'booking'
+        });
+      }
+
+      if (newStatus === 'cancelled') {
+        Notifs.add(customer.id, {
+          title: 'Appointment Cancelled',
+          message: `${booking.service_name} on ${booking.date} at ${booking.time} was cancelled.`,
+          type: 'info'
+        });
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
+
+
+

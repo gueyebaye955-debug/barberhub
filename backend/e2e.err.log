@@ -1,0 +1,4 @@
+error: new row for relation "bookings" violates check constraint "bookings_time_check"
+    at C:\Users\mbaye\OneDrive\Desktop\watu\BarberHub-Simple\backend\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async C:\Users\mbaye\OneDrive\Desktop\watu\BarberHub-Simple\backend\routes\bookings.js:148:18

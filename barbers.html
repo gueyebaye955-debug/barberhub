@@ -1,0 +1,521 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Find and book trusted barbers in New York, Brooklyn, Manhattan, Queens, and Bronx. View ratings, real availability, prices, and nearby locations.">
+  <meta name="keywords" content="barber near me, NYC barber, Brooklyn barber, Manhattan barber, Queens barber, Bronx barber, haircut booking">
+  <link rel="canonical" href="/barbers.html">
+  <meta property="og:title" content="Find Barbers in New York | BarberHub">
+  <meta property="og:description" content="Book top-rated local barbers with real availability and transparent pricing.">
+  <meta property="og:type" content="website">
+  <title>Find Barbers in New York | BarberHub</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="preconnect" href="https://i.pravatar.cc" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+
+  <style>
+    .page-layout { display: grid; grid-template-columns: 260px 1fr; gap: 1.75rem; padding-bottom: 4rem; }
+    .filter-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; height: fit-content; position: sticky; top: 80px; }
+    .filter-panel h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.9rem; }
+    .filter-section { margin-bottom: 1.4rem; }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .results-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .results-count { font-size: 0.875rem; color: var(--text-muted); }
+    @media (max-width: 768px) { .page-layout { grid-template-columns: 1fr; } .filter-panel { position: static; } }
+  </style>
+</head>
+<body class="page-wrap">
+  <nav class="navbar" id="navbar"></nav>
+
+  <div class="page-header">
+    <div class="container">
+      <h1 data-i18n="barbers_title">Find Your Perfect Barber</h1>
+      <p data-i18n="barbers_sub">Browse top-rated barbers near you</p>
+    </div>
+  </div>
+
+  <main>
+    <div class="container" style="padding-top:1.5rem">
+      <div class="page-layout">
+        <!-- Filter sidebar -->
+        <aside class="filter-panel">
+          <div class="filter-section">
+            <h3 data-i18n="filter_search_ph">Search</h3>
+            <div class="autocomplete-wrap">
+              <input type="text" class="form-control" id="searchInput" data-i18n="filter_search_ph" placeholder="Name, shop, or style" oninput="onSearchInput(this.value)" autocomplete="off">
+              <div class="autocomplete-list" id="autocompleteList" style="display:none"></div>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3 data-i18n="filter_city">City</h3>
+            <select class="form-control" id="cityFilter" onchange="applyFilters()">
+              <option value="" data-i18n="filter_city_all">All Cities</option>
+              <option value="New York">New York</option>
+              <option value="Brooklyn">Brooklyn</option>
+              <option value="Manhattan">Manhattan</option>
+              <option value="Queens">Queens</option>
+              <option value="Bronx">Bronx</option>
+            </select>
+          </div>
+
+          <div class="filter-section">
+            <h3 data-i18n="filter_rating">Min Rating</h3>
+            <div class="chip-group" id="ratingChips">
+              <button class="chip active" data-val=""    onclick="setChip('ratingChips',this,'')">Any</button>
+              <button class="chip" data-val="4"          onclick="setChip('ratingChips',this,'4')">4+</button>
+              <button class="chip" data-val="4.5"        onclick="setChip('ratingChips',this,'4.5')">4.5+</button>
+              <button class="chip" data-val="4.8"        onclick="setChip('ratingChips',this,'4.8')">4.8+</button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3 data-i18n="filter_service">Service Type</h3>
+            <div class="chip-group" id="svcChips">
+              <button class="chip active" data-val=""         onclick="setChip('svcChips',this,'')">All</button>
+              <button class="chip" data-val="Cuts"            onclick="setChip('svcChips',this,'Cuts')"> Cuts</button>
+              <button class="chip" data-val="Beard"           onclick="setChip('svcChips',this,'Beard')"> Beard</button>
+              <button class="chip" data-val="Kids"            onclick="setChip('svcChips',this,'Kids')"> Kids</button>
+              <button class="chip" data-val="Specialty"       onclick="setChip('svcChips',this,'Specialty')"> Specialty</button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3 data-i18n="filter_avail">Availability</h3>
+            <div class="chip-group" id="availChips">
+              <button class="chip active" data-val=""         onclick="setChip('availChips',this,'')">Any Day</button>
+              <button class="chip" data-val="today"           onclick="setChip('availChips',this,'today')">Today</button>
+              <button class="chip" data-val="tomorrow"        onclick="setChip('availChips',this,'tomorrow')">Tomorrow</button>
+              <button class="chip" data-val="weekend"         onclick="setChip('availChips',this,'weekend')">Weekend</button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3 data-i18n="filter_sort">Sort By</h3>
+            <div class="chip-group" id="sortChips">
+              <button class="chip active" data-val="rating"   onclick="setChip('sortChips',this,'rating')">Top Rated</button>
+              <button class="chip" data-val="bookings"        onclick="setChip('sortChips',this,'bookings')">Popular</button>
+              <button class="chip" data-val="reviews"         onclick="setChip('sortChips',this,'reviews')">Most Reviews</button>
+              <button class="chip" data-val="price"           onclick="setChip('sortChips',this,'price')">Price </button>
+              <button class="chip" data-val="distance"        onclick="setChip('sortChips',this,'distance')"> Distance</button>
+            </div>
+          </div>
+
+          <button class="btn btn-ghost w-full" onclick="resetFilters()" data-i18n="filter_reset">Reset Filters</button>
+        </aside>
+
+        <!-- Results -->
+        <div>
+          <div class="results-toolbar">
+            <span class="results-count" id="resultsCount"></span>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" id="locateBtn" onclick="locateMe()" title="Find barbers near your location"> Near Me</button>
+              <div class="view-toggle">
+                <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')" data-i18n="view_grid"> Grid</button>
+                <button class="view-btn"        id="mapViewBtn"  onclick="setView('map')" data-i18n="view_map"> Map</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="gridResults" class="grid-3"></div>
+          <div id="barberMap"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+  <script id="barbersSchema" type="application/ld+json"></script>
+
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script>
+    window.__currentNavPage = 'barbers';
+    renderNav('barbers');
+    renderFooter();
+    applyI18n();
+    const track = (name, meta = {}) => { if (typeof Analytics !== 'undefined') Analytics.track(name, meta); };
+    track('barber_search', { source: 'barbers_page_load' });
+
+    const filters = { search: '', city: '', rating: '', service: '', avail: '', sort: 'rating' };
+    let currentView = 'grid';
+    let leafletMap  = null;
+    let mapMarkers  = [];
+    let userLocation = null;   // { lat, lng } when granted
+    let userMarker   = null;   // Leaflet marker for "You are here"
+    let searchTracked = false;
+    let leafletReadyPromise = null;
+
+    // Haversine formula  returns distance in km between two lat/lng points
+    function haversine(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function fmtDist(km) {
+      return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+    }
+
+    function ensureLeaflet() {
+      if (window.L) return Promise.resolve();
+      if (leafletReadyPromise) return leafletReadyPromise;
+
+      leafletReadyPromise = new Promise((resolve, reject) => {
+        if (!document.getElementById('leafletCss')) {
+          const css = document.createElement('link');
+          css.id = 'leafletCss';
+          css.rel = 'stylesheet';
+          css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(css);
+        }
+
+        const existing = document.getElementById('leafletJs');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Leaflet failed to load.')), { once: true });
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.id = 'leafletJs';
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Leaflet failed to load.'));
+        document.body.appendChild(script);
+      });
+
+      return leafletReadyPromise;
+    }
+
+    function updateBarbersSchema(results) {
+      const list = (results || getAllBarbers()).slice(0, 25).map((b, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        item: {
+          '@type': 'BarberShop',
+          name: b.shop_name || `${b.first_name} ${b.last_name}`,
+          address: b.location || b.city,
+          areaServed: b.city,
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: b.rating,
+            reviewCount: b.total_reviews
+          },
+          url: `profile.html?id=${b.id}`
+        }
+      }));
+
+      const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: 'Barbers in New York',
+        numberOfItems: list.length,
+        itemListElement: list
+      };
+
+      const el = document.getElementById('barbersSchema');
+      if (el) el.textContent = JSON.stringify(schema);
+    }
+
+    function locateMe() {
+      const btn = document.getElementById('locateBtn');
+      // Toggle off if already active
+      if (userLocation) {
+        userLocation = null;
+        if (userMarker) { userMarker.remove(); userMarker = null; }
+        btn.textContent = ' Near Me';
+        btn.classList.remove('active');
+        // Revert to top-rated sort
+        setChip('sortChips', document.querySelector('#sortChips [data-val="rating"]'), 'rating');
+        return;
+      }
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      btn.textContent = ' Locating';
+      btn.disabled = true;
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          btn.textContent = ' Near Me ';
+          btn.classList.add('active');
+          btn.disabled = false;
+          // Auto-select distance sort and switch to map
+          setChip('sortChips', document.querySelector('#sortChips [data-val="distance"]'), 'distance');
+          setView('map');
+        },
+        err => {
+          btn.textContent = ' Near Me';
+          btn.disabled = false;
+          const msg = err.code === 1
+            ? 'Location permission denied. Please allow location access in your browser settings.'
+            : 'Could not get your location. Please try again.';
+          alert(msg);
+        },
+        { timeout: 10000 }
+      );
+    }
+
+    // Pre-fill from URL params
+    const params = new URLSearchParams(location.search);
+    if (params.get('q'))    { filters.search = params.get('q');    document.getElementById('searchInput').value = filters.search; }
+    if (params.get('city')) { filters.city   = params.get('city'); document.getElementById('cityFilter').value  = filters.city; }
+
+    function getFilteredResults() {
+      let results = getAllBarbers();
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        results = results.filter(b =>
+          (b.shop_name||'').toLowerCase().includes(q) ||
+          (b.first_name+' '+b.last_name).toLowerCase().includes(q) ||
+          b.services.some(s => s.name.toLowerCase().includes(q)) ||
+          b.city.toLowerCase().includes(q)
+        );
+      }
+      if (filters.city)    results = results.filter(b => b.city === filters.city);
+      if (filters.rating)  results = results.filter(b => b.rating >= parseFloat(filters.rating));
+      if (filters.service) results = results.filter(b => b.services.some(s => s.category === filters.service));
+      if (filters.avail) {
+        const today    = new Date().getDay();
+        const tomorrow = (today + 1) % 7;
+        results = results.filter(b => {
+          if (filters.avail === 'today')    return b.availability.find(a => a.day === today    && a.open);
+          if (filters.avail === 'tomorrow') return b.availability.find(a => a.day === tomorrow && a.open);
+          if (filters.avail === 'weekend')  return b.availability.find(a => (a.day === 0 || a.day === 6) && a.open);
+          return true;
+        });
+      }
+      // Attach distance from user location (km) when available
+      if (userLocation) {
+        results.forEach(b => {
+          b._distance = (b.lat && b.lng)
+            ? haversine(userLocation.lat, userLocation.lng, b.lat, b.lng)
+            : null;
+        });
+      } else {
+        results.forEach(b => { b._distance = null; });
+      }
+
+      const sortFns = {
+        rating:   (a,b) => b.rating - a.rating,
+        bookings: (a,b) => b.total_bookings - a.total_bookings,
+        reviews:  (a,b) => b.total_reviews  - a.total_reviews,
+        price:    (a,b) => Math.min(...a.services.map(s=>s.price)) - Math.min(...b.services.map(s=>s.price)),
+        distance: (a,b) => {
+          if (a._distance == null && b._distance == null) return 0;
+          if (a._distance == null) return 1;
+          if (b._distance == null) return -1;
+          return a._distance - b._distance;
+        }
+      };
+      results.sort(sortFns[filters.sort] || sortFns.rating);
+      return results;
+    }
+
+    function applyFilters() {
+      filters.city = document.getElementById('cityFilter').value;
+      const results = getFilteredResults();
+      const found = results.length;
+      document.getElementById('resultsCount').textContent =
+        `${found} ${found === 1 ? t('barbers_found') : t('barbers_found_plural')}`;
+      updateBarbersSchema(results);
+      if (currentView === 'grid') renderGrid(results);
+      else renderMap(results).catch(console.error);
+    }
+
+    function renderGrid(results) {
+      const el = document.getElementById('gridResults');
+      if (!results.length) {
+        el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>${t('no_barbers')}</h3><p>${t('no_barbers_sub')}</p></div>`;
+        return;
+      }
+      el.innerHTML = results.map(b => {
+        let card = barberCardHTML(b);
+        // Inject distance badge next to city when location is active
+        if (userLocation && b._distance != null) {
+          const dist = fmtDist(b._distance);
+          card = card.replace(
+            `<div class="bc-loc"> ${b.city}</div>`,
+            `<div class="bc-loc"> ${b.city}<span style="color:var(--primary);font-size:0.7rem;font-weight:700;margin-left:0.4rem"> ${dist} away</span></div>`
+          );
+        }
+        return card;
+      }).join('');
+    }
+
+    async function renderMap(results) {
+      const mapEl = document.getElementById('barberMap');
+      mapEl.classList.add('show');
+      await ensureLeaflet();
+      if (!leafletMap) {
+        leafletMap = L.map('barberMap').setView([40.7128, -74.0060], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: ' <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        }).addTo(leafletMap);
+      }
+
+      // Remove old barber markers
+      mapMarkers.forEach(m => m.remove());
+      mapMarkers = [];
+
+      // Remove and re-add user location marker
+      if (userMarker) { userMarker.remove(); userMarker = null; }
+      if (userLocation) {
+        const youIcon = L.divIcon({
+          html: '<div style="background:#3b82f6;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.45)"></div>',
+          className: '',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+        userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: youIcon, zIndexOffset: 1000 })
+          .addTo(leafletMap)
+          .bindPopup('<div style="font-family:sans-serif;font-size:0.85rem"><strong> You are here</strong></div>');
+        leafletMap.setView([userLocation.lat, userLocation.lng], 12);
+      }
+
+      // Add barber markers
+      results.forEach(b => {
+        if (!b.lat || !b.lng) return;
+        const minPrice = Math.min(...b.services.map(s => s.price));
+        const distLine = (userLocation && b._distance != null)
+          ? `<div style="font-size:0.75rem;color:#3b82f6;font-weight:600;margin:0.15rem 0">Distance ${fmtDist(b._distance)} away</div>`
+          : '';
+        const nextSlot = getNextOpenSlot(b);
+        const slotLine = nextSlot
+          ? `<div style="font-size:0.75rem;color:#16a34a;font-weight:600;margin:0.1rem 0">Next slot ${nextSlot.display}</div>`
+          : '';
+        const m = L.marker([b.lat, b.lng]).addTo(leafletMap);
+        m.bindPopup(`
+          <div style="min-width:190px;font-family:sans-serif">
+            <strong style="font-size:0.9rem">${b.shop_name || b.first_name+' '+b.last_name}</strong>
+            ${b.is_verified ? ' <span style="background:#6366f1;color:#fff;border-radius:50%;padding:0 3px;font-size:0.6rem"></span>' : ''}
+            <div style="font-size:0.75rem;color:#888;margin:0.2rem 0"> ${b.city}</div>
+            ${distLine}
+            ${slotLine}
+            <div style="font-size:0.82rem"> ${b.rating.toFixed(1)}  ${t('card_from')} ${fmtPrice(minPrice)}</div>
+            <div style="font-size:0.75rem;margin-top:0.25rem"> ${b.booked_today} ${t('card_booked_today')}</div>
+            <a href="profile.html?id=${b.id}" style="display:block;margin-top:0.6rem;background:#e94560;color:#fff;padding:0.3rem 0.75rem;border-radius:6px;font-size:0.78rem;text-align:center;text-decoration:none">${t('card_book_now')} </a>
+          </div>`);
+        mapMarkers.push(m);
+      });
+
+      // Center on first result only when no user location
+      if (!userLocation && results.length > 0 && results[0].lat) {
+        leafletMap.setView([results[0].lat, results[0].lng], 12);
+      }
+      setTimeout(() => leafletMap.invalidateSize(), 100);
+    }
+
+    function setView(view) {
+      currentView = view;
+      document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+      document.getElementById('mapViewBtn').classList.toggle('active', view === 'map');
+      document.getElementById('gridResults').style.display = view === 'grid' ? '' : 'none';
+      const mapEl = document.getElementById('barberMap');
+      if (view !== 'map') mapEl.classList.remove('show');
+      applyFilters();
+    }
+
+    function setChip(groupId, el, val) {
+      document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      if (groupId === 'ratingChips') filters.rating  = val;
+      if (groupId === 'svcChips')    filters.service = val;
+      if (groupId === 'sortChips')   filters.sort    = val;
+      if (groupId === 'availChips')  filters.avail   = val;
+      applyFilters();
+    }
+
+    function onSearchInput(val) {
+      filters.search = val;
+      if (val.trim() && !searchTracked) {
+        track('barber_search', { source: 'filter_input' });
+        searchTracked = true;
+      }
+      const list = document.getElementById('autocompleteList');
+      if (!val.trim()) { list.style.display = 'none'; applyFilters(); return; }
+      const q = val.toLowerCase();
+      const matches = [];
+      getAllBarbers().forEach(b => {
+        const name = b.shop_name || b.first_name+' '+b.last_name;
+        if (name.toLowerCase().includes(q))
+          matches.push({ type: 'barber', label: name, sub: b.city, id: b.id });
+        b.services.forEach(s => {
+          if (s.name.toLowerCase().includes(q) && !matches.find(m => m.label === s.name))
+            matches.push({ type: 'service', label: s.name, sub: s.category });
+        });
+      });
+      if (!matches.length) { list.style.display = 'none'; }
+      else {
+        list.style.display = 'block';
+        list.innerHTML = matches.slice(0,6).map(m => `
+          <div class="autocomplete-item" onclick="selectAC(${m.id||'null'},'${m.label.replace(/'/g,"\\'")}','${m.type}')">
+            <span class="ac-icon">${m.type === 'barber' ? '' : ''}</span>
+            <div><div class="ac-name">${m.label}</div><div class="ac-sub">${m.sub}</div></div>
+          </div>`).join('');
+      }
+      applyFilters();
+    }
+
+    function selectAC(id, label, type) {
+      document.getElementById('searchInput').value = label;
+      document.getElementById('autocompleteList').style.display = 'none';
+      if (type === 'barber' && id) {
+        track('profile_view', { source: 'autocomplete', barber_id: id });
+        window.location.href = `profile.html?id=${id}`;
+        return;
+      }
+      filters.search = label;
+      applyFilters();
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.autocomplete-wrap'))
+        document.getElementById('autocompleteList').style.display = 'none';
+    });
+
+    function resetFilters() {
+      filters.search = ''; filters.city = ''; filters.rating = '';
+      filters.service = ''; filters.avail = ''; filters.sort = 'rating';
+      searchTracked = false;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('cityFilter').value  = '';
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('#ratingChips [data-val=""]').classList.add('active');
+      document.querySelector('#svcChips   [data-val=""]').classList.add('active');
+      document.querySelector('#sortChips  [data-val="rating"]').classList.add('active');
+      document.querySelector('#availChips [data-val=""]').classList.add('active');
+      applyFilters();
+    }
+
+    (async function initBarbersPage() {
+      try {
+        await loadApiBarbers();
+      } catch (err) {
+        console.warn('Falling back to local barber data:', err.message);
+      }
+      updateBarbersSchema(getAllBarbers());
+      applyFilters();
+    }());
+  </script>
+</body>
+</html>
+
+
+
+
+
+
