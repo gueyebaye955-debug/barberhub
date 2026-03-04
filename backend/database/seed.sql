@@ -4,7 +4,7 @@
 INSERT INTO users (first_name, last_name, email, password, phone, city, role, approved) VALUES
   ('John', 'Doe', 'john@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5550001111', 'New York', 'customer', true),
   ('Carlos', 'Rivera', 'carlos@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '3139896811', 'New York', 'barber', true),
-  ('Admin', 'Hub', 'admin@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '', 'New York', 'admin', true),
+  ('Admin', 'Hub', 'admin@demo.com', '$2a$10$MXadMmjl2aMOfEhmSzzUxO9QZBBbuUK4cIUy50drbQdz2dNkfn7nO', '', 'New York', 'admin', true),
   ('Sofia', 'Chen', 'sofia@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5552223333', 'Los Angeles', 'barber', true),
   ('Marcus', 'James', 'marcus@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5554445555', 'Chicago', 'barber', true)
 ON CONFLICT (email) DO NOTHING;
