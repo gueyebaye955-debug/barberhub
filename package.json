@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "build": "npm install --prefix backend",
-    "start": "node backend/server.js"
+    "start": "node backend/server.js",
+    "db:migrate": "node backend/database/migrate.js",
+    "db:seed": "node backend/database/seed.js",
+    "db:setup": "npm run db:migrate && npm run db:seed"
   },
   "engines": {
     "node": ">=18"
