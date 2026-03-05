@@ -259,6 +259,171 @@
       /* City cards touch-friendly */
       .local-city-card { padding: 0.85rem; min-height: 60px; }
     }
+
+    /* ===== Circular Barber Scroll ===== */
+    .barber-scroll-row {
+      display: flex;
+      gap: 1.25rem;
+      overflow-x: auto;
+      padding: 0.5rem 0.25rem 1.25rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .barber-scroll-row::-webkit-scrollbar { display: none; }
+
+    .barber-circle-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      width: 88px;
+    }
+    .barber-circle-avatar {
+      width: 82px; height: 82px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      overflow: hidden;
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 800; color: white;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .barber-circle-item:hover .barber-circle-avatar,
+    .barber-circle-item:active .barber-circle-avatar {
+      transform: scale(1.06);
+      box-shadow: 0 0 0 5px rgba(233,69,96,0.25);
+    }
+    .barber-circle-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .barber-circle-verified {
+      position: absolute; bottom: 3px; right: 3px;
+      width: 18px; height: 18px;
+      background: var(--primary); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: white;
+      border: 2px solid var(--bg);
+    }
+    .barber-circle-name {
+      font-size: 0.78rem; font-weight: 600;
+      text-align: center; max-width: 88px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--text);
+    }
+    .barber-circle-sub {
+      font-size: 0.69rem; color: var(--text-muted); text-align: center;
+    }
+    .barber-circle-price { color: var(--primary); font-weight: 600; }
+
+    /* ===== Profile Sheet ===== */
+    .profile-sheet-overlay {
+      position: fixed; inset: 0; z-index: 900;
+      background: rgba(0,0,0,0.65);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+      display: flex; align-items: flex-end;
+    }
+    .profile-sheet-overlay.open { opacity: 1; pointer-events: all; }
+    .profile-sheet-panel {
+      width: 100%; max-height: 94vh;
+      background: var(--bg);
+      border-radius: 1.5rem 1.5rem 0 0;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      overscroll-behavior: contain;
+    }
+    .profile-sheet-overlay.open .profile-sheet-panel { transform: translateY(0); }
+
+    .profile-sheet-topbar {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg);
+      padding: 0.6rem 1.25rem 0.6rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-sheet-drag {
+      width: 40px; height: 5px;
+      background: var(--border); border-radius: 3px;
+      position: absolute; left: 50%; top: 0.55rem; transform: translateX(-50%);
+    }
+    .sheet-profile-hero {
+      background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.25rem 1rem;
+    }
+    .sheet-profile-header { display: flex; gap: 1rem; align-items: flex-start; }
+    .sheet-profile-ava {
+      width: 78px; height: 78px; flex-shrink: 0;
+      border-radius: 50%; border: 3px solid var(--primary);
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; font-weight: 800; color: white; overflow: hidden;
+    }
+    .sheet-profile-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sheet-profile-name {
+      font-size: 1.1rem; font-weight: 800;
+      display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+      margin-bottom: 0.2rem;
+    }
+    .sheet-profile-meta {
+      display: flex; flex-wrap: wrap; gap: 0.4rem;
+      font-size: 0.78rem; color: var(--text-muted); margin: 0.3rem 0;
+    }
+    .sheet-profile-bio { color: var(--text-muted); line-height: 1.6; font-size: 0.83rem; margin-top: 0.5rem; }
+    .sheet-cta {
+      padding: 0.85rem 1.25rem;
+      display: flex; gap: 0.6rem; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .sheet-cta .btn { flex: 1; min-width: 110px; }
+    .sheet-tabs { padding: 0 1.25rem; }
+    .sheet-tab-content { padding: 1rem 1.25rem 5rem; }
+    .sheet-svc-list { display: flex; flex-direction: column; gap: 0.65rem; }
+    .sheet-svc-item {
+      padding: 0.9rem 1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .sheet-svc-item h4 { margin-bottom: 0.1rem; font-size: 0.88rem; }
+    .sheet-svc-item p { color: var(--text-muted); font-size: 0.76rem; }
+    .sheet-svc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
+    .sheet-svc-price { font-size: 1.05rem; font-weight: 800; color: var(--primary); }
+    .sheet-portfolio-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.55rem; }
+    .sheet-review-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.9rem;
+    }
+    .sheet-review-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.45rem; }
+    .sheet-review-ava {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-elevated);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: var(--primary); font-size: 0.8rem; flex-shrink: 0;
+    }
+    .sheet-reviews-summary {
+      display: grid; grid-template-columns: auto 1fr; gap: 1.25rem;
+      align-items: center; margin-bottom: 1.1rem;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem;
+    }
+    .sheet-avail-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); font-size: 0.84rem;
+    }
+    .sheet-avail-row:last-child { border-bottom: none; }
+    .sheet-avail-row.closed { opacity: 0.5; }
+    .sheet-rating-bar-row { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.3rem; font-size: 0.76rem; }
+    .sheet-rating-bar-track { flex: 1; height: 5px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+    .sheet-rating-bar-fill { height: 100%; background: var(--gold); border-radius: 3px; }
+    @media (max-width: 480px) {
+      .sheet-portfolio-grid { grid-template-columns: repeat(2,1fr); }
+      .sheet-reviews-summary { grid-template-columns: 1fr; gap: 0.75rem; }
+      .sheet-svc-item { flex-direction: column; align-items: flex-start; }
+      .sheet-svc-right { width: 100%; align-items: flex-start; flex-direction: row; justify-content: space-between; }
+    }
   </style>
 </head>
 <body class="page-wrap">
@@ -331,12 +496,12 @@
 
     <section class="section" style="padding-top: 0;">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" style="margin-bottom:0.75rem">
           <h2>Featured Barbers</h2>
-          <p>Consistently top-rated professionals</p>
+          <p>Tap a barber to see their full profile and book instantly</p>
         </div>
-        <div class="grid-4" id="featuredGrid"></div>
-        <div class="text-center mt-3">
+        <div class="barber-scroll-row" id="featuredScrollRow"></div>
+        <div class="text-center mt-2">
           <a href="barbers.html" class="btn btn-outline btn-lg">View All Barbers</a>
         </div>
       </div>
@@ -344,11 +509,11 @@
 
     <section class="section" style="padding-top: 0;">
       <div class="container">
-        <div class="section-header">
+        <div class="section-header" style="margin-bottom:0.75rem">
           <h2>Trending Barbers</h2>
-          <p>Most booked this month</p>
+          <p>Most booked this month — tap to book</p>
         </div>
-        <div class="grid-4" id="trendingGrid"></div>
+        <div class="barber-scroll-row" id="trendingScrollRow"></div>
       </div>
     </section>
 
@@ -398,6 +563,50 @@
     </section>
   </main>
 
+  <!-- ===== Profile Sheet Overlay ===== -->
+  <div id="profileSheet" class="profile-sheet-overlay" onclick="sheetBgClick(event)">
+    <div class="profile-sheet-panel" id="profileSheetPanel">
+      <div class="profile-sheet-topbar">
+        <div class="profile-sheet-drag"></div>
+        <button class="btn btn-ghost btn-sm" onclick="closeProfileSheet()">✕ Close</button>
+      </div>
+      <div id="profileSheetContent"></div>
+    </div>
+  </div>
+
+  <!-- Sheet Review Modal -->
+  <div class="modal-overlay" id="sheetReviewModal">
+    <div class="modal">
+      <h3>Write a Review</h3>
+      <p class="sub">Rate your experience</p>
+      <div class="form-group">
+        <label class="form-label">Rating</label>
+        <div id="sheetStarPicker" style="display:flex;gap:6px;font-size:1.8rem;cursor:pointer">
+          <span data-v="1"></span><span data-v="2"></span><span data-v="3"></span><span data-v="4"></span><span data-v="5"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comment (optional)</label>
+        <textarea class="form-control" id="sheetReviewComment" placeholder="Share your experience..." rows="3"></textarea>
+      </div>
+      <div id="sheetReviewAlert"></div>
+      <div style="display:flex;gap:0.75rem;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeSheetReviewModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitSheetReview()">Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet Lightbox -->
+  <div class="lightbox-overlay" id="sheetLightbox" onclick="sheetLightboxBgClick(event)">
+    <button class="lightbox-close" onclick="closeSheetLightbox()"></button>
+    <button class="lightbox-nav lightbox-prev" onclick="sheetLightboxNav(-1)"></button>
+    <img class="lightbox-img" id="sheetLightboxImg" src="" alt="">
+    <button class="lightbox-nav lightbox-next" onclick="sheetLightboxNav(1)"></button>
+    <div class="lightbox-caption" id="sheetLightboxCaption"></div>
+    <div class="lightbox-counter" id="sheetLightboxCounter"></div>
+  </div>
+
   <footer class="footer" id="footer"></footer>
   <script id="homeSchema" type="application/ld+json">
     {
@@ -425,6 +634,7 @@
     applyI18n();
     if (typeof Analytics !== 'undefined') Analytics.track('homepage_view');
 
+    // ── Search ────────────────────────────────────────────────────────────────
     function doSearch() {
       const q = document.getElementById('searchInput').value.trim();
       const city = document.getElementById('cityInput').value.trim();
@@ -444,30 +654,394 @@
       if (e.key === 'Enter') doSearch();
     });
 
+    // ── Circular scroll row renderer ─────────────────────────────────────────
+    function renderCircleRow(barbers, containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = barbers.map((b) => {
+        const initials = getNameInitials(b.first_name, b.last_name);
+        const avatarSrc = getBarberAvatar(b);
+        const rating = Number.isFinite(Number(b.rating)) ? Number(b.rating).toFixed(1) : '';
+        const minPrice = getBarberMinPrice(b);
+        return `
+          <div class="barber-circle-item" onclick="openProfileSheet(${b.id})" role="button" tabindex="0" aria-label="View profile for ${escapeHTML(b.first_name)}">
+            <div class="barber-circle-avatar">
+              ${avatarSrc ? `<img src="${avatarSrc}" alt="${escapeHTML(b.first_name)}" loading="lazy">` : initials}
+              ${b.is_verified ? '<div class="barber-circle-verified">✓</div>' : ''}
+            </div>
+            <span class="barber-circle-name">${escapeHTML(b.first_name)}</span>
+            ${rating ? `<span class="barber-circle-sub">★ ${rating}</span>` : ''}
+            ${minPrice !== null ? `<span class="barber-circle-sub barber-circle-price">From ${fmtPrice(minPrice)}</span>` : ''}
+          </div>`;
+      }).join('');
+      // keyboard accessibility: Enter/Space opens sheet
+      el.querySelectorAll('.barber-circle-item').forEach((item) => {
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.click(); }
+        });
+      });
+    }
+
+    // ── Home render ──────────────────────────────────────────────────────────
     (async function renderHome() {
-      function renderGrids() {
-        const allBarbers = getAllBarbers();
-        const featured = [...allBarbers].sort((a, b) => b.rating - a.rating);
-        const trending = [...allBarbers].sort((a, b) => b.total_bookings - a.total_bookings);
-        document.getElementById('featuredGrid').innerHTML = featured.slice(0, 4).map((b) => barberCardHTML(b)).join('');
-        document.getElementById('trendingGrid').innerHTML = trending.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+      function renderAll() {
+        const all = getAllBarbers();
+        const featured = [...all].sort((a, b) => b.rating - a.rating);
+        const trending = [...all].sort((a, b) => b.total_bookings - a.total_bookings);
+        renderCircleRow(featured, 'featuredScrollRow');
+        renderCircleRow(trending, 'trendingScrollRow');
         const user = Auth.getUser();
         if (user && user.role === 'customer') {
           document.getElementById('recommendedSection').style.display = 'block';
-          const recommended = [...allBarbers].sort((a, b) => {
-            const aCityMatch = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-            const bCityMatch = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-            if (bCityMatch !== aCityMatch) return bCityMatch - aCityMatch;
-            return b.rating - a.rating;
+          const recommended = [...all].sort((a, b) => {
+            const am = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+            const bm = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+            return bm !== am ? bm - am : b.rating - a.rating;
           });
           document.getElementById('recommendedGrid').innerHTML = recommended.slice(0, 4).map((b) => barberCardHTML(b)).join('');
         }
       }
-
-      renderGrids(); // Show the 6 static barbers immediately — no waiting
-      await loadApiBarbers(); // Fetch from API in background (5s timeout)
-      renderGrids(); // Update grids if API returned more/different barbers
+      renderAll();
+      await loadApiBarbers();
+      renderAll();
     })();
+
+    // ── Profile Sheet State ───────────────────────────────────────────────────
+    let _sheetBarber = null;
+    let _sheetTab = 'services';
+    let _sheetReviewRating = 5;
+    let _sheetLbPhotos = [];
+    let _sheetLbIndex = 0;
+
+    const SHEET_CAT_ICONS = { Cuts: '✂', Beard: '🧔', Kids: '👶', Specialty: '⭐' };
+
+    function openProfileSheet(barberId) {
+      const b = getAllBarbers().find((x) => x.id === barberId);
+      if (!b) return;
+      _sheetBarber = b;
+      _sheetTab = 'services';
+      renderSheetContent();
+      document.getElementById('profileSheet').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (typeof Analytics !== 'undefined') Analytics.track('profile_sheet_open', { barber_id: barberId });
+      // Fetch fresh data from API in background
+      loadApiBarberById(barberId).then((fresh) => {
+        if (fresh) { _sheetBarber = fresh; renderSheetContent(); }
+      }).catch(() => {});
+    }
+
+    function closeProfileSheet() {
+      document.getElementById('profileSheet').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function sheetBgClick(e) {
+      if (e.target === document.getElementById('profileSheet')) closeProfileSheet();
+    }
+
+    function renderSheetContent() {
+      const barber = _sheetBarber;
+      const user = Auth.getUser();
+      const isFav = user ? Favorites.isFav(user.id, barber.id) : false;
+      const services = getBarberServices(barber);
+      const minPrice = getBarberMinPrice(barber);
+      const initials = getNameInitials(barber.first_name, barber.last_name);
+      const isCustomer = user && user.role === 'customer';
+      const rating = Number.isFinite(Number(barber.rating)) ? Number(barber.rating) : 0;
+      const totalReviews = Number.isFinite(Number(barber.total_reviews)) ? Number(barber.total_reviews) : 0;
+      const avatarSrc = getBarberAvatar(barber);
+      const nextAvail = getNextAvailable(barber);
+
+      document.getElementById('profileSheetContent').innerHTML = `
+        <div class="sheet-profile-hero">
+          <div class="sheet-profile-header">
+            <div class="sheet-profile-ava">
+              ${avatarSrc ? `<img src="${avatarSrc}" alt="${escapeHTML(barber.first_name)}">` : initials}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="sheet-profile-name">
+                ${escapeHTML(barber.shop_name || barber.first_name + ' ' + barber.last_name)}
+                ${barber.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
+              </div>
+              <div class="sheet-profile-meta">
+                ${barber.location ? `<span>📍 ${escapeHTML(barber.location)}</span>` : ''}
+                ${barber.years_experience ? `<span>✂ ${barber.years_experience} yrs exp</span>` : ''}
+                ${barber.total_bookings ? `<span>📅 ${barber.total_bookings} bookings</span>` : ''}
+              </div>
+              <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.25rem">
+                ${starsHTML(rating, '0.85rem')}
+                <strong style="font-size:0.88rem">${rating.toFixed(1)}</strong>
+                <span class="text-muted text-sm">(${totalReviews})</span>
+                ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.68rem;padding:0.12rem 0.45rem;border-radius:50px;font-weight:700">🔥 ${barber.booked_today} booked today</span>` : ''}
+              </div>
+              <div class="text-muted text-sm">Next available: <strong style="color:var(--green)">${nextAvail}</strong></div>
+              ${barber.bio ? `<div class="sheet-profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet-cta">
+          ${isCustomer && services.length
+            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">📅 Book Now${minPrice !== null ? ' · From ' + fmtPrice(minPrice) : ''}</a>`
+            : !isCustomer
+              ? `<a href="login.html" class="btn btn-primary">Log in to Book</a>`
+              : `<button class="btn btn-ghost" disabled>No services listed</button>`}
+          <a href="profile.html?id=${barber.id}" class="btn btn-outline">Full Profile</a>
+          ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" onclick="sheetToggleFav()">${isFav ? '♥ Saved' : '♡ Save'}</button>` : ''}
+          ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm" style="flex-basis:100%">💬 Message Barber</a>` : ''}
+        </div>
+
+        <div class="sheet-tabs">
+          <div class="tabs">
+            <button class="tab-btn ${_sheetTab === 'services' ? 'active' : ''}" onclick="switchSheetTab('services',this)">Services</button>
+            <button class="tab-btn ${_sheetTab === 'portfolio' ? 'active' : ''}" onclick="switchSheetTab('portfolio',this)">Gallery</button>
+            <button class="tab-btn ${_sheetTab === 'reviews' ? 'active' : ''}" onclick="switchSheetTab('reviews',this)">Reviews</button>
+            <button class="tab-btn ${_sheetTab === 'availability' ? 'active' : ''}" onclick="switchSheetTab('availability',this)">Schedule</button>
+          </div>
+        </div>
+        <div class="sheet-tab-content" id="sheetTabContent"></div>`;
+
+      renderSheetTab(_sheetTab);
+    }
+
+    function switchSheetTab(tab, btn) {
+      document.querySelectorAll('#profileSheetContent .tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      _sheetTab = tab;
+      renderSheetTab(tab);
+    }
+
+    function renderSheetTab(tab) {
+      const barber = _sheetBarber;
+      const user = Auth.getUser();
+      const isCustomer = user && user.role === 'customer';
+      const el = document.getElementById('sheetTabContent');
+      if (!el) return;
+
+      const servicesList = getBarberServices(barber);
+      const portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
+      const reviewsBase = Array.isArray(barber.reviews) ? barber.reviews : [];
+      const availability = Array.isArray(barber.availability) ? barber.availability : [];
+
+      if (tab === 'services') {
+        if (!servicesList.length) {
+          el.innerHTML = `<div class="empty-state"><div class="icon">✂</div><p>No services listed yet.</p></div>`;
+          return;
+        }
+        const grouped = {};
+        servicesList.forEach((s) => { if (!grouped[s.category]) grouped[s.category] = []; grouped[s.category].push(s); });
+        const cats = Object.keys(grouped);
+        const renderSvcs = (filter) => {
+          const list = filter === 'all' ? servicesList : (grouped[filter] || []);
+          return list.map((s) => `
+            <div class="sheet-svc-item">
+              <div>
+                <h4>${escapeHTML(s.name)} <span style="font-size:0.68rem;background:var(--bg-elevated);padding:0.1rem 0.4rem;border-radius:50px;color:var(--text-muted)">${SHEET_CAT_ICONS[s.category] || ''} ${escapeHTML(s.category)}</span></h4>
+                ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
+                <span style="font-size:0.72rem;color:var(--text-muted)">⏱ ${fmtDur(s.duration)}</span>
+              </div>
+              <div class="sheet-svc-right">
+                <span class="sheet-svc-price">${fmtPrice(s.price)}</span>
+                ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
+              </div>
+            </div>`).join('');
+        };
+        el.innerHTML = `
+          <div class="fade-in">
+            <div class="cat-filter-bar" id="sheetCatBar">
+              <button class="cat-chip active" onclick="filterSheetCat('all',this)">All (${servicesList.length})</button>
+              ${cats.map((c) => `<button class="cat-chip" onclick="filterSheetCat('${escapeHTML(c)}',this)">${SHEET_CAT_ICONS[c] || ''} ${escapeHTML(c)} (${grouped[c].length})</button>`).join('')}
+            </div>
+            <div class="sheet-svc-list" id="sheetSvcList">${renderSvcs('all')}</div>
+          </div>`;
+        window._sheetGrouped = grouped;
+        window._sheetServicesList = servicesList;
+
+      } else if (tab === 'portfolio') {
+        if (!portfolio.length) {
+          el.innerHTML = `<div class="empty-state"><div class="icon">🖼</div><p>No portfolio photos yet.</p></div>`;
+        } else {
+          _sheetLbPhotos = portfolio;
+          el.innerHTML = `
+            <div class="fade-in">
+              <p class="text-muted text-sm" style="margin-bottom:0.75rem">Tap to view full size</p>
+              <div class="sheet-portfolio-grid">
+                ${portfolio.map((p, i) => `<img class="portfolio-thumb" src="${p.url}" alt="${escapeHTML(p.caption)}" loading="lazy" onclick="openSheetLightbox(${i})">`).join('')}
+              </div>
+            </div>`;
+        }
+
+      } else if (tab === 'reviews') {
+        const userReviews = Reviews.get(barber.id);
+        const allReviews = [...reviewsBase, ...userReviews];
+        const avg = allReviews.reduce((s, r) => s + r.rating, 0) / (allReviews.length || 1);
+        const counts = [5, 4, 3, 2, 1].map((n) => ({ n, cnt: allReviews.filter((r) => r.rating === n).length }));
+        const reviewHTML = allReviews.map((r) => {
+          const replyKey = `bh_reply_${barber.id}_${r.id}`;
+          const replyText = localStorage.getItem(replyKey) || r.reply || null;
+          return `
+            <div class="sheet-review-card">
+              <div class="sheet-review-head">
+                <div class="sheet-review-ava">${escapeHTML(r.name[0])}</div>
+                <div>
+                  <strong style="font-size:0.85rem">${escapeHTML(r.name)}</strong>
+                  <div style="display:flex;align-items:center;gap:0.3rem">
+                    ${starsHTML(r.rating, '0.76rem')}
+                    <span class="text-muted text-sm">${r.date}</span>
+                  </div>
+                </div>
+              </div>
+              ${r.comment ? `<p style="color:var(--text-muted);font-size:0.83rem;line-height:1.55">${escapeHTML(r.comment)}</p>` : ''}
+              ${replyText ? `<div class="review-reply"><strong>${escapeHTML(barber.first_name)} replied:</strong> ${escapeHTML(replyText)}</div>` : ''}
+            </div>`;
+        }).join('');
+        el.innerHTML = `
+          <div class="fade-in">
+            <div class="sheet-reviews-summary">
+              <div style="text-align:center">
+                <div style="font-size:2.8rem;font-weight:800;line-height:1;color:var(--primary)">${avg.toFixed(1)}</div>
+                <div style="margin:0.3rem 0">${starsHTML(avg, '1rem')}</div>
+                <p class="text-muted text-sm">${allReviews.length} reviews</p>
+              </div>
+              <div>
+                ${counts.map(({ n, cnt }) => `
+                  <div class="sheet-rating-bar-row">
+                    <span style="min-width:14px;color:var(--text-muted)">${n}</span>
+                    <div class="sheet-rating-bar-track"><div class="sheet-rating-bar-fill" style="width:${allReviews.length ? (cnt / allReviews.length * 100) : 0}%"></div></div>
+                    <span style="font-size:0.7rem;color:var(--text-muted);min-width:16px">${cnt}</span>
+                  </div>`).join('')}
+              </div>
+            </div>
+            ${isCustomer ? `<button class="btn btn-outline btn-sm" style="margin-bottom:1rem" onclick="openSheetReviewModal()">✍ Write a Review</button>` : ''}
+            <div style="display:flex;flex-direction:column;gap:0.6rem">
+              ${reviewHTML || '<div class="empty-state"><p>No reviews yet. Be the first!</p></div>'}
+            </div>
+          </div>`;
+
+      } else if (tab === 'availability') {
+        if (!availability.length) {
+          el.innerHTML = `<div class="empty-state"><p>Schedule not set.</p></div>`;
+          return;
+        }
+        el.innerHTML = `
+          <div class="card fade-in" style="overflow:hidden">
+            ${availability.map((a) => `
+              <div class="sheet-avail-row ${!a.open ? 'closed' : ''}">
+                <span style="font-weight:500;min-width:100px">${a.label}</span>
+                <span style="color:var(--text-muted)">${a.open ? `${a.start} – ${a.end}` : 'Closed'}</span>
+              </div>`).join('')}
+          </div>`;
+      }
+    }
+
+    // Called from cat-chip buttons inside the sheet
+    function filterSheetCat(cat, btn) {
+      document.querySelectorAll('#sheetCatBar .cat-chip').forEach((c) => c.classList.remove('active'));
+      btn.classList.add('active');
+      const barber = _sheetBarber;
+      const isCustomer = Auth.getUser() && Auth.getUser().role === 'customer';
+      const list = cat === 'all' ? window._sheetServicesList : (window._sheetGrouped[cat] || []);
+      document.getElementById('sheetSvcList').innerHTML = list.map((s) => `
+        <div class="sheet-svc-item">
+          <div>
+            <h4>${escapeHTML(s.name)} <span style="font-size:0.68rem;background:var(--bg-elevated);padding:0.1rem 0.4rem;border-radius:50px;color:var(--text-muted)">${SHEET_CAT_ICONS[s.category] || ''} ${escapeHTML(s.category)}</span></h4>
+            ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
+            <span style="font-size:0.72rem;color:var(--text-muted)">⏱ ${fmtDur(s.duration)}</span>
+          </div>
+          <div class="sheet-svc-right">
+            <span class="sheet-svc-price">${fmtPrice(s.price)}</span>
+            ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    async function sheetToggleFav() {
+      const user = Auth.getUser();
+      if (!user) { window.location.href = 'login.html'; return; }
+      const barber = _sheetBarber;
+      try {
+        if (window.BH_API) {
+          if (Favorites.isFav(user.id, barber.id)) await window.BH_API.removeFavorite(barber.id);
+          else await window.BH_API.addFavorite(barber.id);
+        }
+      } catch (err) { console.warn('Fav sync failed:', err.message); }
+      Favorites.toggle(user.id, barber.id);
+      renderSheetContent();
+    }
+
+    // ── Sheet Review Modal ────────────────────────────────────────────────────
+    function openSheetReviewModal() {
+      _sheetReviewRating = 5;
+      sheetUpdateStars(5);
+      document.getElementById('sheetReviewComment').value = '';
+      document.getElementById('sheetReviewAlert').innerHTML = '';
+      document.getElementById('sheetReviewModal').classList.add('open');
+    }
+    function closeSheetReviewModal() { document.getElementById('sheetReviewModal').classList.remove('open'); }
+    function sheetUpdateStars(val) {
+      document.querySelectorAll('#sheetStarPicker span').forEach((s) => {
+        s.style.color = parseInt(s.dataset.v) <= val ? 'var(--gold)' : '#4a5568';
+      });
+    }
+    document.getElementById('sheetStarPicker').addEventListener('click', (e) => {
+      const s = e.target.closest('span');
+      if (!s) return;
+      _sheetReviewRating = parseInt(s.dataset.v);
+      sheetUpdateStars(_sheetReviewRating);
+    });
+    document.getElementById('sheetReviewModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('sheetReviewModal')) closeSheetReviewModal();
+    });
+    async function submitSheetReview() {
+      const user = Auth.getUser();
+      if (!user) return;
+      const barber = _sheetBarber;
+      const comment = document.getElementById('sheetReviewComment').value.trim();
+      try {
+        if (window.BH_API) {
+          await window.BH_API.addReview(barber.id, _sheetReviewRating, comment);
+          const fresh = await loadApiBarberById(barber.id);
+          if (fresh) _sheetBarber = fresh;
+        } else {
+          Reviews.add(barber.id, { id: 'u' + Date.now(), name: user.first_name + ' ' + (user.last_name || '')[0] + '.', rating: _sheetReviewRating, comment, date: new Date().toISOString().split('T')[0], reply: null });
+        }
+      } catch (err) {
+        document.getElementById('sheetReviewAlert').innerHTML = `<div class="alert alert-danger">${err.message || 'Unable to submit review.'}</div>`;
+        return;
+      }
+      closeSheetReviewModal();
+      switchSheetTab('reviews', document.querySelectorAll('#profileSheetContent .tab-btn')[2]);
+    }
+    sheetUpdateStars(5);
+
+    // ── Sheet Lightbox ────────────────────────────────────────────────────────
+    function openSheetLightbox(idx) {
+      _sheetLbIndex = idx;
+      updateSheetLightbox();
+      document.getElementById('sheetLightbox').classList.add('open');
+    }
+    function closeSheetLightbox() { document.getElementById('sheetLightbox').classList.remove('open'); }
+    function sheetLightboxBgClick(e) { if (e.target === document.getElementById('sheetLightbox')) closeSheetLightbox(); }
+    function sheetLightboxNav(dir) {
+      _sheetLbIndex = (_sheetLbIndex + dir + _sheetLbPhotos.length) % _sheetLbPhotos.length;
+      updateSheetLightbox();
+    }
+    function updateSheetLightbox() {
+      const p = _sheetLbPhotos[_sheetLbIndex];
+      document.getElementById('sheetLightboxImg').src = p.url;
+      document.getElementById('sheetLightboxCaption').textContent = p.caption || '';
+      document.getElementById('sheetLightboxCounter').textContent = `${_sheetLbIndex + 1} / ${_sheetLbPhotos.length}`;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('profileSheet').classList.contains('open')) {
+        if (e.key === 'Escape') closeProfileSheet();
+      }
+      if (document.getElementById('sheetLightbox').classList.contains('open')) {
+        if (e.key === 'Escape') closeSheetLightbox();
+        if (e.key === 'ArrowLeft') sheetLightboxNav(-1);
+        if (e.key === 'ArrowRight') sheetLightboxNav(1);
+      }
+    });
   </script>
 </body>
 </html>
