@@ -3,6 +3,7 @@ const router = require('express').Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { sendBookingEmail } = require('../mailer');
 const {
   cleanString,
   normalizeDbTime,
@@ -157,6 +158,19 @@ router.post('/', requireAuth, requireRole('customer'), asyncHandler(async (req, 
     [barberProfile.user_id, 'New booking', `New ${svc.name} booking for ${date} at ${time}`]
   );
 
+  // Email barber about new booking
+  const barberUser = await pool.query('SELECT email, first_name, last_name FROM users WHERE id=$1', [barberProfile.user_id]);
+  const customerUser = await pool.query('SELECT first_name, last_name FROM users WHERE id=$1', [req.user.id]);
+  if (barberUser.rows.length && customerUser.rows.length) {
+    const cu = customerUser.rows[0];
+    sendBookingEmail('new_booking', barberUser.rows[0].email, {
+      customerName: `${cu.first_name} ${cu.last_name}`,
+      serviceName: svc.name,
+      date,
+      time,
+    }).catch(() => {});
+  }
+
   return res.status(201).json({ ok: true, booking: result.rows[0] });
 }));
 
@@ -186,6 +200,34 @@ router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   }
 
   await pool.query('UPDATE bookings SET status=$1 WHERE id=$2', [status, bookingId]);
+
+  // Send email on confirmed or cancelled
+  if (status === 'confirmed' || status === 'cancelled') {
+    const emailData = await pool.query(
+      `SELECT cu.email AS customer_email, cu.first_name AS c_first, cu.last_name AS c_last,
+              bu.email AS barber_email, bu.first_name AS b_first, bu.last_name AS b_last
+       FROM bookings bk
+       JOIN users cu ON cu.id = bk.customer_id
+       JOIN barber_profiles bp ON bp.id = bk.barber_id
+       JOIN users bu ON bu.id = bp.user_id
+       WHERE bk.id = $1`,
+      [bookingId]
+    );
+    if (emailData.rows.length) {
+      const d = emailData.rows[0];
+      const emailPayload = { serviceName: b.service_name, date: b.date, time: b.time };
+      if (status === 'confirmed') {
+        sendBookingEmail('booking_confirmed', d.customer_email, {
+          ...emailPayload,
+          barberName: `${d.b_first} ${d.b_last}`,
+        }).catch(() => {});
+      } else {
+        // cancelled — notify customer
+        sendBookingEmail('booking_cancelled', d.customer_email, emailPayload).catch(() => {});
+      }
+    }
+  }
+
   return res.json({ ok: true });
 }));
 

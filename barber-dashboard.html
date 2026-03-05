@@ -47,7 +47,15 @@
     .schedule-row { display: grid; grid-template-columns: 100px 60px 1fr; gap: 0.75rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
     .schedule-row:last-child { border-bottom: none; }
     @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } }
+    @media (max-width: 768px) {
+      .dash-layout { grid-template-columns: 1fr; }
+      .dash-sidebar { position: static; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 540px; }
+      .msg-panel-inner { flex-direction: column !important; height: auto !important; }
+      .msg-conv-list { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--border); padding-right: 0 !important; padding-bottom: 0.75rem; max-height: 180px; overflow-y: auto; }
+      .msg-thread-area { height: 300px; }
+    }
   </style>
 </head>
 <body class="page-wrap">
@@ -110,6 +118,10 @@
 
     let activeTab = 'overview';
     let editingSvcId = null;
+    let conversations = [];
+    let activeConvId = null;
+    let convMessages = [];
+    let msgPollTimer = null;
 
     const SVC_KEY = `bh_services_${barber.id}`;
     function getServices() {
@@ -154,6 +166,7 @@
             <div class="dash-nav-item ${activeTab==='services'?'active':''}" onclick="switchTab('services')"> ${t('bdash_services')}</div>
             <div class="dash-nav-item ${activeTab==='schedule'?'active':''}" onclick="switchTab('schedule')"> ${t('bdash_schedule')}</div>
             <div class="dash-nav-item ${activeTab==='customers'?'active':''}" onclick="switchTab('customers')"> ${t('bdash_customers')}</div>
+            <div class="dash-nav-item ${activeTab==='messages'?'active':''}" onclick="switchTab('messages')"> Messages${conversations.reduce((s,c)=>s+Number(c.unread_count||0),0)?` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${conversations.reduce((s,c)=>s+Number(c.unread_count||0),0)}</span>`:''}</div>
             <div class="dash-nav-item ${activeTab==='profile'?'active':''}" onclick="switchTab('profile')"> ${t('dash_profile')}</div>
             <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
           </nav>
@@ -330,6 +343,46 @@
             </div>`}
           </div>
 
+          <!-- Messages -->
+          <div class="dash-panel ${activeTab==='messages'?'active':''}" id="panel-messages">
+            <h2> Messages</h2>
+            <p class="sub">Chat with your customers</p>
+            <div class="msg-panel-inner" style="display:flex;gap:1rem;height:420px">
+              <div class="msg-conv-list" style="width:220px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border);padding-right:0.75rem">
+                ${conversations.length === 0
+                  ? `<p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem">No conversations yet.</p>`
+                  : conversations.map(c => `
+                    <div onclick="openConv(${c.other_id})"
+                      style="padding:0.65rem 0.5rem;border-radius:8px;cursor:pointer;margin-bottom:0.25rem;background:${activeConvId===c.other_id?'rgba(233,69,96,0.12)':'transparent'};display:flex;justify-content:space-between;align-items:center">
+                      <div>
+                        <div style="font-weight:600;font-size:0.9rem">${escapeHTML(c.other_name)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${escapeHTML(c.last_message||'')}</div>
+                      </div>
+                      ${c.unread_count>0?`<span style="background:var(--primary);color:#fff;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:10px">${c.unread_count}</span>`:''}
+                    </div>`).join('')
+                }
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column">
+                ${activeConvId === null
+                  ? `<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">Select a conversation</div>`
+                  : `<div id="msgThread" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem 0">
+                      ${convMessages.map(m => `
+                        <div style="display:flex;justify-content:${m.sender_id===user.id?'flex-end':'flex-start'}">
+                          <div style="max-width:72%;padding:0.5rem 0.85rem;border-radius:16px;${m.sender_id===user.id?'background:var(--primary);color:#fff;border-bottom-right-radius:4px':'background:var(--surface2);border-bottom-left-radius:4px'};font-size:0.9rem">
+                            ${escapeHTML(m.content)}
+                            <div style="font-size:0.65rem;margin-top:0.2rem;opacity:0.6;text-align:right">${timeAgo(m.created_at)}</div>
+                          </div>
+                        </div>`).join('')}
+                    </div>
+                    <form onsubmit="sendMsg(event)" style="display:flex;gap:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border)">
+                      <input id="msgInput" class="form-control" placeholder="Type a message…" style="flex:1" autocomplete="off">
+                      <button class="btn btn-primary" type="submit">Send</button>
+                    </form>`
+                }
+              </div>
+            </div>
+          </div>
+
           <!-- Profile / Avatar -->
           <div class="dash-panel ${activeTab==='profile'?'active':''}" id="panel-profile">
             <h2>${t('dash_profile')}</h2>
@@ -392,7 +445,98 @@
         </div>`;
     }
 
-    function switchTab(tab) { activeTab = tab; render(); }
+    function timeAgo(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1)   return 'just now';
+      if (mins < 60)  return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24)   return `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      if (tab === 'messages') {
+        loadConversations();
+        startMsgPoll();
+      } else {
+        stopMsgPoll();
+      }
+      render();
+    }
+
+    async function loadConversations() {
+      if (!window.BH_API) return;
+      try {
+        conversations = await window.BH_API.getConversations();
+        render();
+      } catch (_) {}
+    }
+
+    async function openConv(otherId) {
+      activeConvId = otherId;
+      if (!window.BH_API) return;
+      try {
+        convMessages = await window.BH_API.getMessages(otherId);
+        await window.BH_API.markRead(otherId);
+        conversations = conversations.map(c => c.other_id === otherId ? { ...c, unread_count: 0 } : c);
+      } catch (_) {}
+      render();
+      scrollMsgThread();
+    }
+
+    async function sendMsg(e) {
+      e.preventDefault();
+      if (!activeConvId || !window.BH_API) return;
+      const input = document.getElementById('msgInput');
+      const content = input.value.trim();
+      if (!content) return;
+      input.value = '';
+      try {
+        const msg = await window.BH_API.sendMessage(activeConvId, content);
+        convMessages.push(msg);
+        render();
+        scrollMsgThread();
+      } catch (err) {
+        alert(err.message || 'Failed to send message.');
+      }
+    }
+
+    function scrollMsgThread() {
+      setTimeout(() => {
+        const el = document.getElementById('msgThread');
+        if (el) el.scrollTop = el.scrollHeight;
+      }, 50);
+    }
+
+    function startMsgPoll() {
+      stopMsgPoll();
+      msgPollTimer = setInterval(async () => {
+        if (activeConvId) {
+          try {
+            const fresh = await window.BH_API.getMessages(activeConvId);
+            if (fresh.length !== convMessages.length) {
+              convMessages = fresh;
+              await window.BH_API.markRead(activeConvId);
+              render();
+              scrollMsgThread();
+            }
+          } catch (_) {}
+        }
+        try {
+          const freshConvs = await window.BH_API.getConversations();
+          const prevTotal = conversations.reduce((s, c) => s + Number(c.unread_count || 0), 0);
+          const newTotal = freshConvs.reduce((s, c) => s + Number(c.unread_count || 0), 0);
+          conversations = freshConvs;
+          if (newTotal !== prevTotal) render();
+        } catch (_) {}
+      }, 5000);
+    }
+
+    function stopMsgPoll() {
+      if (msgPollTimer) { clearInterval(msgPollTimer); msgPollTimer = null; }
+    }
 
     function saveAvatar() {
       const url = document.getElementById('avatarUrlInput')?.value.trim();

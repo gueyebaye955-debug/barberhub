@@ -3,4 +3,4 @@ builder = "nixpacks"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "node backend/database/update-admin-password.js && npm start"
+startCommand = "npm run db:migrate && npm start"

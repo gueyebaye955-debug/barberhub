@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
+const passport = require('./utils/passport');
 const path = require('path');
 
 const pool = require('./db');
@@ -10,6 +12,15 @@ const asyncHandler = require('./utils/asyncHandler');
 
 const app = express();
 app.disable('x-powered-by');
+
+// Session + Passport (only needed for Google OAuth redirect flow)
+app.use(session({
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 5 * 60 * 1000 },
+}));
+app.use(passport.initialize());
 
 if (!process.env.JWT_SECRET) {
   console.error('Missing JWT_SECRET in environment. Set it in backend/.env before starting the server.');
@@ -65,6 +76,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/barbers', require('./routes/barbers'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/messages', require('./routes/messages'));
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });

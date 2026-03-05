@@ -6,6 +6,30 @@ const pool = require('../db');
 const mailer = require('../mailer');
 const asyncHandler = require('../utils/asyncHandler');
 const { cleanString, normalizeEmail } = require('../utils/validators');
+const passport = require('../utils/passport');
+
+function makeJwt(user) {
+  return jwt.sign(
+    { id: user.id, role: user.role, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
+// ── Google OAuth ──────────────────────────────────────────────────────────────
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login.html?error=google', session: false }),
+  (req, res) => {
+    const user = req.user;
+    const token = makeJwt(user);
+    const { password: _p, ...safeUser } = user;
+    const encoded = encodeURIComponent(JSON.stringify(safeUser));
+    res.redirect(`/login.html?token=${token}&user=${encoded}`);
+  }
+);
+// ─────────────────────────────────────────────────────────────────────────────
 
 router.post('/register/send-code', asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body?.email);
@@ -88,11 +112,7 @@ router.post('/register', asyncHandler(async (req, res) => {
     );
   }
 
-  const token = jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
+  const token = makeJwt(user);
 
   return res.status(201).json({ ok: true, token, user });
 }));
@@ -114,12 +134,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ error: 'Invalid email or password' });
 
-  const token = jwt.sign(
-    { id: user.id, role: user.role, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-
+  const token = makeJwt(user);
   const { password: _ignoredPassword, ...safeUser } = user;
   return res.json({ ok: true, token, user: safeUser });
 }));

@@ -223,13 +223,29 @@
     .local-city-card strong { display: block; margin-bottom: 0.2rem; }
     .local-city-card span { color: var(--text-muted); font-size: 0.82rem; }
 
+    .hero__field input { font-size: 1rem; }
+
     @media (max-width: 768px) {
+      .hero { min-height: auto; }
+      .hero__content { padding: 2rem 0 2rem; }
+      .hero__title { font-size: clamp(1.9rem, 8vw, 3rem); }
+      .hero__sub { font-size: 0.95rem; }
       .hero__search-row { flex-direction: column; }
-      .hero__field { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero__field { border-right: none; border-bottom: 1px solid var(--border); padding: 0.5rem 0.75rem; max-width: 100% !important; }
       .hero__field:last-of-type { border-bottom: none; }
+      .hero__search .btn { width: 100%; border-radius: 8px; padding: 0.85rem; margin-top: 0.25rem; }
+      .hero__stats { gap: 1rem; flex-wrap: wrap; }
       .hiw-steps { grid-template-columns: 1fr; }
-      .cta-box { flex-direction: column; }
+      .cta-box { flex-direction: column; padding: 1.75rem; }
       .cta-box__icon { display: none; }
+      .cta-box__text h2 { font-size: 1.4rem; }
+      .local-city-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .hero__content { padding: 1.5rem 0; }
+      .hero__stats { gap: 0.75rem; }
+      .hero__stat strong { font-size: 1.1rem; }
       .local-city-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>

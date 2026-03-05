@@ -198,6 +198,29 @@
         auth: true,
       });
     },
+
+    async getConversations() {
+      return request('/messages/conversations', { auth: true });
+    },
+
+    async getMessages(userId, page = 1) {
+      return request(`/messages/${encodeURIComponent(userId)}?page=${page}`, { auth: true });
+    },
+
+    async sendMessage(userId, content) {
+      return request(`/messages/${encodeURIComponent(userId)}`, {
+        method: 'POST',
+        auth: true,
+        body: { content },
+      });
+    },
+
+    async markRead(userId) {
+      return request(`/messages/${encodeURIComponent(userId)}/read`, {
+        method: 'PATCH',
+        auth: true,
+      });
+    },
   };
 
   global.BH_API = api;

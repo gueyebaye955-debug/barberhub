@@ -110,22 +110,32 @@
     let lbIndex  = 0;
 
     (async function initProfilePage() {
-      barber = await loadApiBarberById(barberId) || getBarber(barberId);
+      // Render immediately with local data so the page isn't blank
+      barber = getBarber(barberId);
+      if (barber) renderProfile();
+
+      // Fetch full data from API in parallel with favorites sync
+      const [apiBarber] = await Promise.all([
+        loadApiBarberById(barberId),
+        (async () => {
+          if (user && window.BH_API) {
+            try {
+              const favRows = await window.BH_API.getFavorites();
+              const favoriteIds = Array.isArray(favRows) ? favRows.map((f) => parseInt(f.id, 10)).filter(Number.isFinite) : [];
+              const allFavs = JSON.parse(localStorage.getItem('bh_favorites') || '{}');
+              allFavs[user.id] = favoriteIds;
+              localStorage.setItem('bh_favorites', JSON.stringify(allFavs));
+            } catch (err) {
+              console.warn('Unable to sync favorites:', err.message);
+            }
+          }
+        })(),
+      ]);
+
+      barber = apiBarber || barber;
       if (!barber) {
         document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Barber not found</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
         return;
-      }
-
-      if (user && window.BH_API) {
-        try {
-          const favRows = await window.BH_API.getFavorites();
-          const favoriteIds = Array.isArray(favRows) ? favRows.map((f) => parseInt(f.id, 10)).filter(Number.isFinite) : [];
-          const allFavs = JSON.parse(localStorage.getItem('bh_favorites') || '{}');
-          allFavs[user.id] = favoriteIds;
-          localStorage.setItem('bh_favorites', JSON.stringify(allFavs));
-        } catch (err) {
-          console.warn('Unable to sync favorites:', err.message);
-        }
       }
 
       document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name}  BarberHub`;
@@ -177,6 +187,7 @@
                 ${isCustomer
                   ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
                   : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`}
+                ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.35rem"> Message Barber</a>` : ''}
                 <a href="${getGoogleBusinessLink(barber)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.5rem">View on Google</a>
                 <p class="text-muted text-sm text-center mt-1">${t('profile_from')} ${fmtPrice(minPrice)}</p>
                 <p class="text-muted text-sm text-center" style="font-size:0.72rem">${t('profile_next')} <strong style="color:var(--green)">${getNextAvailable(barber)}</strong></p>

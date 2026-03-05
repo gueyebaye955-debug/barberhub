@@ -45,7 +45,16 @@
     .stat-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
     .stat-mini .val { font-size: 1.75rem; font-weight: 800; color: var(--primary); }
     .stat-mini .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
-    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } .stat-mini-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) {
+      .dash-layout { grid-template-columns: 1fr; }
+      .dash-sidebar { position: static; }
+      .stat-mini-grid { grid-template-columns: repeat(2, 1fr); }
+      .form-row-2 { grid-template-columns: 1fr; }
+      .booking-card { grid-template-columns: 1fr; }
+      .msg-panel-inner { flex-direction: column !important; height: auto !important; }
+      .msg-conv-list { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--border); padding-right: 0 !important; padding-bottom: 0.75rem; max-height: 180px; overflow-y: auto; }
+      .msg-thread-area { height: 300px; }
+    }
   </style>
 </head>
 <body class="page-wrap">
@@ -85,6 +94,10 @@
 
     let activeTab = 'bookings';
     let dashboardBookings = [];
+    let conversations = [];
+    let activeConvId = null;
+    let convMessages = [];
+    let msgPollTimer = null;
 
     async function syncDashboardData() {
       try {
@@ -136,6 +149,7 @@
           <nav class="dash-nav">
             <div class="dash-nav-item ${activeTab==='bookings'?'active':''}" onclick="switchTab('bookings')"> ${t('dash_my_bookings')}${badge(bookings.length)}</div>
             <div class="dash-nav-item ${activeTab==='favorites'?'active':''}" onclick="switchTab('favorites')"> ${t('dash_favorites')}${badge(favBarbers.length)}</div>
+            <div class="dash-nav-item ${activeTab==='messages'?'active':''}" onclick="switchTab('messages')"> Messages${badge(conversations.reduce((s,c)=>s+Number(c.unread_count||0),0)||0)}</div>
             <div class="dash-nav-item ${activeTab==='notifications'?'active':''}" onclick="switchTab('notifications')"> ${t('dash_notifications')}${badge(unread)}</div>
             <div class="dash-nav-item ${activeTab==='profile'?'active':''}" onclick="switchTab('profile')"> ${t('dash_profile')}</div>
             <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
@@ -228,6 +242,48 @@
             }
           </div>
 
+          <!-- Messages -->
+          <div class="dash-panel ${activeTab==='messages'?'active':''}" id="panel-messages">
+            <h2> Messages</h2>
+            <p class="sub">Chat with your barbers</p>
+            <div class="msg-panel-inner" style="display:flex;gap:1rem;height:420px">
+              <!-- Conversation list -->
+              <div class="msg-conv-list" style="width:220px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border);padding-right:0.75rem">
+                ${conversations.length === 0
+                  ? `<p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem">No conversations yet.<br>Message a barber from their profile.</p>`
+                  : conversations.map(c => `
+                    <div onclick="openConv(${c.other_id})"
+                      style="padding:0.65rem 0.5rem;border-radius:8px;cursor:pointer;margin-bottom:0.25rem;background:${activeConvId===c.other_id?'rgba(233,69,96,0.12)':'transparent'};display:flex;justify-content:space-between;align-items:center">
+                      <div>
+                        <div style="font-weight:600;font-size:0.9rem">${escapeHTML(c.other_name)}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">${escapeHTML(c.last_message||'')}</div>
+                      </div>
+                      ${c.unread_count>0?`<span style="background:var(--primary);color:#fff;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:10px">${c.unread_count}</span>`:''}
+                    </div>`).join('')
+                }
+              </div>
+              <!-- Thread -->
+              <div style="flex:1;display:flex;flex-direction:column">
+                ${activeConvId === null
+                  ? `<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">Select a conversation</div>`
+                  : `<div id="msgThread" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem 0">
+                      ${convMessages.map(m => `
+                        <div style="display:flex;justify-content:${m.sender_id===user.id?'flex-end':'flex-start'}">
+                          <div style="max-width:72%;padding:0.5rem 0.85rem;border-radius:16px;${m.sender_id===user.id?'background:var(--primary);color:#fff;border-bottom-right-radius:4px':'background:var(--surface2);border-bottom-left-radius:4px'};font-size:0.9rem">
+                            ${escapeHTML(m.content)}
+                            <div style="font-size:0.65rem;margin-top:0.2rem;opacity:0.6;text-align:right">${timeAgo(m.created_at)}</div>
+                          </div>
+                        </div>`).join('')}
+                    </div>
+                    <form onsubmit="sendMsg(event)" style="display:flex;gap:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border)">
+                      <input id="msgInput" class="form-control" placeholder="Type a message…" style="flex:1" autocomplete="off">
+                      <button class="btn btn-primary" type="submit">Send</button>
+                    </form>`
+                }
+              </div>
+            </div>
+          </div>
+
           <!-- Profile -->
           <div class="dash-panel ${activeTab==='profile'?'active':''}" id="panel-profile">
             <h2>${t('dash_profile')}</h2>
@@ -270,7 +326,86 @@
         Notifs.markAllRead(user.id);
         renderNav('dashboard');
       }
+      if (tab === 'messages') {
+        loadConversations();
+        startMsgPoll();
+      } else {
+        stopMsgPoll();
+      }
       render();
+    }
+
+    async function loadConversations() {
+      if (!window.BH_API) return;
+      try {
+        conversations = await window.BH_API.getConversations();
+        render();
+      } catch (_) {}
+    }
+
+    async function openConv(otherId) {
+      activeConvId = otherId;
+      if (!window.BH_API) return;
+      try {
+        convMessages = await window.BH_API.getMessages(otherId);
+        await window.BH_API.markRead(otherId);
+        // refresh unread counts
+        conversations = conversations.map(c => c.other_id === otherId ? { ...c, unread_count: 0 } : c);
+      } catch (_) {}
+      render();
+      scrollMsgThread();
+    }
+
+    async function sendMsg(e) {
+      e.preventDefault();
+      if (!activeConvId || !window.BH_API) return;
+      const input = document.getElementById('msgInput');
+      const content = input.value.trim();
+      if (!content) return;
+      input.value = '';
+      try {
+        const msg = await window.BH_API.sendMessage(activeConvId, content);
+        convMessages.push(msg);
+        render();
+        scrollMsgThread();
+      } catch (err) {
+        alert(err.message || 'Failed to send message.');
+      }
+    }
+
+    function scrollMsgThread() {
+      setTimeout(() => {
+        const el = document.getElementById('msgThread');
+        if (el) el.scrollTop = el.scrollHeight;
+      }, 50);
+    }
+
+    function startMsgPoll() {
+      stopMsgPoll();
+      msgPollTimer = setInterval(async () => {
+        if (activeConvId) {
+          try {
+            const fresh = await window.BH_API.getMessages(activeConvId);
+            if (fresh.length !== convMessages.length) {
+              convMessages = fresh;
+              await window.BH_API.markRead(activeConvId);
+              render();
+              scrollMsgThread();
+            }
+          } catch (_) {}
+        }
+        try {
+          const freshConvs = await window.BH_API.getConversations();
+          const prevTotal = conversations.reduce((s, c) => s + Number(c.unread_count || 0), 0);
+          const newTotal = freshConvs.reduce((s, c) => s + Number(c.unread_count || 0), 0);
+          conversations = freshConvs;
+          if (newTotal !== prevTotal) render();
+        } catch (_) {}
+      }, 5000);
+    }
+
+    function stopMsgPoll() {
+      if (msgPollTimer) { clearInterval(msgPollTimer); msgPollTimer = null; }
     }
 
     async function cancelBooking(id) {
@@ -326,7 +461,16 @@
 
     (async function initDashboard() {
       await syncDashboardData();
-      render();
+      const params = new URLSearchParams(location.search);
+      const msgTarget = parseInt(params.get('msg'), 10);
+      if (msgTarget) {
+        activeTab = 'messages';
+        await loadConversations();
+        startMsgPoll();
+        await openConv(msgTarget);
+      } else {
+        render();
+      }
     }());
   </script>
 </body>

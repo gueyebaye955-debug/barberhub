@@ -826,11 +826,16 @@ const TRANSLATIONS = {
 
 //  Core functions 
 function getLang() {
-  return localStorage.getItem('bh_lang') || 'en';
+  // Only use stored lang if user explicitly chose it; otherwise default to 'fr'
+  if (localStorage.getItem('bh_lang_chosen')) {
+    return localStorage.getItem('bh_lang') || 'fr';
+  }
+  return 'fr';
 }
 
 function setLang(lang) {
   localStorage.setItem('bh_lang', lang);
+  localStorage.setItem('bh_lang_chosen', '1');
   location.reload();
 }
 
