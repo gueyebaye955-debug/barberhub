@@ -29,6 +29,9 @@
       .filter-collapsible { display: none; }
       .filter-collapsible.open { display: block; }
       .filter-toggle-btn { display: flex; align-items: center; gap: 0.5rem; width: 100%; margin-bottom: 1rem; }
+      .results-toolbar { align-items: stretch; }
+      .results-toolbar .view-toggle { width: 100%; }
+      .results-toolbar .view-btn { flex: 1; justify-content: center; }
     }
     @media (min-width: 769px) { .filter-toggle-btn { display: none; } }
   </style>
@@ -285,26 +288,27 @@
     if (params.get('city')) { filters.city   = params.get('city'); document.getElementById('cityFilter').value  = filters.city; }
 
     function getFilteredResults() {
-      let results = getAllBarbers();
+      let results = getAllBarbers().filter((barber) => barber && Number.isFinite(Number(barber.id)));
       if (filters.search) {
         const q = filters.search.toLowerCase();
         results = results.filter(b =>
           (b.shop_name||'').toLowerCase().includes(q) ||
           (b.first_name+' '+b.last_name).toLowerCase().includes(q) ||
-          b.services.some(s => s.name.toLowerCase().includes(q)) ||
-          b.city.toLowerCase().includes(q)
+          getBarberServices(b).some(s => String(s.name || '').toLowerCase().includes(q)) ||
+          String(b.city || '').toLowerCase().includes(q)
         );
       }
       if (filters.city)    results = results.filter(b => b.city === filters.city);
-      if (filters.rating)  results = results.filter(b => b.rating >= parseFloat(filters.rating));
-      if (filters.service) results = results.filter(b => b.services.some(s => s.category === filters.service));
+      if (filters.rating)  results = results.filter(b => Number(b.rating) >= parseFloat(filters.rating));
+      if (filters.service) results = results.filter(b => getBarberServices(b).some(s => s.category === filters.service));
       if (filters.avail) {
         const today    = new Date().getDay();
         const tomorrow = (today + 1) % 7;
         results = results.filter(b => {
-          if (filters.avail === 'today')    return b.availability.find(a => a.day === today    && a.open);
-          if (filters.avail === 'tomorrow') return b.availability.find(a => a.day === tomorrow && a.open);
-          if (filters.avail === 'weekend')  return b.availability.find(a => (a.day === 0 || a.day === 6) && a.open);
+          const availability = Array.isArray(b.availability) ? b.availability : [];
+          if (filters.avail === 'today')    return availability.find(a => a.day === today    && a.open);
+          if (filters.avail === 'tomorrow') return availability.find(a => a.day === tomorrow && a.open);
+          if (filters.avail === 'weekend')  return availability.find(a => (a.day === 0 || a.day === 6) && a.open);
           return true;
         });
       }
@@ -320,10 +324,14 @@
       }
 
       const sortFns = {
-        rating:   (a,b) => b.rating - a.rating,
-        bookings: (a,b) => b.total_bookings - a.total_bookings,
-        reviews:  (a,b) => b.total_reviews  - a.total_reviews,
-        price:    (a,b) => Math.min(...a.services.map(s=>s.price)) - Math.min(...b.services.map(s=>s.price)),
+        rating:   (a,b) => Number(b.rating || 0) - Number(a.rating || 0),
+        bookings: (a,b) => Number(b.total_bookings || 0) - Number(a.total_bookings || 0),
+        reviews:  (a,b) => Number(b.total_reviews  || 0) - Number(a.total_reviews || 0),
+        price:    (a,b) => {
+          const aPrice = getBarberMinPrice(a, Number.POSITIVE_INFINITY);
+          const bPrice = getBarberMinPrice(b, Number.POSITIVE_INFINITY);
+          return aPrice - bPrice;
+        },
         distance: (a,b) => {
           if (a._distance == null && b._distance == null) return 0;
           if (a._distance == null) return 1;
@@ -352,18 +360,28 @@
         el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>${t('no_barbers')}</h3><p>${t('no_barbers_sub')}</p></div>`;
         return;
       }
-      el.innerHTML = results.map(b => {
-        let card = barberCardHTML(b);
-        // Inject distance badge next to city when location is active
-        if (userLocation && b._distance != null) {
-          const dist = fmtDist(b._distance);
-          card = card.replace(
-            `<div class="bc-loc"> ${b.city}</div>`,
-            `<div class="bc-loc"> ${b.city}<span style="color:var(--primary);font-size:0.7rem;font-weight:700;margin-left:0.4rem"> ${dist} away</span></div>`
-          );
+      const cards = results.map(b => {
+        try {
+          let card = barberCardHTML(b);
+          // Inject distance badge next to city when location is active
+          if (userLocation && b._distance != null) {
+            const dist = fmtDist(b._distance);
+            const city = escapeHTML(b?.city || 'Location not set');
+            card = card.replace(
+              `<div class="bc-loc"> ${city}</div>`,
+              `<div class="bc-loc"> ${city}<span style="color:var(--primary);font-size:0.7rem;font-weight:700;margin-left:0.4rem"> ${dist} away</span></div>`
+            );
+          }
+          return card;
+        } catch (err) {
+          console.warn('Skipping invalid barber card:', err.message, b);
+          return '';
         }
-        return card;
-      }).join('');
+      }).filter(Boolean);
+
+      el.innerHTML = cards.length
+        ? cards.join('')
+        : `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>${t('no_barbers')}</h3><p>${t('no_barbers_sub')}</p></div>`;
     }
 
     async function renderMap(results) {
@@ -399,7 +417,11 @@
       // Add barber markers
       results.forEach(b => {
         if (!b.lat || !b.lng) return;
-        const minPrice = Math.min(...b.services.map(s => s.price));
+        const minPrice = getBarberMinPrice(b);
+        const ratingValue = Number.isFinite(Number(b?.rating)) ? Number(b.rating).toFixed(1) : '0.0';
+        const bookedToday = Number.isFinite(Number(b?.booked_today)) ? Number(b.booked_today) : 0;
+        const city = escapeHTML(b?.city || 'Location not set');
+        const name = escapeHTML(b?.shop_name || `${b?.first_name || ''} ${b?.last_name || ''}`.trim() || 'Barber');
         const distLine = (userLocation && b._distance != null)
           ? `<div style="font-size:0.75rem;color:#3b82f6;font-weight:600;margin:0.15rem 0">Distance ${fmtDist(b._distance)} away</div>`
           : '';
@@ -407,16 +429,19 @@
         const slotLine = nextSlot
           ? `<div style="font-size:0.75rem;color:#16a34a;font-weight:600;margin:0.1rem 0">Next slot ${nextSlot.display}</div>`
           : '';
+        const priceLine = minPrice === null
+          ? '<div style="font-size:0.82rem">Pricing on profile</div>'
+          : `<div style="font-size:0.82rem"> ${ratingValue}  ${t('card_from')} ${fmtPrice(minPrice)}</div>`;
         const m = L.marker([b.lat, b.lng]).addTo(leafletMap);
         m.bindPopup(`
-          <div style="min-width:190px;font-family:sans-serif">
-            <strong style="font-size:0.9rem">${b.shop_name || b.first_name+' '+b.last_name}</strong>
+          <div style="min-width:160px;max-width:220px;width:70vw;font-family:sans-serif">
+            <strong style="font-size:0.9rem">${name}</strong>
             ${b.is_verified ? ' <span style="background:#6366f1;color:#fff;border-radius:50%;padding:0 3px;font-size:0.6rem"></span>' : ''}
-            <div style="font-size:0.75rem;color:#888;margin:0.2rem 0"> ${b.city}</div>
+            <div style="font-size:0.75rem;color:#888;margin:0.2rem 0"> ${city}</div>
             ${distLine}
             ${slotLine}
-            <div style="font-size:0.82rem"> ${b.rating.toFixed(1)}  ${t('card_from')} ${fmtPrice(minPrice)}</div>
-            <div style="font-size:0.75rem;margin-top:0.25rem"> ${b.booked_today} ${t('card_booked_today')}</div>
+            ${priceLine}
+            <div style="font-size:0.75rem;margin-top:0.25rem"> ${bookedToday} ${t('card_booked_today')}</div>
             <a href="profile.html?id=${b.id}" style="display:block;margin-top:0.6rem;background:#e94560;color:#fff;padding:0.3rem 0.75rem;border-radius:6px;font-size:0.78rem;text-align:center;text-decoration:none">${t('card_book_now')} </a>
           </div>`);
         mapMarkers.push(m);
@@ -524,9 +549,5 @@
   </script>
 </body>
 </html>
-
-
-
-
 
 

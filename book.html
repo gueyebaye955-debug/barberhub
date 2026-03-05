@@ -44,8 +44,20 @@
     .confirm-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     .confirm-row:last-child { border-bottom: none; }
     .confirm-row span { color: var(--text-muted); }
-    .book-nav { display: flex; justify-content: space-between; margin-top: 1.75rem; }
-    @media (max-width: 768px) { .book-layout { grid-template-columns: 1fr; } .book-sidebar { position: static; } }
+    .rules-hint { font-size: 0.78rem; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; }
+    .book-nav { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.75rem; }
+    .book-confirm-actions { display: flex; gap: 0.5rem; align-items: center; }
+    @media (max-width: 768px) {
+      .book-layout { grid-template-columns: 1fr; }
+      .book-sidebar { position: static; }
+      .book-main { padding: 1.25rem; }
+      .book-nav { flex-direction: column; }
+      .book-nav .btn { width: 100%; }
+      .book-confirm-actions { width: 100%; flex-direction: column; align-items: stretch; }
+      .book-confirm-actions .btn { width: 100%; }
+      .confirm-row { flex-wrap: wrap; gap: 0.35rem; align-items: flex-start; }
+      .slots-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+    }
   </style>
 </head>
 <body class="page-wrap">
@@ -93,7 +105,8 @@
 
     function applyPreselectedService() {
       if (!preService || !barber) return;
-      sel.service = barber.services.find((s) => s.id === preService) || null;
+      const services = getBarberServices(barber);
+      sel.service = services.find((s) => s.id === preService) || null;
       if (sel.service) step = 1;
     }
 
@@ -130,21 +143,31 @@
     }
 
     async function initBookingPage() {
-      barber = getBarber(barberId) || await loadApiBarberById(barberId);
-      if (!barber) {
-        window.location.href = 'barbers.html';
-        return;
+      try {
+        barber = getBarber(barberId) || await loadApiBarberById(barberId);
+        if (!barber) {
+          window.location.href = 'barbers.html';
+          return;
+        }
+
+        calendarPrefs = getBarberCalendarPrefs(barber.id);
+        applyPreselectedService();
+
+        if (typeof Analytics !== 'undefined') {
+          Analytics.track('booking_start', { barber_id: barberId, preselected_service: !!preService });
+        }
+
+        if (step === 1) await refreshBookedSlots();
+        render();
+      } catch (err) {
+        console.error('Booking page failed to initialize:', err);
+        document.getElementById('bookContainer').innerHTML = `
+          <div style="max-width:520px;margin:3rem auto;text-align:center;padding:1.5rem">
+            <h2 style="margin-bottom:0.6rem">Unable to load booking</h2>
+            <p style="color:var(--text-muted);margin-bottom:1.2rem">Please try again or choose another barber.</p>
+            <a class="btn btn-primary" href="barbers.html">Browse barbers</a>
+          </div>`;
       }
-
-      calendarPrefs = getBarberCalendarPrefs(barber.id);
-      applyPreselectedService();
-
-      if (typeof Analytics !== 'undefined') {
-        Analytics.track('booking_start', { barber_id: barberId, preselected_service: !!preService });
-      }
-
-      if (step === 1) await refreshBookedSlots();
-      render();
     }
 
     function render() {
@@ -156,10 +179,10 @@
         <div class="book-layout">
           <div class="book-sidebar">
             <div class="book-barber">
-              <div class="book-barber-ava">${barber.first_name[0]}${barber.last_name[0]}</div>
+              <div class="book-barber-ava">${getNameInitials(barber?.first_name, barber?.last_name)}</div>
               <div>
-                <strong style="font-size:0.9rem">${barber.shop_name || barber.first_name + ' ' + barber.last_name}</strong>
-                <p class="text-muted text-sm"> ${barber.city}</p>
+                <strong style="font-size:0.9rem">${barber.shop_name || `${barber.first_name || ''} ${barber.last_name || ''}`.trim() || 'Barber'}</strong>
+                <p class="text-muted text-sm"> ${barber.city || 'Location not set'}</p>
               </div>
             </div>
             <div class="book-steps">
@@ -187,13 +210,24 @@
 
     function renderStep() {
       const el = document.getElementById('stepContent');
+      const services = getBarberServices(barber);
 
       if (step === 0) {
+        if (!services.length) {
+          el.innerHTML = `
+            <h2>${t('step0_title')}</h2>
+            <p class="sub">This barber has no services listed yet.</p>
+            <div class="book-nav">
+              <a class="btn btn-ghost" href="profile.html?id=${barber.id}">Back to Profile</a>
+              <a class="btn btn-primary" href="barbers.html">Browse Other Barbers</a>
+            </div>`;
+          return;
+        }
         el.innerHTML = `
           <h2>${t('step0_title')}</h2>
           <p class="sub">${t('step0_sub')}</p>
           <div class="svc-pick-list">
-            ${barber.services.map(s => `
+            ${services.map(s => `
               <div class="svc-pick ${sel.service?.id === s.id ? 'selected' : ''}" onclick="selectService(${s.id})">
                 <div class="svc-pick-info">
                   <strong>${s.name}</strong>
@@ -248,7 +282,7 @@
                    </div>`
             }
           </div>
-          <div style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem">
+          <div class="rules-hint">
             Scheduling rules: ${calendarRulesHint()}
           </div>
           <div class="book-nav">
@@ -283,7 +317,7 @@
           <div id="bookAlert"></div>
           <div class="book-nav">
             <button class="btn btn-ghost" onclick="prevStep()">${t('btn_back')}</button>
-            <div style="display:flex;gap:0.5rem;align-items:center">
+            <div class="book-confirm-actions">
               <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Print confirmation"> ${t('btn_print') || 'Print'}</button>
               <button class="btn btn-primary btn-lg" onclick="confirmBooking()">${t('btn_confirm')}</button>
             </div>
@@ -368,7 +402,7 @@
       alert(` You're on the waitlist for ${sel.date}. We'll notify you if a slot opens up!`);
     }
 
-    function selectService(id) { sel.service = barber.services.find(s => s.id === id); render(); }
+    function selectService(id) { sel.service = getBarberServices(barber).find(s => s.id === id) || null; render(); }
     async function changeDate(val) {
       sel.date = val;
       sel.slot = null;
@@ -502,5 +536,3 @@
   </script>
 </body>
 </html>
-
-

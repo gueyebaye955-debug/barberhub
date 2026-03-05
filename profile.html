@@ -36,11 +36,17 @@
     .rating-bar-track { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
     .rating-bar-fill  { height: 100%; background: var(--gold); border-radius: 3px; }
     .rating-bar-label { min-width: 24px; color: var(--text-muted); }
+    .reviews-summary { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; margin-bottom: 1.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
     @media (max-width: 768px) {
       .profile-header { grid-template-columns: 1fr; text-align: center; }
       .profile-meta { justify-content: center; }
       .profile-cta  { width: 100%; }
       .portfolio-grid { grid-template-columns: repeat(2,1fr); }
+      .svc-item { flex-direction: column; align-items: flex-start; }
+      .svc-right { width: 100%; align-items: flex-start; }
+      .avail-row { flex-wrap: wrap; gap: 0.35rem; }
+      .avail-day { min-width: 0; }
+      .reviews-summary { grid-template-columns: 1fr; gap: 1rem; }
     }
   </style>
 </head>
@@ -112,7 +118,13 @@
     (async function initProfilePage() {
       // Render immediately with local data so the page isn't blank
       barber = getBarber(barberId);
-      if (barber) renderProfile();
+      if (barber) {
+        try {
+          renderProfile();
+        } catch (err) {
+          console.error('Initial profile render failed:', err);
+        }
+      }
 
       // Fetch full data from API in parallel with favorites sync
       const [apiBarber] = await Promise.all([
@@ -140,7 +152,13 @@
 
       document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name}  BarberHub`;
       if (typeof Analytics !== 'undefined') Analytics.track('profile_view', { barber_id: barber.id, city: barber.city });
-      renderProfile();
+      try {
+        renderProfile();
+      } catch (err) {
+        console.error('Profile render failed:', err);
+        document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Unable to load this barber profile</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
+        return;
+      }
 
       if (params.get('review') === '1') {
         setTimeout(() => {
@@ -152,9 +170,21 @@
 
     function renderProfile() {
       const isFav    = user ? Favorites.isFav(user.id, barber.id) : false;
-      const minPrice = Math.min(...barber.services.map(s => s.price));
-      const initials = barber.first_name[0] + barber.last_name[0];
+      const services = getBarberServices(barber);
+      const minPrice = getBarberMinPrice(barber);
+      const initials = getNameInitials(barber?.first_name, barber?.last_name);
       const isCustomer = user && user.role === 'customer';
+      const ratingValue = Number.isFinite(Number(barber?.rating)) ? Number(barber.rating) : 0;
+      const totalReviews = Number.isFinite(Number(barber?.total_reviews)) ? Number(barber.total_reviews) : 0;
+      const portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
+      const bookCta = isCustomer
+        ? (services.length
+          ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
+          : `<button class="btn btn-ghost btn-lg btn-block" disabled>No services listed yet</button>`)
+        : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`;
+      const minPriceLabel = minPrice === null
+        ? 'Pricing available on profile'
+        : `${t('profile_from')} ${fmtPrice(minPrice)}`;
 
       document.getElementById('main').innerHTML = `
         <div class="profile-hero">
@@ -175,21 +205,19 @@
                   ${barber.cancellation_hours ? `<span> ${barber.cancellation_hours}h ${t('profile_cancel')}</span>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-                  ${starsHTML(barber.rating, '1.05rem')}
-                  <strong>${barber.rating.toFixed(1)}</strong>
-                  <span class="text-muted text-sm">(${barber.total_reviews} ${t('reviews_count')})</span>
+                  ${starsHTML(ratingValue, '1.05rem')}
+                  <strong>${ratingValue.toFixed(1)}</strong>
+                  <span class="text-muted text-sm">(${totalReviews} ${t('reviews_count')})</span>
                   ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:50px;font-weight:700"> ${barber.booked_today} ${t('card_booked_today')}</span>` : ''}
                   ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" style="margin-left:0.5rem" onclick="toggleFav()">${isFav ? t('profile_saved') : t('profile_save')}</button>` : ''}
                 </div>
                 ${barber.bio ? `<div class="profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
               </div>
               <div class="profile-cta">
-                ${isCustomer
-                  ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
-                  : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`}
+                ${bookCta}
                 ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.35rem"> Message Barber</a>` : ''}
                 <a href="${getGoogleBusinessLink(barber)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.5rem">View on Google</a>
-                <p class="text-muted text-sm text-center mt-1">${t('profile_from')} ${fmtPrice(minPrice)}</p>
+                <p class="text-muted text-sm text-center mt-1">${minPriceLabel}</p>
                 <p class="text-muted text-sm text-center" style="font-size:0.72rem">${t('profile_next')} <strong style="color:var(--green)">${getNextAvailable(barber)}</strong></p>
               </div>
             </div>
@@ -199,7 +227,7 @@
         <div class="container" style="margin-top:2rem">
           <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('services',this)">${t('tab_services')}</button>
-            <button class="tab-btn" onclick="switchTab('portfolio',this)">${t('tab_portfolio')}${barber.portfolio.length ? ` (${barber.portfolio.length})` : ''}</button>
+            <button class="tab-btn" onclick="switchTab('portfolio',this)">${t('tab_portfolio')}${portfolio.length ? ` (${portfolio.length})` : ''}</button>
             <button class="tab-btn" onclick="switchTab('reviews',this)">${t('tab_reviews')}</button>
             <button class="tab-btn" onclick="switchTab('availability',this)">${t('tab_schedule')}</button>
           </div>
@@ -222,17 +250,26 @@
       const isCustomer = user && user.role === 'customer';
       const isBarber   = user && user.role === 'barber' && user.barber_id === barber.id;
       const el = document.getElementById('tabContent');
+      const servicesList = getBarberServices(barber);
+      const reviewsBase = Array.isArray(barber.reviews) ? barber.reviews : [];
+      const availability = Array.isArray(barber.availability) ? barber.availability : [];
+      const portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
 
       if (tab === 'services') {
         const grouped = {};
-        barber.services.forEach(s => {
+        servicesList.forEach(s => {
           if (!grouped[s.category]) grouped[s.category] = [];
           grouped[s.category].push(s);
         });
         const cats = Object.keys(grouped);
 
+        if (!servicesList.length) {
+          el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>No services listed yet.</p></div>`;
+          return;
+        }
+
         const renderServices = (filter) => {
-          const services = filter === 'all' ? barber.services : (grouped[filter] || []);
+          const services = filter === 'all' ? servicesList : (grouped[filter] || []);
           return services.map(s => `
             <div class="svc-item card">
               <div>
@@ -250,7 +287,7 @@
         el.innerHTML = `
           <div class="fade-in">
             <div class="cat-filter-bar" id="catFilterBar">
-              <button class="cat-chip active" onclick="filterCat('all',this)">${t('all_services')} (${barber.services.length})</button>
+              <button class="cat-chip active" onclick="filterCat('all',this)">${t('all_services')} (${servicesList.length})</button>
               ${cats.map(c => `<button class="cat-chip" onclick="filterCat('${c}',this)">${CAT_ICONS[c]||''} ${c} (${grouped[c].length})</button>`).join('')}
             </div>
             <div class="svc-list" id="svcList">${renderServices('all')}</div>
@@ -263,15 +300,15 @@
         };
 
       } else if (tab === 'portfolio') {
-        if (!barber.portfolio.length) {
+        if (!portfolio.length) {
           el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>${t('no_portfolio')}</p></div>`;
         } else {
-          lbPhotos = barber.portfolio;
+          lbPhotos = portfolio;
           el.innerHTML = `
             <div class="fade-in">
               <p class="text-muted text-sm" style="margin-bottom:1rem">${t('click_to_view')}</p>
               <div class="portfolio-grid">
-                ${barber.portfolio.map((p, i) => `
+                ${portfolio.map((p, i) => `
                   <img class="portfolio-thumb" src="${p.url}" alt="${p.caption}" loading="lazy" onclick="openLightbox(${i})" title="${p.caption}">`
                 ).join('')}
               </div>
@@ -280,7 +317,7 @@
 
       } else if (tab === 'reviews') {
         const userReviews = Reviews.get(barber.id);
-        const allReviews  = [...barber.reviews, ...userReviews];
+        const allReviews  = [...reviewsBase, ...userReviews];
         const avg = allReviews.reduce((s,r) => s + r.rating, 0) / (allReviews.length || 1);
         const counts = [5,4,3,2,1].map(n => ({
           n, cnt: allReviews.filter(r => r.rating === n).length
@@ -317,7 +354,7 @@
 
         el.innerHTML = `
           <div class="fade-in">
-            <div style="display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center;margin-bottom:1.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem">
+            <div class="reviews-summary">
               <div style="text-align:center">
                 <div style="font-size:3.5rem;font-weight:800;line-height:1;color:var(--primary)">${avg.toFixed(1)}</div>
                 <div style="margin:0.35rem 0">${starsHTML(avg, '1.2rem')}</div>
@@ -339,7 +376,7 @@
           </div>`;
 
       } else if (tab === 'availability') {
-        const rows = barber.availability.map(a => `
+        const rows = availability.map(a => `
           <div class="avail-row ${!a.open ? 'closed' : ''}">
             <span class="avail-day">${a.label}</span>
             <span class="avail-time">${a.open ? `${a.start}  ${a.end}` : t('closed_day')}</span>
@@ -443,5 +480,3 @@
   </script>
 </body>
 </html>
-
-

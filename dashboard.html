@@ -45,6 +45,10 @@
     .stat-mini { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
     .stat-mini .val { font-size: 1.75rem; font-weight: 800; color: var(--primary); }
     .stat-mini .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 0.65rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .msg-panel-inner { display: flex; gap: 1rem; height: 420px; }
+    .msg-thread-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .msg-compose { display: flex; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
     @media (max-width: 768px) {
       .dash-layout { grid-template-columns: 1fr; }
       .dash-sidebar { position: static; }
@@ -54,6 +58,8 @@
       .msg-panel-inner { flex-direction: column !important; height: auto !important; }
       .msg-conv-list { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--border); padding-right: 0 !important; padding-bottom: 0.75rem; max-height: 180px; overflow-y: auto; }
       .msg-thread-area { height: 300px; }
+      .msg-compose { flex-direction: column; }
+      .msg-compose .btn { width: 100%; }
     }
   </style>
 </head>
@@ -220,7 +226,7 @@
 
           <!-- Notifications -->
           <div class="dash-panel ${activeTab==='notifications'?'active':''}" id="panel-notifications">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+            <div class="panel-head">
               <h2>${t('dash_notifications')}</h2>
               ${unread ? `<button class="btn btn-sm btn-ghost" onclick="markAllRead()">${t('mark_all_read')}</button>` : ''}
             </div>
@@ -246,7 +252,7 @@
           <div class="dash-panel ${activeTab==='messages'?'active':''}" id="panel-messages">
             <h2> Messages</h2>
             <p class="sub">Chat with your barbers</p>
-            <div class="msg-panel-inner" style="display:flex;gap:1rem;height:420px">
+            <div class="msg-panel-inner">
               <!-- Conversation list -->
               <div class="msg-conv-list" style="width:220px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border);padding-right:0.75rem">
                 ${conversations.length === 0
@@ -263,7 +269,7 @@
                 }
               </div>
               <!-- Thread -->
-              <div style="flex:1;display:flex;flex-direction:column">
+              <div class="msg-thread-area">
                 ${activeConvId === null
                   ? `<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">Select a conversation</div>`
                   : `<div id="msgThread" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem 0">
@@ -275,7 +281,7 @@
                           </div>
                         </div>`).join('')}
                     </div>
-                    <form onsubmit="sendMsg(event)" style="display:flex;gap:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border)">
+                    <form onsubmit="sendMsg(event)" class="msg-compose">
                       <input id="msgInput" class="form-control" placeholder="Type a message…" style="flex:1" autocomplete="off">
                       <button class="btn btn-primary" type="submit">Send</button>
                     </form>`
@@ -475,4 +481,3 @@
   </script>
 </body>
 </html>
-

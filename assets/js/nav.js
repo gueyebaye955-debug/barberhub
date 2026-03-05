@@ -22,7 +22,7 @@
     "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline' https://unpkg.com",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://api.emailjs.com",
+    "connect-src 'self' https: http://localhost:* http://127.0.0.1:*",
     "font-src 'self' data: https://unpkg.com"
   ].join('; ');
   document.head.prepend(meta);
@@ -279,4 +279,3 @@ function renderFooter() {
       </div>
     </div>`;
 }
-

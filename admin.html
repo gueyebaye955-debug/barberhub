@@ -30,7 +30,7 @@
     .stat-card.green   .val { color: var(--green); }
     .stat-card.blue    .val { color: #60a5fa; }
     .stat-card.amber   .val { color: #f59e0b; }
-    .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+    .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; margin-bottom: 1.5rem; -webkit-overflow-scrolling: touch; }
     .table-header { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg-elevated); }
     .table-header h3 { font-size: 0.95rem; margin: 0; }
     table { width: 100%; border-collapse: collapse; }
@@ -50,8 +50,26 @@
     .status-cancelled { background: rgba(239,68,68,0.15); color: #ef4444; }
     .filter-bar { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .filter-bar input { flex: 1; min-width: 200px; }
+    .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .monitor-grid { padding: 1rem; display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 0.75rem; }
+    .action-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .settings-wrap { max-width: 500px; }
+    .settings-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .table-actions-cell { white-space: normal; min-width: 180px; }
     @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 768px) { .dash-layout { grid-template-columns: 1fr; } .dash-sidebar { position: static; } }
+    @media (max-width: 768px) {
+      .dash-layout { grid-template-columns: 1fr; }
+      .dash-sidebar { position: static; }
+      .split-grid { grid-template-columns: 1fr; }
+      .monitor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .filter-bar input { min-width: 0; width: 100%; }
+      .table-wrap table { min-width: 620px; }
+      .settings-wrap { max-width: 100%; }
+      .table-actions-cell .btn { margin-left: 0 !important; margin-top: 0.35rem; }
+    }
+    @media (max-width: 480px) {
+      .monitor-grid { grid-template-columns: 1fr; }
+    }
     /* Notification modal */
     .notif-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem; }
     .notif-modal { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;max-width:420px;width:100%;position:relative; }
@@ -163,7 +181,7 @@
               <div class="stat-card blue"><div class="val">${fmtPrice(totalRev)}</div><div class="lbl">${t('total_revenue')}</div></div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+            <div class="split-grid">
               <div class="table-wrap">
                 <div class="table-header"><h3>${t('booking_breakdown')}</h3></div>
                 <table>
@@ -212,7 +230,7 @@
                   <button class="btn btn-sm btn-ghost" onclick="clearMonitoringData()">Clear Monitoring Data</button>
                 </div>
               </div>
-              <div style="padding:1rem;display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:0.75rem">
+              <div class="monitor-grid">
                 <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.rate.toFixed(1)}%</div><div class="lbl">Uptime Success</div></div>
                 <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.avgLatency}ms</div><div class="lbl">Avg Latency</div></div>
                 <div class="stat-card"><div class="val" style="font-size:1.5rem">${uptimeSummary.total}</div><div class="lbl">Checks</div></div>
@@ -278,9 +296,11 @@
                       <td><strong>${escapeHTML(b.first_name)} ${escapeHTML(b.last_name)}</strong></td>
                       <td>${escapeHTML(b.email)}</td>
                       <td>${escapeHTML(b.city||'')}</td>
-                      <td style="display:flex;gap:0.4rem">
-                        <button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="approveBarber('${b.email}',true)">${t('admin_approve')}</button>
-                        <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="approveBarber('${b.email}',false)">${t('admin_reject')}</button>
+                      <td>
+                        <div class="action-row">
+                          <button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="approveBarber('${b.email}',true)">${t('admin_approve')}</button>
+                          <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="approveBarber('${b.email}',false)">${t('admin_reject')}</button>
+                        </div>
                       </td>
                     </tr>`).join('')}
                   </tbody>
@@ -357,7 +377,7 @@
               3. Copy your <strong>Public Key</strong>, <strong>Service ID</strong> and <strong>Template ID</strong> below.
             </div>
 
-            <div style="max-width:500px">
+            <div class="settings-wrap">
               <div class="form-group">
                 <label class="form-label">EmailJS Public Key</label>
                 <input class="form-control" id="ejs-pubkey" placeholder="e.g. abc123XYZ_xxxxxxxx" value="${ejsCfg.publicKey||''}">
@@ -370,7 +390,7 @@
                 <label class="form-label">Template ID</label>
                 <input class="form-control" id="ejs-template" placeholder="e.g. template_xxxxxxx" value="${ejsCfg.templateId||''}">
               </div>
-              <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+              <div class="settings-actions">
                 <button class="btn btn-primary" onclick="saveEjsConfig()"> Save Settings</button>
                 <button class="btn btn-ghost" onclick="testEmail()"> Send Test Email to Me</button>
               </div>
@@ -395,7 +415,7 @@
                       <td>${escapeHTML(b.service_name)}</td>
                       <td>${b.date}<br><span style="color:var(--text-muted);font-size:0.8rem">${b.time}</span></td>
                       <td>${fmtPrice(b.price)}</td>
-                      <td style="white-space:nowrap">
+                      <td class="table-actions-cell">
                         <span class="status-badge status-${escapeHTML(b.status)}">${escapeHTML(b.status)}</span>
                         ${b.status==='pending'   ? `<button class="btn btn-sm" style="margin-left:0.35rem;background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="updateBookingStatus(${b.id},'confirmed')"> Confirm</button>` : ''}
                         ${b.status==='confirmed' ? `<button class="btn btn-sm" style="margin-left:0.35rem;background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)"  onclick="updateBookingStatus(${b.id},'completed')"> Done</button>` : ''}
@@ -592,6 +612,5 @@
   </script>
 </body>
 </html>
-
 
 

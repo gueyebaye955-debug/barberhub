@@ -647,10 +647,29 @@ function setCurrency(c) { localStorage.setItem('bh_currency', c); location.reloa
 //  Helper: format price 
 function fmtPrice(p) {
   const cur = getCurrency();
-  const amt = parseFloat(p);
-  if (cur === 'EUR')  return '' + (amt * 0.92).toFixed(0);
-  if (cur === 'FCFA') return (amt * 600).toFixed(0) + ' FCFA';
-  return '$' + amt.toFixed(0);
+  const amt = Number(p);
+  if (!Number.isFinite(amt)) return 'TBD';
+  const safeAmt = Math.max(0, amt);
+  if (cur === 'EUR')  return '' + (safeAmt * 0.92).toFixed(0);
+  if (cur === 'FCFA') return (safeAmt * 600).toFixed(0) + ' FCFA';
+  return '$' + safeAmt.toFixed(0);
+}
+
+function getBarberServices(barber) {
+  return Array.isArray(barber?.services) ? barber.services.filter(Boolean) : [];
+}
+
+function getBarberMinPrice(barber, fallback = null) {
+  const prices = getBarberServices(barber)
+    .map((service) => Number(service?.price))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  return prices.length ? Math.min(...prices) : fallback;
+}
+
+function getNameInitials(firstName, lastName) {
+  const first = String(firstName || 'B').trim();
+  const last = String(lastName || '').trim();
+  return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || 'B';
 }
 
 //  Helper: get barber avatar (localStorage override first) 
@@ -674,21 +693,29 @@ function statusBadge(status) {
 
 //  Render barber card HTML 
 function barberCardHTML(b, page = '') {
-  const minPrice    = Math.min(...b.services.map(s => s.price));
-  const tags        = b.services.slice(0, 3).map(s => `<span class="bc-tag">${escapeHTML(s.name)}</span>`).join('');
+  const services    = getBarberServices(b);
+  const minPrice    = getBarberMinPrice(b);
+  const tags        = services.length
+    ? services.slice(0, 3).map(s => `<span class="bc-tag">${escapeHTML(s.name || 'Service')}</span>`).join('')
+    : '<span class="bc-tag">Services coming soon</span>';
   const nextSlot    = getNextOpenSlot(b);
   const nextAvail   = nextSlot ? nextSlot.display : 'Check schedule';
   const availColor  = nextSlot
     ? (nextSlot.dayOffset === 0 ? 'var(--green)' : nextSlot.dayOffset === 1 ? 'var(--gold)' : 'var(--text-muted)')
     : 'var(--text-muted)';
-  const bookedLabel = b.booked_today > 0 ? `<span class="bc-social-proof"> ${b.booked_today} booked today</span>` : '';
-  const displayName = escapeHTML(b.shop_name || b.first_name + ' ' + b.last_name);
-  const initials    = escapeHTML(b.first_name[0] + b.last_name[0]);
+  const bookedLabel = Number(b?.booked_today) > 0 ? `<span class="bc-social-proof"> ${b.booked_today} booked today</span>` : '';
+  const displayName = escapeHTML(b?.shop_name || `${b?.first_name || ''} ${b?.last_name || ''}`.trim() || 'Barber');
+  const initials    = escapeHTML(getNameInitials(b?.first_name, b?.last_name));
+  const ratingValue = Number.isFinite(Number(b?.rating)) ? Number(b.rating) : 0;
+  const reviewCount = Number.isFinite(Number(b?.total_reviews)) ? Number(b.total_reviews) : 0;
+  const priceLabel  = minPrice === null
+    ? 'Pricing available on profile'
+    : `From <strong>${fmtPrice(minPrice)}</strong>`;
 
   return `
     <a class="barber-card card fade-in" href="profile.html?id=${b.id}">
       <div class="bc-cover">
-        <div class="bc-avatar">${getBarberAvatar(b) ? `<img src="${getBarberAvatar(b)}" alt="${escapeHTML(b.first_name)}" loading="lazy" decoding="async">` : initials}</div>
+        <div class="bc-avatar">${getBarberAvatar(b) ? `<img src="${getBarberAvatar(b)}" alt="${escapeHTML(b?.first_name || 'Barber')}" loading="lazy" decoding="async">` : initials}</div>
         ${bookedLabel}
       </div>
       <div class="bc-body">
@@ -696,20 +723,18 @@ function barberCardHTML(b, page = '') {
           ${displayName}
           ${b.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
         </div>
-        <div class="bc-loc"> ${escapeHTML(b.city)}</div>
+        <div class="bc-loc"> ${escapeHTML(b?.city || 'Location not set')}</div>
         <div class="bc-rating">
-          ${starsHTML(b.rating)}
-          <strong>${b.rating.toFixed(1)}</strong>
-          <span>(${b.total_reviews})</span>
+          ${starsHTML(ratingValue)}
+          <strong>${ratingValue.toFixed(1)}</strong>
+          <span>(${reviewCount})</span>
         </div>
         <div class="bc-next-avail" style="color:${availColor}"> Next slot: <strong>${escapeHTML(nextAvail)}</strong></div>
         <div class="bc-tags">${tags}</div>
         <div class="bc-footer">
-          <span class="bc-price">From <strong>${fmtPrice(minPrice)}</strong></span>
+          <span class="bc-price">${priceLabel}</span>
           <span class="btn btn-primary btn-sm">Book Now</span>
         </div>
       </div>
     </a>`;
 }
-
-

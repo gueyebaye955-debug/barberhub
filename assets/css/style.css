@@ -31,6 +31,7 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 a { color: var(--primary); text-decoration: none; }
@@ -378,7 +379,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 .modal .sub { color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem; }
 
 /* Admin table */
-.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 th, td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
 th { background: var(--bg-elevated); color: var(--text-muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -425,12 +426,17 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   /* Navbar: hide desktop links/dropdowns/user pill — all accessible via hamburger */
   .navbar__links { display: none; }
   .navbar__actions .btn:not(.hamburger):not(.theme-toggle) { display: none; }
-  #langSwitcher, #curSwitcher { display: none; }
+  #curSwitcher { display: none; }
+  #langSwitcher { display: block; }
+  #langSwitcher .lang-btn { min-height: 40px; padding: 0.35rem 0.6rem; }
   .navbar__user { display: none; }
   .hamburger { display: flex; }
   .section { padding: 2.5rem 0; }
   .section-header { margin-bottom: 1.5rem; }
   .auth-card { padding: 1.5rem; }
+  .container { padding: 0 1rem; }
+  .btn { white-space: normal; }
+  .table-wrap > table { min-width: 560px; }
   /* Touch targets for filter chips and tabs */
   .quick-tag { min-height: 44px; padding: 0.55rem 1rem; font-size: 0.82rem; }
   .cat-chip  { min-height: 44px; padding: 0.55rem 1rem; }
@@ -441,6 +447,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 @media (max-width: 480px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .dash-stats { grid-template-columns: 1fr; }
   .section { padding: 2rem 0; }
   .container { padding: 0 1rem; }
   /* Smallest screens: all buttons full touch target */
@@ -789,4 +796,3 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   .book-confirm-card { box-shadow: none !important; border: 1px solid #ccc !important; }
   a { color: black !important; }
 }
-
