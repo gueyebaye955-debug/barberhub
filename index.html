@@ -443,28 +443,28 @@
     });
 
     (async function renderHome() {
-      await loadApiBarbers();
-
-      const allBarbers = getAllBarbers();
-      const featured = [...allBarbers].sort((a, b) => b.rating - a.rating);
-      const trending = [...allBarbers].sort((a, b) => b.total_bookings - a.total_bookings);
-
-      document.getElementById('featuredGrid').innerHTML = featured.slice(0, 4).map((b) => barberCardHTML(b)).join('');
-      document.getElementById('trendingGrid').innerHTML = trending.slice(0, 4).map((b) => barberCardHTML(b)).join('');
-
-      const user = Auth.getUser();
-      if (user && user.role === 'customer') {
-        document.getElementById('recommendedSection').style.display = 'block';
-
-        const recommended = [...allBarbers].sort((a, b) => {
-          const aCityMatch = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-          const bCityMatch = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-          if (bCityMatch !== aCityMatch) return bCityMatch - aCityMatch;
-          return b.rating - a.rating;
-        });
-
-        document.getElementById('recommendedGrid').innerHTML = recommended.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+      function renderGrids() {
+        const allBarbers = getAllBarbers();
+        const featured = [...allBarbers].sort((a, b) => b.rating - a.rating);
+        const trending = [...allBarbers].sort((a, b) => b.total_bookings - a.total_bookings);
+        document.getElementById('featuredGrid').innerHTML = featured.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+        document.getElementById('trendingGrid').innerHTML = trending.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+        const user = Auth.getUser();
+        if (user && user.role === 'customer') {
+          document.getElementById('recommendedSection').style.display = 'block';
+          const recommended = [...allBarbers].sort((a, b) => {
+            const aCityMatch = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+            const bCityMatch = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
+            if (bCityMatch !== aCityMatch) return bCityMatch - aCityMatch;
+            return b.rating - a.rating;
+          });
+          document.getElementById('recommendedGrid').innerHTML = recommended.slice(0, 4).map((b) => barberCardHTML(b)).join('');
+        }
       }
+
+      renderGrids(); // Show the 6 static barbers immediately — no waiting
+      await loadApiBarbers(); // Fetch from API in background (5s timeout)
+      renderGrids(); // Update grids if API returned more/different barbers
     })();
   </script>
 </body>

@@ -130,7 +130,7 @@
     }
 
     async function initBookingPage() {
-      barber = await loadApiBarberById(barberId) || getBarber(barberId);
+      barber = getBarber(barberId) || await loadApiBarberById(barberId);
       if (!barber) {
         window.location.href = 'barbers.html';
         return;

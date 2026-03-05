@@ -306,22 +306,25 @@ function normalizeApiBarber(row) {
   };
 }
 
+function _apiTimeout(ms) {
+  return new Promise((_, reject) => setTimeout(() => reject(new Error('API timeout')), ms));
+}
+
 async function loadApiBarbers(params = {}) {
   if (!window.BH_API) return API_BARBERS;
   try {
-    const rows = await window.BH_API.getBarbers(params);
+    const rows = await Promise.race([window.BH_API.getBarbers(params), _apiTimeout(5000)]);
     API_BARBERS = Array.isArray(rows) ? rows.map(normalizeApiBarber) : [];
-    return API_BARBERS;
   } catch (error) {
     console.warn('Unable to load API barbers:', error.message);
-    return API_BARBERS;
   }
+  return API_BARBERS;
 }
 
 async function loadApiBarberById(id) {
   if (!window.BH_API) return null;
   try {
-    const row = await window.BH_API.getBarber(id);
+    const row = await Promise.race([window.BH_API.getBarber(id), _apiTimeout(5000)]);
     const normalized = normalizeApiBarber(row);
     const idx = API_BARBERS.findIndex((b) => b.id === normalized.id);
     if (idx === -1) API_BARBERS.push(normalized);
