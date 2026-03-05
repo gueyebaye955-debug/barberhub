@@ -3,7 +3,11 @@
   const TOKEN_KEY = 'bh_token';
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
-  const DEFAULT_BASE = '/api';
+  const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
+  // Use relative /api when on localhost or Railway itself; use full URL on Netlify/other hosts
+  const DEFAULT_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('railway.app'))
+    ? '/api'
+    : RAILWAY_API;
 
   function getBaseUrl() {
     const fromStorage = localStorage.getItem('bh_api_base');
