@@ -229,14 +229,21 @@
       .hero { min-height: auto; }
       .hero__content { padding: 2rem 0 2rem; }
       .hero__title { font-size: clamp(1.9rem, 8vw, 3rem); }
-      .hero__sub { font-size: 0.95rem; }
+      .hero__sub { font-size: 0.95rem; max-width: 100%; }
+      /* Search bar: stack fields vertically, full width */
+      .hero__search { max-width: 100%; }
       .hero__search-row { flex-direction: column; }
-      .hero__field { border-right: none; border-bottom: 1px solid var(--border); padding: 0.5rem 0.75rem; max-width: 100% !important; }
+      .hero__field { border-right: none; border-bottom: 1px solid var(--border); padding: 0.65rem 0.75rem; max-width: 100% !important; min-height: 52px; }
       .hero__field:last-of-type { border-bottom: none; }
-      .hero__search .btn { width: 100%; border-radius: 8px; padding: 0.85rem; margin-top: 0.25rem; }
+      .hero__search .btn { width: 100%; border-radius: 8px; padding: 0.9rem; margin-top: 0.25rem; min-height: 52px; font-size: 1rem; }
+      /* Quick-tag filters: larger touch targets, span full row */
+      .quick-tags { padding: 0.5rem 0.5rem 0; gap: 0.5rem; }
+      .quick-tag { flex: 1 1 auto; text-align: center; min-height: 44px; padding: 0.55rem 0.75rem; }
       .hero__stats { gap: 1rem; flex-wrap: wrap; }
       .hiw-steps { grid-template-columns: 1fr; }
       .cta-box { flex-direction: column; padding: 1.75rem; }
+      .cta-box__btns { flex-direction: column; }
+      .cta-box__btns .btn { width: 100%; }
       .cta-box__icon { display: none; }
       .cta-box__text h2 { font-size: 1.4rem; }
       .local-city-grid { grid-template-columns: repeat(2, 1fr); }
@@ -247,6 +254,8 @@
       .hero__stats { gap: 0.75rem; }
       .hero__stat strong { font-size: 1.1rem; }
       .local-city-grid { grid-template-columns: repeat(2, 1fr); }
+      /* City cards touch-friendly */
+      .local-city-card { padding: 0.85rem; min-height: 60px; }
     }
   </style>
 </head>
@@ -270,7 +279,7 @@
                 <span>Search</span>
                 <input type="text" id="searchInput" placeholder="Search barbers, styles, services...">
               </div>
-              <div class="hero__field" style="max-width: 200px;">
+              <div class="hero__field">
                 <span>City</span>
                 <input type="text" id="cityInput" placeholder="City">
               </div>
