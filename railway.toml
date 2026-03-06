@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build"
+buildCommand = "cd backend && npm install"
 
 [deploy]
-startCommand = "npm run db:migrate && npm start"
+startCommand = "cd backend && npm run db:migrate && npm start"
