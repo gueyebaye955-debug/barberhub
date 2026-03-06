@@ -135,7 +135,7 @@ async function sendBookingEmail(type, toEmail, data) {
       </div>
       <div style="padding:1.5rem 2rem">`;
   const footer = `</div><div style="background:#1a1a2e;padding:0.8rem 2rem;font-size:0.75rem;color:#888">
-        Jelall - <a href="https://jelall-production.up.railway.app" style="color:#e94560">Open app</a>
+        Jelall - <a href="https://barberhub-production.up.railway.app" style="color:#e94560">Open app</a>
       </div></div>`;
 
   const customerPhoneRow = data.customerPhone

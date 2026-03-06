@@ -3,6 +3,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://jelall-production.up.railway.app/api/:splat"
+  to = "https://barberhub-production.up.railway.app/api/:splat"
   status = 200
   force = true

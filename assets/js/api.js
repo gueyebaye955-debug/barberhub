@@ -3,7 +3,7 @@
   const TOKEN_KEY = 'bh_token';
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
-  const RAILWAY_API = 'https://jelall-production.up.railway.app/api';
+  const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
   // Use relative /api for all real HTTP servers (production, custom domains, local Express).
   // Only fall back to full Railway URL when opening files directly or via a dev server
   // that is NOT the Express backend (e.g. VSCode Live Server on port 5500).
