@@ -240,13 +240,19 @@ function _defaultAvailability() {
 }
 
 function _normalizeApiService(service) {
+  const gallery = Array.isArray(service.gallery) ? service.gallery : (Array.isArray(service.images) ? service.images : (Array.isArray(service.preview_images) ? service.preview_images : []));
+  const discountPercent = Number(service.discount_percent);
   return {
     id: parseInt(service.id, 10),
     name: service.name || 'Service',
     desc: service.desc || service.description || '',
     category: _titleCase(service.category || 'cuts'),
     price: (Number(service.price) || 0) / 100,
-    duration: Number(service.duration) || 30
+    duration: Number(service.duration) || 30,
+    gallery: gallery.filter((img) => typeof img === 'string' && img.trim()).slice(0, 3),
+    discount_enabled: Boolean(service.discount_enabled || service.has_discount || (Number.isFinite(discountPercent) && discountPercent > 0)),
+    discount_percent: Number.isFinite(discountPercent) ? discountPercent : 0,
+    is_popular: Boolean(service.is_popular || service.popular)
   };
 }
 
@@ -265,6 +271,20 @@ function _normalizeApiReview(review) {
   };
 }
 
+function _normalizeApiPortfolioPhoto(photo, index = 0) {
+  if (!photo || typeof photo !== 'object') return null;
+  const rawUrl = typeof photo.image_url === 'string' ? photo.image_url : photo.url;
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+  const sortOrder = Number(photo.sort_order);
+  return {
+    id: Number.isFinite(Number(photo.id)) ? Number(photo.id) : `p-${Date.now()}-${index}`,
+    url: rawUrl.trim(),
+    caption: typeof photo.caption === 'string' ? photo.caption : '',
+    sort_order: Number.isFinite(sortOrder) ? sortOrder : index,
+    created_at: photo.created_at || null
+  };
+}
+
 function normalizeApiBarber(row) {
   const existing = BARBERS.find((b) => b.id === parseInt(row.id, 10))
     || API_BARBERS.find((b) => b.id === parseInt(row.id, 10))
@@ -275,6 +295,18 @@ function normalizeApiBarber(row) {
   const services = servicesRaw.length ? servicesRaw.map(_normalizeApiService) : (existing?.services || []);
   const reviewsRaw = Array.isArray(row.reviews) ? row.reviews : (existing?.reviews || []);
   const reviews = reviewsRaw.map((r) => (r.reviewer_name !== undefined ? _normalizeApiReview(r) : r));
+  const portfolioRaw = Array.isArray(row.portfolio) ? row.portfolio : (existing?.portfolio || []);
+  const portfolio = portfolioRaw
+    .map((p, idx) => _normalizeApiPortfolioPhoto(p, idx))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aOrder = Number.isFinite(Number(a.sort_order)) ? Number(a.sort_order) : 0;
+      const bOrder = Number.isFinite(Number(b.sort_order)) ? Number(b.sort_order) : 0;
+      return aOrder - bOrder;
+    });
+  const portfolioCount = Number.isFinite(Number(row.portfolio_count))
+    ? Number(row.portfolio_count)
+    : portfolio.length;
 
   return {
     id: parseInt(row.id, 10),
@@ -298,7 +330,8 @@ function normalizeApiBarber(row) {
     services,
     reviews,
     availability: existing?.availability || _defaultAvailability(),
-    portfolio: existing?.portfolio || [],
+    portfolio,
+    portfolio_count: portfolioCount,
     travel_buffer_minutes: Number(row.travel_buffer_minutes) || 0,
     lunch_break_start: row.lunch_break_start || null,
     lunch_break_end: row.lunch_break_end || null,
@@ -344,7 +377,8 @@ function getDynamicBarber(id) {
   // Merge localStorage service + schedule overrides (same keys barber-dashboard uses)
   const services     = JSON.parse(localStorage.getItem('bh_services_' + id) || 'null') || p.services;
   const availability = JSON.parse(localStorage.getItem('bh_schedule_'  + id) || 'null') || p.availability;
-  return { ...p, services, availability };
+  const portfolio    = Array.isArray(p.portfolio) ? p.portfolio : [];
+  return { ...p, services, availability, portfolio, portfolio_count: portfolio.length };
 }
 
 //  Helper: get barber by id (seed data first, then dynamic) 
@@ -630,6 +664,19 @@ function getGoogleBusinessLink(barber) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+function getBarberProfileUrl(id) {
+  const safeId = parseInt(id, 10);
+  const fallback = `profile.html?id=${encodeURIComponent(id)}`;
+  if (!Number.isInteger(safeId) || safeId <= 0) return fallback;
+  if (location.protocol === 'file:') return fallback;
+  // Only use pretty /barber/:id URL when served by the Express backend
+  // (port 4000 locally, or any non-localhost domain in production)
+  const h = location.hostname;
+  const isExpress = location.port === '4000' || (h !== 'localhost' && h !== '127.0.0.1');
+  if (!isExpress) return fallback;
+  return `/barber/${safeId}`;
+}
+
 //  Helper: render star HTML 
 function starsHTML(rating, size = '0.9rem') {
   let html = `<span class="stars" style="font-size:${size}">`;
@@ -641,7 +688,7 @@ function starsHTML(rating, size = '0.9rem') {
 }
 
 //  Currency helpers 
-function getCurrency() { return localStorage.getItem('bh_currency') || 'USD'; }
+function getCurrency() { return localStorage.getItem('bh_currency') || 'FCFA'; }
 function setCurrency(c) { localStorage.setItem('bh_currency', c); location.reload(); }
 
 //  Helper: format price 
@@ -713,7 +760,7 @@ function barberCardHTML(b, page = '') {
     : `From <strong>${fmtPrice(minPrice)}</strong>`;
 
   return `
-    <a class="barber-card card fade-in" href="profile.html?id=${b.id}">
+    <a class="barber-card card fade-in" href="${getBarberProfileUrl(b.id)}">
       <div class="bc-cover">
         <div class="bc-avatar">${getBarberAvatar(b) ? `<img src="${getBarberAvatar(b)}" alt="${escapeHTML(b?.first_name || 'Barber')}" loading="lazy" decoding="async">` : initials}</div>
         ${bookedLabel}

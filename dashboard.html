@@ -197,7 +197,7 @@
                   <div class="booking-actions">
                     ${b.status === 'pending' || b.status === 'confirmed' ? `<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="cancelBooking(${b.id})">${t('cancel_booking')}</button>` : ''}
                     ${b.status === 'completed' ? `
-                      <a href="profile.html?id=${b.barber_id}&review=1" class="btn btn-sm btn-ghost">${t('leave_review')}</a>
+                      <a href="${getBarberProfileUrl(b.barber_id)}?review=1" class="btn btn-sm btn-ghost">${t('leave_review')}</a>
                       <a href="${(() => {
                         const rb = getBarber(b.barber_id);
                         const svc = rb?.services?.find(s => s.name === b.service_name);

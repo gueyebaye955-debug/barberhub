@@ -3,7 +3,7 @@ const router = require('express').Router();
 const pool = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
-const { sendBookingEmail } = require('../mailer');
+const { sendBookingEmail, sendWhatsAppBookingAlert } = require('../mailer');
 const {
   cleanString,
   normalizeDbTime,
@@ -158,20 +158,53 @@ router.post('/', requireAuth, requireRole('customer'), asyncHandler(async (req, 
     [barberProfile.user_id, 'New booking', `New ${svc.name} booking for ${date} at ${time}`]
   );
 
-  // Email barber about new booking
-  const barberUser = await pool.query('SELECT email, first_name, last_name FROM users WHERE id=$1', [barberProfile.user_id]);
-  const customerUser = await pool.query('SELECT first_name, last_name FROM users WHERE id=$1', [req.user.id]);
+  const providerNotify = {
+    email_sent: false,
+    whatsapp_sent: false,
+    whatsapp_status: 'not_attempted',
+    whatsapp_link: '',
+  };
+
+  const barberUser = await pool.query(
+    'SELECT email, first_name, last_name, phone FROM users WHERE id=$1',
+    [barberProfile.user_id]
+  );
+  const customerUser = await pool.query(
+    'SELECT first_name, last_name, email, phone FROM users WHERE id=$1',
+    [req.user.id]
+  );
   if (barberUser.rows.length && customerUser.rows.length) {
+    const bu = barberUser.rows[0];
     const cu = customerUser.rows[0];
-    sendBookingEmail('new_booking', barberUser.rows[0].email, {
-      customerName: `${cu.first_name} ${cu.last_name}`,
+    const customerName = `${cu.first_name} ${cu.last_name}`.trim();
+
+    providerNotify.email_sent = await sendBookingEmail('new_booking', bu.email, {
+      customerName,
+      customerPhone: cu.phone || '',
+      customerEmail: cu.email || '',
       serviceName: svc.name,
       date,
       time,
-    }).catch(() => {});
+      notes,
+    }).catch(() => false);
+
+    const waResult = await sendWhatsAppBookingAlert(bu.phone, {
+      bookingId: result.rows[0].id,
+      customerName,
+      customerPhone: cu.phone || '',
+      customerEmail: cu.email || '',
+      serviceName: svc.name,
+      date,
+      time,
+      notes,
+    }).catch(() => ({ ok: false, reason: 'send_failed', link: '' }));
+
+    providerNotify.whatsapp_sent = !!waResult.ok;
+    providerNotify.whatsapp_status = waResult.reason || 'send_failed';
+    providerNotify.whatsapp_link = waResult.link || '';
   }
 
-  return res.status(201).json({ ok: true, booking: result.rows[0] });
+  return res.status(201).json({ ok: true, booking: result.rows[0], provider_notify: providerNotify });
 }));
 
 router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {

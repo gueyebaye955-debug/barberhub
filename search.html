@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search — BarberHub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f7f8fa;
+      min-height: 100vh;
+      padding: 56px 20px 120px;
+      color: #111827;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .page {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── Page header ── */
+    .page-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6366f1;
+      margin-bottom: 6px;
+    }
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #111827;
+      line-height: 1.25;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .page-sub {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    /* ── Search wrapper ── */
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6b7280;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* ── Search box ── */
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 0 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 0 rgba(99,102,241,0);
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    .search-box.active {
+      border-color: #6366f1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 3.5px rgba(99,102,241,0.14);
+    }
+
+    .search-box__icon {
+      flex-shrink: 0;
+      color: #9ca3af;
+      display: flex;
+      transition: color 0.18s;
+    }
+    .search-box.active .search-box__icon { color: #6366f1; }
+
+    .search-box__input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: none;
+      font-family: inherit;
+      font-size: 1rem;
+      color: #111827;
+      padding: 16px 0;
+      line-height: 1.4;
+      min-width: 0;
+      caret-color: #6366f1;
+    }
+    .search-box__input::placeholder { color: #9ca3af; }
+
+    .search-box__clear {
+      flex-shrink: 0;
+      background: #f3f4f6;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.7);
+      transition: opacity 0.15s, transform 0.15s, background 0.12s;
+    }
+    .search-box__clear.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    .search-box__clear:hover { background: #e5e7eb; color: #374151; }
+
+    /* ── Dropdown ── */
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0; right: 0;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow:
+        0 4px 6px rgba(0,0,0,0.04),
+        0 12px 40px rgba(0,0,0,0.10);
+      z-index: 300;
+      overflow: hidden;
+      max-height: 440px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #e5e7eb transparent;
+
+      /* Entry animation */
+      animation: ddIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+      transform-origin: top center;
+    }
+
+    @keyframes ddIn {
+      from { opacity: 0; transform: scaleY(0.94) translateY(-6px); }
+      to   { opacity: 1; transform: scaleY(1)    translateY(0); }
+    }
+
+    /* Section headers */
+    .dd-section-label {
+      padding: 11px 16px 3px;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Horizontal rule between sections */
+    .dd-sep {
+      height: 1px;
+      background: #f3f4f6;
+      margin: 5px 0;
+    }
+
+    /* Individual suggestion row */
+    .dd-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .dd-item:hover,
+    .dd-item.focused {
+      background: #f5f5ff;
+    }
+
+    .dd-item:active { background: #ededfd; }
+
+    /* Icon circle on left */
+    .dd-item__icon {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      transition: background 0.1s;
+    }
+
+    .dd-item:hover .dd-item__icon,
+    .dd-item.focused .dd-item__icon {
+      background: #edecfb;
+      color: #6366f1;
+    }
+
+    .dd-item__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dd-item__name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #111827;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+
+    /* Highlight matched text */
+    .dd-item__name mark {
+      background: none;
+      color: #6366f1;
+      font-weight: 700;
+    }
+
+    .dd-item__address {
+      font-size: 0.775rem;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* Arrow hint on right */
+    .dd-item__arrow {
+      flex-shrink: 0;
+      color: #d1d5db;
+      opacity: 0;
+      transition: opacity 0.1s, color 0.1s;
+    }
+    .dd-item:hover .dd-item__arrow,
+    .dd-item.focused .dd-item__arrow {
+      opacity: 1;
+      color: #6366f1;
+    }
+
+    /* Empty state */
+    .dd-empty {
+      padding: 36px 16px;
+      text-align: center;
+    }
+    .dd-empty__icon { font-size: 2.25rem; margin-bottom: 10px; }
+    .dd-empty__title { font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    .dd-empty__sub   { font-size: 0.8rem; color: #9ca3af; }
+
+    /* ── Popular searches ── */
+    .popular {
+      margin-top: 28px;
+    }
+    .popular__label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #9ca3af;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+    .popular__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .popular__chip {
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 50px;
+      padding: 7px 15px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .popular__chip:hover {
+      border-color: #6366f1;
+      color: #6366f1;
+      background: rgba(99,102,241,0.04);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+    .popular__chip:active { background: rgba(99,102,241,0.08); }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      body { padding: 32px 16px 80px; }
+      .page-title { font-size: 1.4rem; }
+      .search-box__input { font-size: 1rem; padding: 15px 0; }
+      .dropdown { border-radius: 12px; max-height: 380px; }
+      .dd-item { padding: 9px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="page-eyebrow" data-i18n="search_page_eyebrow">BarberHub Search</div>
+    <h1 class="page-title" data-i18n="search_page_title">Find your next appointment</h1>
+    <p class="page-sub" data-i18n="search_page_sub">Book top-rated barbers and beauty professionals near you.</p>
+
+    <!-- Search component -->
+    <div class="search-wrapper" id="searchWrapper">
+      <label class="search-label" for="searchInput" data-i18n="search_label_services_businesses">Services or businesses</label>
+
+      <div class="search-box" id="searchBox">
+        <!-- Left: magnifying glass -->
+        <span class="search-box__icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+
+        <!-- Input -->
+        <input
+          type="text"
+          class="search-box__input"
+          id="searchInput"
+          data-i18n="search_placeholder"
+          placeholder="Search for service or business name"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search services or businesses"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="searchDropdown"
+          role="combobox"
+        >
+
+        <!-- Right: clear button -->
+        <button class="search-box__clear" id="clearBtn" aria-label="Clear search" tabindex="-1">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Dropdown is injected here by JS -->
+    </div>
+
+    <!-- Popular searches -->
+    <div class="popular" id="popularSection">
+      <div class="popular__label" data-i18n="search_popular_now">Popular right now</div>
+      <div class="popular__chips">
+        <button class="popular__chip" onclick="fillSearch('Barber')">✂️ Barber</button>
+        <button class="popular__chip" onclick="fillSearch('Massage')">💆 Massage</button>
+        <button class="popular__chip" onclick="fillSearch('Manicure')">💅 Manicure</button>
+        <button class="popular__chip" onclick="fillSearch('Facial')">✨ Facial</button>
+        <button class="popular__chip" onclick="fillSearch('Ear Piercing')">💎 Ear Piercing</button>
+        <button class="popular__chip" onclick="fillSearch('Hair Color')">🎨 Hair Color</button>
+        <button class="popular__chip" onclick="fillSearch('Waxing')">🪮 Waxing</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="assets/js/i18n.js"></script>
+  <script>
+    // ─── Data ──────────────────────────────────────────────────────────────────
+    const SERVICES = [
+      'Baby Ear Piercing',
+      'Ear Waxing',
+      'Ear Piercing',
+      'Ear Cleaning',
+      'Ear Candling',
+      'Barber',
+      'Barber Fade',
+      'Beard Trim',
+      'Beard Shaping',
+      'Balayage',
+      'Barre Class',
+      'Brazilian Blowout',
+      'Brazilian Wax',
+      'Deep Conditioning',
+      'Dermaplaning',
+      'Eyebrow Threading',
+      'Eyebrow Tinting',
+      'Eyelash Extensions',
+      'Eyelash Lift',
+      'Facial',
+      'Full Body Wax',
+      'Gel Manicure',
+      'Haircut',
+      'Hair Color',
+      'Hair Extensions',
+      'Highlights',
+      'Hot Stone Massage',
+      'Keratin Treatment',
+      'Kids Haircut',
+      'Lash Lift',
+      'Lash Tint',
+      'Leg Wax',
+      'Manicure',
+      'Massage',
+      'Microblading',
+      'Nail Art',
+      'Pedicure',
+      'Scalp Treatment',
+      'Spray Tan',
+      'Swedish Massage',
+      'Waxing',
+      'Wax Eyebrows',
+      'Wax Legs',
+    ];
+
+    const BUSINESSES = [
+      { name: 'Carlos Cuts Studio',        address: '234 W 42nd St, New York, NY' },
+      { name: "Sofia's Style Lab",          address: '789 Broadway, Brooklyn, NY' },
+      { name: 'Marcus Fresh Cuts',          address: '456 Flatbush Ave, Brooklyn, NY' },
+      { name: "Tony's Classic Barbershop",  address: '123 Main St, Manhattan, NY' },
+      { name: 'Glamour Beauty Salon',       address: '567 5th Ave, New York, NY' },
+      { name: 'The Nail Bar',               address: '890 Park Ave, New York, NY' },
+      { name: 'Zen Spa & Wellness',         address: '321 Lexington Ave, New York, NY' },
+      { name: 'Elite Beauty Studio',        address: '654 Amsterdam Ave, New York, NY' },
+      { name: 'Urban Cuts',                 address: '987 Atlantic Ave, Brooklyn, NY' },
+      { name: 'Prestige Hair Studio',       address: '234 DeKalb Ave, Brooklyn, NY' },
+      { name: 'Beauty Bar NYC',             address: '111 W 23rd St, New York, NY' },
+      { name: 'Harlem Hair Lab',            address: '88 W 125th St, Harlem, NY' },
+      { name: 'Brooklyn Brow Bar',          address: '320 Atlantic Ave, Brooklyn, NY' },
+      { name: 'Manhattan Nail Studio',      address: '440 Park Ave S, New York, NY' },
+      { name: 'The Barber Lounge',          address: '55 Water St, New York, NY' },
+    ];
+
+    // ─── SVG icons ────────────────────────────────────────────────────────────
+    const ICON_SEARCH = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>`;
+
+    const ICON_ARROW = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>`;
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    function esc(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Bold the matching substring; highlight color via CSS mark element
+    function highlight(text, query) {
+      if (!query) return esc(text);
+      const i = text.toLowerCase().indexOf(query.toLowerCase());
+      if (i < 0) return esc(text);
+      return (
+        esc(text.slice(0, i)) +
+        '<mark>' + esc(text.slice(i, i + query.length)) + '</mark>' +
+        esc(text.slice(i + query.length))
+      );
+    }
+
+    // Sort by relevance: exact > starts-with > contains
+    function sortByRelevance(items, query, label) {
+      const q = query.toLowerCase();
+      return [...items].sort((a, b) => {
+        const la = label(a).toLowerCase();
+        const lb = label(b).toLowerCase();
+        const scoreA = la === q ? 0 : la.startsWith(q) ? 1 : 2;
+        const scoreB = lb === q ? 0 : lb.startsWith(q) ? 1 : 2;
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        return la.localeCompare(lb);
+      });
+    }
+
+    // ─── State ────────────────────────────────────────────────────────────────
+    const input    = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const searchBox = document.getElementById('searchBox');
+    const wrapper  = document.getElementById('searchWrapper');
+    let dropdown   = null;
+    let focusedIdx = -1;
+    let blurTimer  = null;
+
+    // ─── Dropdown lifecycle ───────────────────────────────────────────────────
+    function openDropdown(query) {
+      if (dropdown) dropdown.remove();
+      focusedIdx = -1;
+
+      const q = query.trim();
+      if (!q) { dropdown = null; return; }
+
+      const svcMatches = sortByRelevance(
+        SERVICES.filter(s => s.toLowerCase().includes(q.toLowerCase())),
+        q, x => x
+      ).slice(0, 7);
+
+      const bizMatches = sortByRelevance(
+        BUSINESSES.filter(b => b.name.toLowerCase().includes(q.toLowerCase())),
+        q, x => x.name
+      ).slice(0, 5);
+
+      const dd = document.createElement('div');
+      dd.className = 'dropdown';
+      dd.id = 'searchDropdown';
+      dd.setAttribute('role', 'listbox');
+
+      if (!svcMatches.length && !bizMatches.length) {
+        dd.innerHTML = `
+          <div class="dd-empty">
+            <div class="dd-empty__icon">🔍</div>
+            <div class="dd-empty__title">${tf('search_no_results_for', { query: esc(q) })}</div>
+            <div class="dd-empty__sub">${t('search_try_different')}</div>
+          </div>`;
+      } else {
+        let html = '';
+
+        if (svcMatches.length) {
+          html += `<div class="dd-section-label">${t('search_services_group')}</div>`;
+          svcMatches.forEach(name => {
+            html += `
+              <div class="dd-item" role="option" data-value="${esc(name)}">
+                <span class="dd-item__icon">${ICON_SEARCH}</span>
+                <div class="dd-item__body">
+                  <div class="dd-item__name">${highlight(name, q)}</div>
+                </div>
+                <span class="dd-item__arrow">${ICON_ARROW}</span>
+              </div>`;
+          });
+        }
+
+        if (svcMatches.length && bizMatches.length) {
+          html += `<div class="dd-sep"></div>`;
+        }
+
+        if (bizMatches.length) {
+          html += `<div class="dd-section-label">${t('search_businesses_group')}</div>`;
+          bizMatches.forEach(biz => {
+            html += `
+              <div class="dd-item" role="option" data-value="${esc(biz.name)}">
+                <span class="dd-item__icon">${ICON_SEARCH}</span>
+                <div class="dd-item__body">
+                  <div class="dd-item__name">${highlight(biz.name, q)}</div>
+                  ${biz.address ? `<div class="dd-item__address">${esc(biz.address)}</div>` : ''}
+                </div>
+                <span class="dd-item__arrow">${ICON_ARROW}</span>
+              </div>`;
+          });
+        }
+
+        dd.innerHTML = html;
+      }
+
+      wrapper.appendChild(dd);
+      dropdown = dd;
+
+      // Delegate clicks (works for mouse + touch)
+      dd.addEventListener('click', e => {
+        const item = e.target.closest('.dd-item');
+        if (item) selectItem(item.dataset.value);
+      });
+
+      input.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDropdown() {
+      if (dropdown) {
+        dropdown.remove();
+        dropdown = null;
+      }
+      focusedIdx = -1;
+      input.setAttribute('aria-expanded', 'false');
+    }
+
+    // ─── Select ───────────────────────────────────────────────────────────────
+    function selectItem(value) {
+      clearTimeout(blurTimer);
+      input.value = value;
+      clearBtn.classList.add('show');
+      closeDropdown();
+      input.focus();
+    }
+
+    // Called by popular chips
+    function fillSearch(value) {
+      input.value = value;
+      clearBtn.classList.add('show');
+      input.focus();
+      openDropdown(value);
+    }
+
+    // ─── Keyboard navigation ──────────────────────────────────────────────────
+    function getItems() {
+      return dropdown ? Array.from(dropdown.querySelectorAll('.dd-item')) : [];
+    }
+
+    function setFocused(idx) {
+      const items = getItems();
+      items.forEach((el, i) => el.classList.toggle('focused', i === idx));
+      focusedIdx = idx;
+      if (idx >= 0) items[idx]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    input.addEventListener('keydown', e => {
+      const items = getItems();
+
+      if (!dropdown) {
+        if (e.key === 'Enter' && input.value.trim()) {
+          // Could navigate to search results page here
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocused(Math.min(focusedIdx + 1, items.length - 1));
+          break;
+
+        case 'ArrowUp':
+          e.preventDefault();
+          if (focusedIdx <= 0) {
+            setFocused(-1);
+          } else {
+            setFocused(focusedIdx - 1);
+          }
+          break;
+
+        case 'Enter':
+          e.preventDefault();
+          if (focusedIdx >= 0 && items[focusedIdx]) {
+            selectItem(items[focusedIdx].dataset.value);
+          } else if (items[0]) {
+            setFocused(0);
+            selectItem(items[0].dataset.value);
+          }
+          break;
+
+        case 'Escape':
+          closeDropdown();
+          break;
+      }
+    });
+
+    // ─── Input events ─────────────────────────────────────────────────────────
+    input.addEventListener('input', () => {
+      const val = input.value;
+      clearBtn.classList.toggle('show', val.length > 0);
+      openDropdown(val);
+    });
+
+    input.addEventListener('focus', () => {
+      searchBox.classList.add('active');
+      if (input.value.trim()) openDropdown(input.value);
+    });
+
+    input.addEventListener('blur', () => {
+      searchBox.classList.remove('active');
+      // 400ms gives mobile simulated clicks (~300ms) time to fire first
+      blurTimer = setTimeout(closeDropdown, 400);
+    });
+
+    // ─── Clear button ─────────────────────────────────────────────────────────
+    clearBtn.addEventListener('click', () => {
+      clearTimeout(blurTimer);
+      input.value = '';
+      clearBtn.classList.remove('show');
+      closeDropdown();
+      input.focus();
+    });
+
+    // ─── Click outside ────────────────────────────────────────────────────────
+    document.addEventListener('mousedown', e => {
+      if (!wrapper.contains(e.target)) closeDropdown();
+    });
+
+    applyI18n();
+    document.title = t('search_page_document_title');
+    input.setAttribute('aria-label', t('search_aria_label'));
+    clearBtn.setAttribute('aria-label', t('search_clear'));
+  </script>
+</body>
+</html>

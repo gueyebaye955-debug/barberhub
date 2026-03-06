@@ -226,7 +226,7 @@
             ratingValue: b.rating,
             reviewCount: b.total_reviews
           },
-          url: `profile.html?id=${b.id}`
+          url: getBarberProfileUrl(b.id)
         }
       }));
 
@@ -442,7 +442,7 @@
             ${slotLine}
             ${priceLine}
             <div style="font-size:0.75rem;margin-top:0.25rem"> ${bookedToday} ${t('card_booked_today')}</div>
-            <a href="profile.html?id=${b.id}" style="display:block;margin-top:0.6rem;background:#e94560;color:#fff;padding:0.3rem 0.75rem;border-radius:6px;font-size:0.78rem;text-align:center;text-decoration:none">${t('card_book_now')} </a>
+            <a href="${getBarberProfileUrl(b.id)}" style="display:block;margin-top:0.6rem;background:#e94560;color:#fff;padding:0.3rem 0.75rem;border-radius:6px;font-size:0.78rem;text-align:center;text-decoration:none">${t('card_book_now')} </a>
           </div>`);
         mapMarkers.push(m);
       });
@@ -510,7 +510,7 @@
       document.getElementById('autocompleteList').style.display = 'none';
       if (type === 'barber' && id) {
         track('profile_view', { source: 'autocomplete', barber_id: id });
-        window.location.href = `profile.html?id=${id}`;
+        window.location.href = getBarberProfileUrl(id);
         return;
       }
       filters.search = label;
@@ -549,5 +549,4 @@
   </script>
 </body>
 </html>
-
 

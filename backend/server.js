@@ -42,7 +42,9 @@ app.use(helmet({
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (server-to-server, curl)
+    // and 'null' origin which browsers send for file:// pages
+    if (!origin || origin === 'null' || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error('Origin not allowed by CORS'));
@@ -51,7 +53,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 
-app.use(express.json({ limit: '200kb' }));
+app.use(express.json({ limit: '3mb' })); // 3mb to allow base64 image uploads
 
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -84,6 +86,10 @@ app.use('/api', (_req, res) => {
 
 const frontendDir = path.join(__dirname, '..');
 app.use(express.static(frontendDir));
+
+app.get('/barber/:id', (req, res) => {
+  res.sendFile(path.join(frontendDir, 'profile.html'));
+});
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));

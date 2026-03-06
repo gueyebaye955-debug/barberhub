@@ -320,7 +320,7 @@
                       <td> ${b.rating.toFixed(1)}</td>
                       <td>${bkCnt}</td>
                       <td>${b.verified ? '<span class="status-badge badge-verified"> Verified</span>' : '<span style="color:var(--text-muted);font-size:0.8rem"></span>'}</td>
-                      <td><a href="profile.html?id=${b.id}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a></td>
+                      <td><a href="${getBarberProfileUrl(b.id)}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a></td>
                     </tr>`;
                   }).join('')}
                 </tbody>
@@ -349,7 +349,7 @@
                     <td><span class="status-badge badge-${escapeHTML(a.role)}">${escapeHTML(a.role)}</span></td>
                     <td>${escapeHTML(a.city||'')}</td>
                     <td>
-                      ${a.role === 'barber' ? `<a href="profile.html?id=${a.barber_id||1}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a>` : ''}
+                      ${a.role === 'barber' ? `<a href="${getBarberProfileUrl(a.barber_id||1)}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a>` : ''}
                       ${a.role !== 'admin' ? `<button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);margin-left:0.3rem" onclick="deleteUser('${a.email}')">${t('admin_remove')}</button>` : ''}
                     </td>
                   </tr>`).join('')}
@@ -612,5 +612,4 @@
   </script>
 </body>
 </html>
-
 

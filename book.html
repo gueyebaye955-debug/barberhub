@@ -174,7 +174,7 @@
       const stepLabels = [t('book_step_service'), t('book_step_datetime'), t('book_step_confirm')];
       const html = `
         <div style="margin: 1.25rem 0 0">
-          <a href="profile.html?id=${barber.id}" style="color:var(--text-muted);font-size:0.85rem">${t('book_back_profile')}</a>
+          <a href="${getBarberProfileUrl(barber.id)}" style="color:var(--text-muted);font-size:0.85rem">${t('book_back_profile')}</a>
         </div>
         <div class="book-layout">
           <div class="book-sidebar">
@@ -218,7 +218,7 @@
             <h2>${t('step0_title')}</h2>
             <p class="sub">This barber has no services listed yet.</p>
             <div class="book-nav">
-              <a class="btn btn-ghost" href="profile.html?id=${barber.id}">Back to Profile</a>
+              <a class="btn btn-ghost" href="${getBarberProfileUrl(barber.id)}">Back to Profile</a>
               <a class="btn btn-primary" href="barbers.html">Browse Other Barbers</a>
             </div>`;
           return;
@@ -434,6 +434,7 @@
       }
 
       let booking = null;
+      let providerNotify = null;
       try {
         if (window.BH_API) {
           const created = await window.BH_API.createBooking({
@@ -444,6 +445,7 @@
             notes: sel.notes
           });
           booking = created?.booking || null;
+          providerNotify = created?.provider_notify || null;
         }
       } catch (err) {
         alert(err.message || 'Unable to confirm booking.');
@@ -490,6 +492,10 @@
       const waMsg = encodeURIComponent(
         `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via BarberHub`
       );
+      const manualWaLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMsg}` : '';
+      const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
+      const providerWaSent = !!providerNotify?.whatsapp_sent;
+      const providerEmailSent = !!providerNotify?.email_sent;
 
       document.getElementById('bookContainer').innerHTML = `
         <div style="max-width:480px;margin:4rem auto;text-align:center;padding:2rem">
@@ -503,15 +509,20 @@
             <button class="btn btn-primary btn-sm" onclick="addBookingToGoogleCalendar()">Add to Google Calendar</button>
             <button class="btn btn-ghost btn-sm" onclick="downloadBookingICS()">Download .ics</button>
           </div>
-          ${cleanPhone ? `
+          ${providerWaLink ? `
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem">
             <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">
-               Pay via Wave or cash  contact the barber directly:
+              ${providerWaSent
+                ? 'Booking details were sent to provider WhatsApp.'
+                : 'Send booking details to provider WhatsApp:'}
             </p>
-            <a href="https://wa.me/${cleanPhone}?text=${waMsg}" target="_blank" rel="noopener"
+            <a href="${providerWaLink}" target="_blank" rel="noopener"
                style="display:inline-flex;align-items:center;gap:0.6rem;background:#25d366;color:white;padding:0.75rem 1.5rem;border-radius:var(--radius);font-weight:700;text-decoration:none;font-size:1rem">
-               Pay via Wave or WhatsApp
+              ${providerWaSent ? 'Open WhatsApp chat' : 'Send on WhatsApp'}
             </a>
+            ${providerEmailSent
+              ? '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.8rem">Provider email notification was also sent.</p>'
+              : ''}
           </div>` : ''}
           <a href="dashboard.html" style="color:var(--text-muted);font-size:0.875rem">
             Go to Dashboard 

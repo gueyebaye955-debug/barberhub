@@ -126,7 +126,25 @@ router.patch('/:id/approve', requireAuth, requireRole('admin'), asyncHandler(asy
     return res.status(400).json({ error: 'approved must be true or false' });
   }
 
+  const userResult = await pool.query(
+    'SELECT id, role, city FROM users WHERE id=$1',
+    [userId]
+  );
+  if (!userResult.rows.length) return res.status(404).json({ error: 'User not found' });
+  const targetUser = userResult.rows[0];
+
   await pool.query('UPDATE users SET approved=$1 WHERE id=$2', [req.body.approved, userId]);
+
+  // Ensure approved barbers always have a profile so /barber/:id can render from DB.
+  if (req.body.approved === true && targetUser.role === 'barber') {
+    await pool.query(
+      `INSERT INTO barber_profiles(user_id, city)
+       VALUES($1, $2)
+       ON CONFLICT(user_id) DO NOTHING`,
+      [targetUser.id, targetUser.city || '']
+    );
+  }
+
   return res.json({ ok: true });
 }));
 

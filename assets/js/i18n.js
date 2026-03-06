@@ -14,6 +14,17 @@ const TRANSLATIONS = {
     nav_signup:           'Sign Up',
     nav_dashboard:        'Dashboard',
     nav_logout:           'Logout',
+    nav_styles:           'Styles',
+    nav_shops:            'Shops',
+    nav_my_bookings:      'My Bookings',
+    nav_favorites:        'Favorites',
+    nav_notifications:    'Notifications',
+    nav_toggle_theme:     'Toggle theme',
+    nav_search_placeholder:'Search services or businesses',
+    nav_search_mobile_ph: 'Search services or businesses',
+    nav_cities_group:     'Cities',
+    nav_barbers_group:    'Barbers',
+    nav_no_results_for:   'No results for "{query}"',
 
     //  Footer 
     footer_tagline:       'Connecting you with the best barbers in your city. Professional cuts, seamless booking.',
@@ -25,15 +36,20 @@ const TRANSLATIONS = {
     footer_help:          'Help Center',
     footer_contact:       'Contact Us',
     footer_privacy:       'Privacy Policy',
+    footer_terms:         'Terms of Service',
+    footer_cancel_policy: 'Cancellation Policy',
+    footer_nyc_guide:     'NYC Barber Guide',
+    footer_brooklyn_barbers:'Brooklyn Barbers',
     footer_rights:        ' 2025 BarberHub. All rights reserved.',
     footer_made:          'Made with  for the barber community',
 
     //  Index 
     hero_tag:             ' Professional Barber Marketplace',
+    hero_title:           'Find, book, <span class="hero__accent">appointments online.</span>',
     hero_title_1:         'Find Your Perfect',
     hero_title_2:         'Barber Today',
-    hero_sub:             'Discover top-rated barbers near you, book appointments online, and get the cut you deserve.',
-    hero_search_q:        'Search barbers, styles, services...',
+    hero_sub:             'Discover top-rated barbers near you, book appointments online.',
+    hero_search_q:        'Search services or businesses',
     hero_search_city:     'City',
     hero_search_btn:      'Search',
     hero_stat_barbers:    'Barbers',
@@ -63,11 +79,90 @@ const TRANSLATIONS = {
     cta_explore:          'Explore Barbers',
     promo_text:           'New barbers joining daily  Book today and save!',
     promo_cta:            'Browse Barbers ',
+    search_page_document_title:'Search - BarberHub',
+    search_page_eyebrow:  'BarberHub Search',
+    search_page_title:    'Find your next appointment',
+    search_page_sub:      'Book top-rated barbers and beauty professionals near you.',
+    search_label_services_businesses:'Services or businesses',
+    search_placeholder:   'Search services or businesses',
+    search_aria_label:    'Search services or businesses',
+    search_clear:         'Clear search',
+    search_popular_now:   'Popular right now',
+    search_no_results_for:'No results for "{query}"',
+    search_try_different: 'Try a different spelling or browse popular searches',
+    search_services_group:'Services',
+    search_businesses_group:'Businesses',
+    legal_last_updated:   'Last updated: March 3, 2026',
+    support_link_word:    'support',
+    err_page_not_found:   'Page Not Found',
+    err_404_desc:         "Looks like this page got a bad cut. The page you're looking for doesn't exist or has moved.",
+    err_back_home:        'Back Home',
+    terms_intro:          'By using BarberHub, you agree to these terms.',
+    terms_platform_role:  'Platform Role',
+    terms_platform_role_desc:'BarberHub provides discovery and booking tools. Services are delivered by independent barbers and shops.',
+    terms_accounts:       'Accounts',
+    terms_accounts_1:     'Keep account details accurate and secure.',
+    terms_accounts_2:     'Do not impersonate others or misuse platform features.',
+    terms_bookings_and_payments:'Bookings and Payments',
+    terms_bookings_1:     'Booking availability can change quickly.',
+    terms_bookings_2:     'Prices and cancellation windows are set by each barber profile.',
+    terms_bookings_3:     'Payment method details are shown at booking confirmation.',
+    terms_acceptable_use: 'Acceptable Use',
+    terms_acceptable_1:   'No abusive content, spam, fraud, or unauthorized scraping.',
+    terms_acceptable_2:   'No attempts to disrupt service operation or security controls.',
+    terms_liability:      'Liability',
+    terms_liability_desc: 'To the extent allowed by law, BarberHub is not liable for indirect damages arising from platform use.',
+    terms_changes:        'Changes',
+    terms_changes_desc:   'We may update these terms and will post the revised date on this page.',
+    terms_questions_contact:'For questions about these terms, contact',
+    privacy_intro_long:   'BarberHub is committed to protecting your privacy. This policy describes what information we collect and how we use it.',
+    privacy_information_collect:'Information We Collect',
+    privacy_collect_1:    'Account details such as name, email, phone number, and city.',
+    privacy_collect_2:    'Booking details including service, barber, date, time, and notes.',
+    privacy_collect_3:    'Device/browser data for security, analytics, and troubleshooting.',
+    privacy_use_info:     'How We Use Information',
+    privacy_use_1:        'To create and manage accounts and appointments.',
+    privacy_use_2:        'To send booking confirmations, reminders, and service notifications.',
+    privacy_use_3:        'To improve site performance, reliability, and fraud protection.',
+    privacy_data_sharing: 'Data Sharing',
+    privacy_data_sharing_desc:'We share booking information with the selected barber to fulfill your appointment. We may also use trusted service providers for messaging and analytics.',
+    privacy_retention:    'Retention',
+    privacy_retention_desc:'We keep booking and account records as needed for service operations, legal obligations, and dispute resolution.',
+    privacy_choices:      'Your Choices',
+    privacy_choices_desc: 'You can request access, correction, or deletion of your data by contacting support.',
+    privacy_questions_contact:'For privacy questions, contact',
+    cancel_intro_long:    'Each barber can set a cancellation notice window shown on their profile. This page explains default policy behavior.',
+    cancel_customer_cancellations:'Customer Cancellations',
+    cancel_customer_1:    'Cancel as early as possible through your dashboard.',
+    cancel_customer_2:    'Late cancellations may affect priority for future bookings.',
+    cancel_no_shows:      'No-Shows',
+    cancel_no_shows_1:    'Repeated no-shows can lead to booking restrictions.',
+    cancel_no_shows_2:    'Barbers may require deposit-based bookings for repeat no-shows.',
+    cancel_barber_cancellations:'Barber Cancellations',
+    cancel_barber_1:      'Barbers should provide as much notice as possible.',
+    cancel_barber_2:      'Customers receive an in-app notification when a booking is cancelled.',
+    cancel_rescheduling:  'Rescheduling',
+    cancel_rescheduling_desc:'When possible, reschedule instead of cancelling to keep your preferred barber and service.',
+    cancel_dispute_contact:'If there is a dispute, contact',
+    cancel_dispute_suffix:'with booking reference and date.',
+    support_help_center_contact:'Help Center & Contact',
+    support_get_support:  'Get support for bookings, accounts, and barber onboarding.',
+    support_booking_help: 'Booking Help',
+    support_booking_1:    'Use your dashboard to cancel or review appointments.',
+    support_booking_2:    'Check each barber profile for cancellation windows.',
+    support_booking_3:    'Use booking reference IDs for faster support.',
+    support_barber_onboarding:'Barber Onboarding',
+    support_barber_1:     'Complete profile photo, schedule, and service list.',
+    support_barber_2:     'Connect your notifications in admin settings.',
+    support_barber_3:     'Set up your Google Business Profile for local visibility.',
+    support_open_google_profile:'Open Google Business Profile',
+    support_contact_support:'Contact Support',
+    support_email_anytime:'Email us anytime for technical or booking issues.',
 
     //  Barbers page 
     barbers_title:        'Find Your Perfect Barber',
     barbers_sub:          'Browse top-rated barbers near you',
-    filter_search_ph:     'Name, shop, or style',
+    filter_search_ph:     'Search services or businesses',
     filter_city:          'City',
     filter_city_all:      'All Cities',
     filter_rating:        'Min Rating',
@@ -91,6 +186,11 @@ const TRANSLATIONS = {
     barbers_found_plural: 'barbers found',
     no_barbers:           'No barbers found',
     no_barbers_sub:       'Try adjusting your filters.',
+    city_best_title:      'Best Barbers in {city}',
+    city_count_one:       '{count} barber in {city}',
+    city_count_many:      '{count} barbers in {city}',
+    city_intro:           'Compare ratings, next open slots, and prices for trusted barbers in {city}.',
+    city_try_other:       'Try another city page.',
 
     //  Barber Card 
     card_next:            'Next:',
@@ -115,6 +215,34 @@ const TRANSLATIONS = {
     profile_next:         ' Next:',
     click_to_view:        'Click any photo to view full size',
     no_portfolio:         'No portfolio photos yet.',
+    no_services_listed:   'No services listed yet.',
+    services_popular:     'Popular Services',
+    services_other:       'Other Services',
+    service_save_badge:   'Save up to',
+    msg_barber_btn:       'Message Barber',
+    view_google_btn:      'View on Google',
+    profile_invalid_link: 'Invalid barber profile link',
+    profile_link_copied:  'Profile link copied',
+    copy_profile_link_prompt:'Copy this barber profile link:',
+    portfolio_manage:     'Manage Portfolio',
+    portfolio_add_url_ph: 'Add photo URL (https://...)',
+    portfolio_caption_ph: 'Caption (optional)',
+    portfolio_add_btn:    'Add Photo',
+    portfolio_reorder_hint:'Use up/down to reorder. First photo is primary.',
+    portfolio_move_up:    'Move Up',
+    portfolio_move_down:  'Move Down',
+    portfolio_delete:     'Delete',
+    portfolio_max_reached:'Max 12 photos reached.',
+    portfolio_recent_work:'Recent Work',
+    portfolio_view_all:   'View All Photos',
+    portfolio_add_success:'Photo added.',
+    portfolio_save_success:'Caption updated.',
+    portfolio_reorder_success:'Portfolio order updated.',
+    portfolio_delete_success:'Photo deleted.',
+    portfolio_api_fallback:'API unavailable. Using local fallback.',
+    portfolio_invalid_url:'Use a valid image URL (https://...).',
+    portfolio_caption_too_long:'Caption must be 160 characters or fewer.',
+    portfolio_delete_confirm:'Delete this photo?',
     write_review:         ' Write a Review',
     no_reviews:           'No reviews yet. Be the first!',
     reviews_count:        'reviews',
@@ -276,6 +404,51 @@ const TRANSLATIONS = {
     booking_breakdown:    'Booking Breakdown',
     top_barbers:          'Top Barbers by Bookings',
     new_registrations:    'Newly Registered Accounts',
+
+    //  Home (redesigned app layout)
+    home_hero_title:      'Find and book appointments',
+    home_search_ph:       'Search services or barbers',
+    home_search_btn:      'Search',
+    home_recommended:     'Recommended',
+    home_categories:      'Categories',
+    home_special_offers:  'Special Offers',
+    bottom_home:          'Home',
+    bottom_explore:       'Explore',
+    bottom_appointments:  'Appointments',
+    bottom_profile:       'Profile',
+    sheet_close:          'Close',
+    home_promoted:        'Promoted',
+    home_save_up_to:      'Save up to {pct}%',
+    home_from_price:      'From {price}',
+    home_view_services:   'View services',
+    home_no_offers:       'No offers yet.',
+    home_no_businesses:   'No businesses available.',
+    sheet_book_now:       'Book Now',
+    sheet_book_from:      'Book Now — From {price}',
+    sheet_full_profile:   'Full Profile',
+    sheet_save_btn:       'Save',
+    sheet_saved_btn:      'Saved',
+    sheet_tab_gallery:    'Gallery',
+    sheet_tab_schedule:   'Schedule',
+    sheet_tap_view:       'Tap to view full size',
+    sheet_time_label:     'Time:',
+    sheet_book_btn:       'Book',
+    sheet_next_avail:     'Next available:',
+    sheet_no_schedule:    'Schedule not set.',
+    sheet_replied:        '{name} replied:',
+    sheet_reviews_plural: '{count} reviews',
+    cat_barbers:          'Barbers',
+    cat_hair_salon:       'Hair Salon',
+    cat_nails:            'Nails',
+    cat_brows_lashes:     'Brows & Lashes',
+    cat_piercing:         'Piercing',
+    cat_massage:          'Massage',
+    review_title:         'Write a Review',
+    review_sub:           'Rate your experience',
+    review_rating_label:  'Rating',
+    review_comment_label: 'Comment (optional)',
+    review_comment_ph:    'Share your experience...',
+    review_submit:        'Submit Review',
   },
 
   fr: {
@@ -286,6 +459,17 @@ const TRANSLATIONS = {
     nav_signup:           "S'inscrire",
     nav_dashboard:        'Tableau de bord',
     nav_logout:           'Dconnexion',
+    nav_styles:           'Styles',
+    nav_shops:            'Salons',
+    nav_my_bookings:      'Mes reservations',
+    nav_favorites:        'Favoris',
+    nav_notifications:    'Notifications',
+    nav_toggle_theme:     'Changer le theme',
+    nav_search_placeholder:'Rechercher un service ou un nom d\'entreprise',
+    nav_search_mobile_ph: 'Rechercher un service ou un nom d\'entreprise',
+    nav_cities_group:     'Villes',
+    nav_barbers_group:    'Barbiers',
+    nav_no_results_for:   'Aucun resultat pour "{query}"',
 
     //  Footer 
     footer_tagline:       'Connectez-vous avec les meilleurs barbiers de votre ville. Coupes professionnelles, rservation facile.',
@@ -297,15 +481,20 @@ const TRANSLATIONS = {
     footer_help:          "Centre d'aide",
     footer_contact:       'Nous contacter',
     footer_privacy:       'Politique de confidentialit',
+    footer_terms:         "Conditions d'utilisation",
+    footer_cancel_policy: "Politique d'annulation",
+    footer_nyc_guide:     'Guide des barbiers NYC',
+    footer_brooklyn_barbers:'Barbiers de Brooklyn',
     footer_rights:        ' 2025 BarberHub. Tous droits rservs.',
     footer_made:          "Fait avec  pour la communaut des barbiers",
 
     //  Index 
     hero_tag:             ' March de barbiers professionnels',
+    hero_title:           'Trouvez et prenez <span class="hero__accent">rendez-vous</span>',
     hero_title_1:         'Trouvez votre barbier',
     hero_title_2:         'idal aujourd\'hui',
-    hero_sub:             'Dcouvrez les meilleurs barbiers prs de chez vous, rservez en ligne et obtenez la coupe que vous mritez.',
-    hero_search_q:        'Rechercher barbiers, styles, services...',
+    hero_sub:             'Découvrez les meilleurs barbiers près de chez vous, réservez en ligne.',
+    hero_search_q:        'Rechercher un service ou un nom d\'entreprise',
     hero_search_city:     'Ville',
     hero_search_btn:      'Rechercher',
     hero_stat_barbers:    'Barbiers',
@@ -335,11 +524,90 @@ const TRANSLATIONS = {
     cta_explore:          'Explorer les barbiers',
     promo_text:           'De nouveaux barbiers chaque jour  Rservez aujourd\'hui et conomisez!',
     promo_cta:            'Voir les barbiers ',
+    search_page_document_title:'Recherche - BarberHub',
+    search_page_eyebrow:  'Recherche BarberHub',
+    search_page_title:    'Trouvez votre prochain rendez-vous',
+    search_page_sub:      'Reservez des barbiers et pros beaute pres de vous.',
+    search_label_services_businesses:'Services ou etablissements',
+    search_placeholder:   'Rechercher un service ou un nom d\'entreprise',
+    search_aria_label:    'Rechercher des services ou etablissements',
+    search_clear:         'Effacer la recherche',
+    search_popular_now:   'Populaire en ce moment',
+    search_no_results_for:'Aucun resultat pour "{query}"',
+    search_try_different: 'Essayez une autre orthographe ou les recherches populaires',
+    search_services_group:'Services',
+    search_businesses_group:'Etablissements',
+    legal_last_updated:   'Derniere mise a jour : 3 mars 2026',
+    support_link_word:    'assistance',
+    err_page_not_found:   'Page introuvable',
+    err_404_desc:         "On dirait que cette page a rate sa coupe. La page que vous cherchez n'existe pas ou a ete deplacee.",
+    err_back_home:        "Retour a l'accueil",
+    terms_intro:          'En utilisant BarberHub, vous acceptez ces conditions.',
+    terms_platform_role:  'Role de la plateforme',
+    terms_platform_role_desc:'BarberHub fournit des outils de recherche et de reservation. Les services sont assures par des barbiers et salons independants.',
+    terms_accounts:       'Comptes',
+    terms_accounts_1:     'Gardez les informations de compte exactes et securisees.',
+    terms_accounts_2:     "N'usurpez pas l'identite d'autrui et n'abusez pas des fonctionnalites de la plateforme.",
+    terms_bookings_and_payments:'Reservations et paiements',
+    terms_bookings_1:     'La disponibilite des reservations peut changer rapidement.',
+    terms_bookings_2:     "Les prix et delais d'annulation sont definis par chaque profil barbier.",
+    terms_bookings_3:     'Les details du moyen de paiement sont affiches a la confirmation.',
+    terms_acceptable_use: 'Utilisation acceptable',
+    terms_acceptable_1:   'Aucun contenu abusif, spam, fraude ou extraction non autorisee.',
+    terms_acceptable_2:   'Aucune tentative de perturber le service ou les controles de securite.',
+    terms_liability:      'Responsabilite',
+    terms_liability_desc: "Dans la limite autorisee par la loi, BarberHub n'est pas responsable des dommages indirects lies a l'utilisation de la plateforme.",
+    terms_changes:        'Modifications',
+    terms_changes_desc:   'Nous pouvons mettre a jour ces conditions et publierons la date revisee sur cette page.',
+    terms_questions_contact:'Pour toute question sur ces conditions, contactez',
+    privacy_intro_long:   "BarberHub s'engage a proteger votre vie privee. Cette politique decrit les informations que nous collectons et comment nous les utilisons.",
+    privacy_information_collect:'Informations que nous collectons',
+    privacy_collect_1:    'Informations de compte telles que nom, e-mail, numero de telephone et ville.',
+    privacy_collect_2:    'Details de reservation incluant service, barbier, date, heure et notes.',
+    privacy_collect_3:    'Donnees appareil/navigateur pour securite, analyses et depannage.',
+    privacy_use_info:     'Comment nous utilisons les informations',
+    privacy_use_1:        'Creer et gerer les comptes et rendez-vous.',
+    privacy_use_2:        'Envoyer confirmations, rappels et notifications de service.',
+    privacy_use_3:        'Ameliorer performances, fiabilite et protection contre la fraude.',
+    privacy_data_sharing: 'Partage des donnees',
+    privacy_data_sharing_desc:'Nous partageons les informations de reservation avec le barbier selectionne pour assurer votre rendez-vous. Nous pouvons aussi utiliser des prestataires fiables pour la messagerie et les analyses.',
+    privacy_retention:    'Conservation',
+    privacy_retention_desc:'Nous conservons les donnees de compte et reservation selon les besoins operationnels, obligations legales et resolution de litiges.',
+    privacy_choices:      'Vos choix',
+    privacy_choices_desc: "Vous pouvez demander l'acces, la correction ou la suppression de vos donnees en contactant le support.",
+    privacy_questions_contact:'Pour les questions de confidentialite, contactez',
+    cancel_intro_long:    "Chaque barbier peut definir un delai d'annulation visible sur son profil. Cette page explique le comportement par defaut.",
+    cancel_customer_cancellations:'Annulations client',
+    cancel_customer_1:    'Annulez le plus tot possible via votre tableau de bord.',
+    cancel_customer_2:    'Les annulations tardives peuvent affecter la priorite des futures reservations.',
+    cancel_no_shows:      'Absences',
+    cancel_no_shows_1:    'Les absences repetees peuvent entrainer des restrictions de reservation.',
+    cancel_no_shows_2:    'Les barbiers peuvent exiger un acompte pour les absences repetees.',
+    cancel_barber_cancellations:'Annulations barbier',
+    cancel_barber_1:      'Les barbiers doivent prevenir le plus tot possible.',
+    cancel_barber_2:      'Les clients recoivent une notification quand une reservation est annulee.',
+    cancel_rescheduling:  'Replanification',
+    cancel_rescheduling_desc:"Quand possible, replanifiez au lieu d'annuler pour garder votre barbier et service preferes.",
+    cancel_dispute_contact:'En cas de litige, contactez',
+    cancel_dispute_suffix:'avec reference de reservation et date.',
+    support_help_center_contact:"Centre d'aide et contact",
+    support_get_support:  "Obtenez de l'aide pour reservations, comptes et integration barbier.",
+    support_booking_help: 'Aide reservation',
+    support_booking_1:    'Utilisez votre tableau de bord pour annuler ou consulter vos rendez-vous.',
+    support_booking_2:    "Consultez chaque profil barbier pour les delais d'annulation.",
+    support_booking_3:    'Utilisez les references de reservation pour une aide plus rapide.',
+    support_barber_onboarding:'Integration barbier',
+    support_barber_1:     'Completez photo de profil, horaires et liste de services.',
+    support_barber_2:     'Connectez vos notifications dans les parametres admin.',
+    support_barber_3:     'Configurez votre Google Business Profile pour la visibilite locale.',
+    support_open_google_profile:'Ouvrir Google Business Profile',
+    support_contact_support:'Contacter le support',
+    support_email_anytime:'Ecrivez-nous a tout moment pour problemes techniques ou de reservation.',
 
     //  Barbers page 
     barbers_title:        'Trouvez votre barbier idal',
     barbers_sub:          'Parcourez les meilleurs barbiers prs de chez vous',
-    filter_search_ph:     'Nom, boutique ou style',
+    filter_search_ph:     'Rechercher un service ou un nom d\'entreprise',
     filter_city:          'Ville',
     filter_city_all:      'Toutes les villes',
     filter_rating:        'Note minimum',
@@ -363,6 +631,11 @@ const TRANSLATIONS = {
     barbers_found_plural: 'barbiers trouvs',
     no_barbers:           'Aucun barbier trouv',
     no_barbers_sub:       'Essayez de modifier vos filtres.',
+    city_best_title:      'Meilleurs barbiers a {city}',
+    city_count_one:       '{count} barbier a {city}',
+    city_count_many:      '{count} barbiers a {city}',
+    city_intro:           'Comparez les notes, prochains creneaux, et prix des barbiers de confiance a {city}.',
+    city_try_other:       'Essayez une autre page de ville.',
 
     //  Barber Card 
     card_next:            'Prochain :',
@@ -387,6 +660,34 @@ const TRANSLATIONS = {
     profile_next:         ' Prochain :',
     click_to_view:        'Cliquez sur une photo pour voir en grand',
     no_portfolio:         'Pas encore de photos de portfolio.',
+    no_services_listed:   'Aucun service disponible.',
+    services_popular:     'Services Populaires',
+    services_other:       'Autres Services',
+    service_save_badge:   'Economisez jusqu a',
+    msg_barber_btn:       'Contacter le barbier',
+    view_google_btn:      'Voir sur Google',
+    profile_invalid_link: 'Lien de profil barbier invalide',
+    profile_link_copied:  'Lien du profil copie',
+    copy_profile_link_prompt:'Copiez ce lien du profil barbier :',
+    portfolio_manage:     'Gerer le portfolio',
+    portfolio_add_url_ph: 'Ajouter URL photo (https://...)',
+    portfolio_caption_ph: 'Legende (optionnel)',
+    portfolio_add_btn:    'Ajouter photo',
+    portfolio_reorder_hint:'Utilisez haut/bas pour reordonner. La 1ere photo est principale.',
+    portfolio_move_up:    'Monter',
+    portfolio_move_down:  'Descendre',
+    portfolio_delete:     'Supprimer',
+    portfolio_max_reached:'Maximum 12 photos atteint.',
+    portfolio_recent_work:'Travaux recents',
+    portfolio_view_all:   'Voir toutes les photos',
+    portfolio_add_success:'Photo ajoutee.',
+    portfolio_save_success:'Legende mise a jour.',
+    portfolio_reorder_success:'Ordre du portfolio mis a jour.',
+    portfolio_delete_success:'Photo supprimee.',
+    portfolio_api_fallback:'API indisponible. Mode local active.',
+    portfolio_invalid_url:'Utilisez une URL image valide (https://...).',
+    portfolio_caption_too_long:'La legende doit faire 160 caracteres max.',
+    portfolio_delete_confirm:'Supprimer cette photo ?',
     write_review:         ' Laisser un avis',
     no_reviews:           "Pas encore d'avis. Soyez le premier !",
     reviews_count:        'avis',
@@ -548,6 +849,51 @@ const TRANSLATIONS = {
     booking_breakdown:    'Rpartition des rservations',
     top_barbers:          'Top barbiers par rservations',
     new_registrations:    'Nouveaux comptes inscrits',
+
+    //  Accueil (nouvelle mise en page)
+    home_hero_title:      'Trouvez et prenez rendez-vous',
+    home_search_ph:       'Rechercher services ou barbiers',
+    home_search_btn:      'Rechercher',
+    home_recommended:     'Recommand\u00e9',
+    home_categories:      'Cat\u00e9gories',
+    home_special_offers:  'Offres sp\u00e9ciales',
+    bottom_home:          'Accueil',
+    bottom_explore:       'Explorer',
+    bottom_appointments:  'Rendez-vous',
+    bottom_profile:       'Profil',
+    sheet_close:          'Fermer',
+    home_promoted:        'Promu',
+    home_save_up_to:      '\u00c9conomisez jusqu\u0027\u00e0 {pct}%',
+    home_from_price:      '\u00c0 partir de {price}',
+    home_view_services:   'Voir les services',
+    home_no_offers:       'Pas d\u0027offres pour l\u0027instant.',
+    home_no_businesses:   'Aucun \u00e9tablissement disponible.',
+    sheet_book_now:       'R\u00e9server',
+    sheet_book_from:      'R\u00e9server \u2014 \u00c0 partir de {price}',
+    sheet_full_profile:   'Profil complet',
+    sheet_save_btn:       'Enregistrer',
+    sheet_saved_btn:      'Enregistr\u00e9',
+    sheet_tab_gallery:    'Galerie',
+    sheet_tab_schedule:   'Horaires',
+    sheet_tap_view:       'Appuyez pour voir en grand',
+    sheet_time_label:     'Dur\u00e9e\u00a0:',
+    sheet_book_btn:       'R\u00e9server',
+    sheet_next_avail:     'Prochaine dispo\u00a0:',
+    sheet_no_schedule:    'Horaires non d\u00e9finis.',
+    sheet_replied:        '{name} a r\u00e9pondu\u00a0:',
+    sheet_reviews_plural: '{count} avis',
+    cat_barbers:          'Barbiers',
+    cat_hair_salon:       'Coiffeur',
+    cat_nails:            'Ongles',
+    cat_brows_lashes:     'Sourcils & Cils',
+    cat_piercing:         'Piercing',
+    cat_massage:          'Massage',
+    review_title:         'Laisser un avis',
+    review_sub:           '\u00c9valuez votre exp\u00e9rience',
+    review_rating_label:  'Note',
+    review_comment_label: 'Commentaire (optionnel)',
+    review_comment_ph:    'Partagez votre exp\u00e9rience...',
+    review_submit:        'Soumettre l\u0027avis',
   },
 
   wo: {
@@ -559,6 +905,17 @@ const TRANSLATIONS = {
     nav_signup:           'Bind sa ygl',
     nav_dashboard:        'Dahsbor',
     nav_logout:           'Dem fi',
+    nav_styles:           'Styles',
+    nav_shops:            'Boutiques',
+    nav_my_bookings:      'Sam rendez-vous yi',
+    nav_favorites:        'Favoris',
+    nav_notifications:    'Ndyu yi',
+    nav_toggle_theme:     'Soppi theme bi',
+    nav_search_placeholder:'Seet turu service walla business',
+    nav_search_mobile_ph: 'Seet turu service walla business',
+    nav_cities_group:     'Dkk yi',
+    nav_barbers_group:    'Barber yi',
+    nav_no_results_for:   'Amul njariñ ci "{query}"',
 
     // Footer
     footer_tagline:       'Jkk la ak barber yi rafet ci sa dkk. Taille professionnelle, rendez-vous yomb.',
@@ -570,15 +927,20 @@ const TRANSLATIONS = {
     footer_help:          'Xam-xam',
     footer_contact:       'Jokkoo ak nun',
     footer_privacy:       'Politig suturlu',
+    footer_terms:         'Terms of Service',
+    footer_cancel_policy: 'Politig anulasion',
+    footer_nyc_guide:     'NYC Barber Guide',
+    footer_brooklyn_barbers:'Brooklyn Barber yi',
     footer_rights:        ' 2025 BarberHub. Mbolo am seen ygl.',
     footer_made:          'Def ak  ci barber yi',
 
     // Index
     hero_tag:             ' March barber yi',
+    hero_title:           'Gisal te wut <span class="hero__accent">ranndiw</span>',
     hero_title_1:         'Seet sa barber',
     hero_title_2:         'bu baax tey',
-    hero_sub:             'Gis barber yi rafet ci sa kr, jl rendez-vous ci internet, ngir sa taille bu baax.',
-    hero_search_q:        'Seet barber, style, liggey...',
+    hero_sub:             'Gis barber yi rafet ci sa këur, jël rendez-vous ci internet.',
+    hero_search_q:        'Seet turu service walla business',
     hero_search_city:     'Dkk',
     hero_search_btn:      'Seet',
     hero_stat_barbers:    'Barber yi',
@@ -608,11 +970,24 @@ const TRANSLATIONS = {
     cta_explore:          'Xool barber yi',
     promo_text:           'Barber yp dau w  Jfl tey, waaw ci kanam!',
     promo_cta:            'Xool barber yi ',
+    search_page_document_title:'Seet - BarberHub',
+    search_page_eyebrow:  'Seet ci BarberHub',
+    search_page_title:    'Seet sa rendez-vous bi ci kanam',
+    search_page_sub:      'Jl barber yi ak beauty professionals yi ci sa wet.',
+    search_label_services_businesses:'Services walla businesses',
+    search_placeholder:   'Seet turu service walla business',
+    search_aria_label:    'Seet services walla businesses',
+    search_clear:         'Far seet bi',
+    search_popular_now:   'Lu gna popular leegi',
+    search_no_results_for:'Amul njariñ ci "{query}"',
+    search_try_different: 'Jfeeneen bindin walla xool seet yu popular yi',
+    search_services_group:'Services',
+    search_businesses_group:'Businesses',
 
     // Barbers page
     barbers_title:        'Seet sa barber bu baax',
     barbers_sub:          'Xool barber yi rafet ci kaw ci sa dkk',
-    filter_search_ph:     'Tur, boutique walla style',
+    filter_search_ph:     'Seet turu service walla business',
     filter_city:          'Dkk',
     filter_city_all:      'Dkk ypp',
     filter_rating:        'Note bu ndaw',
@@ -636,6 +1011,11 @@ const TRANSLATIONS = {
     barbers_found_plural: 'barber yi gna',
     no_barbers:           'Barber amul',
     no_barbers_sub:       'Sopiku filtres yi.',
+    city_best_title:      'Barber yi gna baax ci {city}',
+    city_count_one:       '{count} barber ci {city}',
+    city_count_many:      '{count} barber yi ci {city}',
+    city_intro:           'Melo notes, wakhtaan yi am, ak pri yi ci barber yi bu woor ci {city}.',
+    city_try_other:       'Jfeeneen benn xet wu yeneen dkk.',
 
     // Card
     card_next:            'Ci kanam:',
@@ -660,6 +1040,34 @@ const TRANSLATIONS = {
     profile_next:         ' Ci kanam:',
     click_to_view:        'Do nataal ngir xool ci kaw',
     no_portfolio:         'Portfolio photos amul.',
+    no_services_listed:   'Service amul fi.',
+    services_popular:     'Services yi gna siiw',
+    services_other:       'Yeneen Services',
+    service_save_badge:   'Waxtu ci',
+    msg_barber_btn:       'Wax ak Barber bi',
+    view_google_btn:      'Xool ci Google',
+    profile_invalid_link: 'Liyu profil barber bi baaxul',
+    profile_link_copied:  'Liyu profil bi kopie na',
+    copy_profile_link_prompt:'Kopiee liiyu profil barber bii:',
+    portfolio_manage:     'Saytu Portfolio',
+    portfolio_add_url_ph: 'Yokk URL photo (https://...)',
+    portfolio_caption_ph: 'Caption (optional)',
+    portfolio_add_btn:    'Yokk Photo',
+    portfolio_reorder_hint:'Jfandikoo up/down ngir toftale. Bu jkk bi mooy photo bu mag.',
+    portfolio_move_up:    'Yeggsi Kaw',
+    portfolio_move_down:  'Wacci Suuf',
+    portfolio_delete:     'Mbb',
+    portfolio_max_reached:'12 photo ba noppi.',
+    portfolio_recent_work:'Liggey yu bees',
+    portfolio_view_all:   'Xool photo ypp',
+    portfolio_add_success:'Photo yokk na.',
+    portfolio_save_success:'Caption soppi na.',
+    portfolio_reorder_success:'Toftale portfolio soppi na.',
+    portfolio_delete_success:'Photo mbb na.',
+    portfolio_api_fallback:'API amul. Local fallback la nu jfle.',
+    portfolio_invalid_url:'Jox URL image bu baax (https://...).',
+    portfolio_caption_too_long:'Caption war na matadi 160 caractere.',
+    portfolio_delete_confirm:'Mbb photo bii?',
     write_review:         ' Dgl xam-xam',
     no_reviews:           'Xam-xam amul. Ygl jmk!',
     reviews_count:        'xam-xam',
@@ -821,14 +1229,62 @@ const TRANSLATIONS = {
     booking_breakdown:    'Rpartition rendez-vous',
     top_barbers:          'Top barber yi ci rendez-vous',
     new_registrations:    'Konte yi samp ci ginaaw',
+
+    // Keur (ndaw design)
+    home_hero_title:      'Seet te j\u00ebl rendez-vous',
+    home_search_ph:       'Seet service walla barber',
+    home_search_btn:      'Seet',
+    home_recommended:     'Mbismeelu ci yow',
+    home_categories:      'Xeex yi',
+    home_special_offers:  'Offres yu yaatu',
+    bottom_home:          'K\u00ebr',
+    bottom_explore:       'Xool',
+    bottom_appointments:  'Rendez-vous',
+    bottom_profile:       'Profil',
+    sheet_close:          'T\u00ebj',
+    home_promoted:        'Promu',
+    home_save_up_to:      'Waaw {pct}%',
+    home_from_price:      'J\u00ebg\u00ebl {price}',
+    home_view_services:   'Xool liggey yi',
+    home_no_offers:       'Offre am\u00fbl.',
+    home_no_businesses:   'Liggey am\u00fbl.',
+    sheet_book_now:       'J\u00ebl rendez-vous',
+    sheet_book_from:      'J\u00ebl rendez-vous \u2014 J\u00ebg\u00ebl {price}',
+    sheet_full_profile:   'Profil bu mag',
+    sheet_save_btn:       'D\u00ebkk',
+    sheet_saved_btn:      'D\u00ebkkoon',
+    sheet_tab_gallery:    'Galerie',
+    sheet_tab_schedule:   'Wakhtaan',
+    sheet_tap_view:       'Togg ng\u00fbr xool ci kaw',
+    sheet_time_label:     'Yoon:',
+    sheet_book_btn:       'J\u00ebl',
+    sheet_next_avail:     'Wakhtaan bi am:',
+    sheet_no_schedule:    'Wakhtaan s\u00ebtal na.',
+    sheet_replied:        '{name} tontu na:',
+    sheet_reviews_plural: '{count} xam-xam',
+    cat_barbers:          'Barber yi',
+    cat_hair_salon:       'Coiffeur',
+    cat_nails:            'Nails',
+    cat_brows_lashes:     'Garu & Xarit',
+    cat_piercing:         'Piercing',
+    cat_massage:          'Massage',
+    review_title:         'D\u00ebl xam-xam',
+    review_sub:           'Melokaan sa xeex',
+    review_rating_label:  'Note',
+    review_comment_label: 'Commentaire (am\u00fbl solo)',
+    review_comment_ph:    'Wone sa xeex...',
+    review_submit:        'Y\u00f3nnee xam-xam',
   }
 };
 
 //  Core functions 
 function getLang() {
-  // Only use stored lang if user explicitly chose it; otherwise default to 'fr'
+  // French is default on first visit unless user explicitly chooses another language.
+  const stored = localStorage.getItem('bh_lang');
+  if (!stored || !TRANSLATIONS[stored]) localStorage.setItem('bh_lang', 'fr');
   if (localStorage.getItem('bh_lang_chosen')) {
-    return localStorage.getItem('bh_lang') || 'fr';
+    const chosen = localStorage.getItem('bh_lang');
+    return TRANSLATIONS[chosen] ? chosen : 'fr';
   }
   return 'fr';
 }
@@ -846,6 +1302,97 @@ function t(key) {
          key;
 }
 
+function tf(key, vars = {}) {
+  const template = t(key);
+  if (typeof template !== 'string') return template;
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, varName) => {
+    if (Object.prototype.hasOwnProperty.call(vars, varName)) {
+      return String(vars[varName]);
+    }
+    return `{${varName}}`;
+  });
+}
+
+const EN_TEXT_TO_KEY = (() => {
+  const map = {};
+  const src = TRANSLATIONS.en || {};
+  Object.keys(src).forEach((key) => {
+    const value = src[key];
+    if (typeof value !== 'string') return;
+    const normalized = value.trim();
+    if (!normalized) return;
+    map[normalized] = key;
+  });
+  return map;
+})();
+
+function translateStaticFragments(root = document) {
+  const scope = root && root.body ? root.body : root;
+  if (!scope) return;
+
+  const isSkippable = (el) => {
+    if (!el) return true;
+    const tag = String(el.tagName || '').toUpperCase();
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return true;
+    if (el.closest('[data-i18n], [data-i18n-html], [data-i18n-skip]')) return true;
+    return false;
+  };
+
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+  textNodes.forEach((node) => {
+    const parent = node.parentElement;
+    if (isSkippable(parent)) return;
+    const raw = String(node.nodeValue || '');
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const key = EN_TEXT_TO_KEY[trimmed];
+    if (!key) return;
+    const translated = t(key);
+    if (!translated || translated === trimmed) return;
+    node.nodeValue = raw.replace(trimmed, translated);
+  });
+
+  const attrTargets = scope.querySelectorAll ? scope.querySelectorAll('[placeholder],[title],[aria-label]') : [];
+  attrTargets.forEach((el) => {
+    if (isSkippable(el)) return;
+    ['placeholder', 'title', 'aria-label'].forEach((attr) => {
+      const raw = el.getAttribute(attr);
+      if (!raw) return;
+      const trimmed = raw.trim();
+      const key = EN_TEXT_TO_KEY[trimmed];
+      if (!key) return;
+      const translated = t(key);
+      if (!translated || translated === trimmed) return;
+      el.setAttribute(attr, translated);
+    });
+  });
+}
+
+let i18nObserverStarted = false;
+function ensureI18nObserver() {
+  if (i18nObserverStarted || typeof MutationObserver === 'undefined') return;
+  if (!document.body) return;
+  i18nObserverStarted = true;
+  let pending = false;
+  const observer = new MutationObserver(() => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      translateStaticFragments(document);
+    });
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['placeholder', 'title', 'aria-label']
+  });
+}
+
 // Apply translations to all [data-i18n] elements in the DOM
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -859,6 +1406,11 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-html]').forEach(el => {
     el.innerHTML = t(el.getAttribute('data-i18n-html'));
   });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-ph'));
+  });
+  translateStaticFragments(document);
+  ensureI18nObserver();
   // Update <html lang>
   document.documentElement.lang = getLang();
 }

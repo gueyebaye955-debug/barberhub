@@ -3,49 +3,291 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>if (/\/barber\/\d+/.test(location.pathname)) document.write('<base href="/">');</script>
   <title>Barber Profile  BarberHub</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
-    .profile-hero { background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%); border-bottom: 1px solid var(--border); padding: 2.5rem 0; }
-    .profile-header { display: grid; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: start; }
-    .profile-ava { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--primary); background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 800; color: white; overflow: hidden; flex-shrink: 0; }
+    .master-sticky-wrap {
+      position: sticky;
+      top: 66px;
+      z-index: 30;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(6px);
+    }
+    .master-topbar {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0;
+    }
+    .master-title {
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .master-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .master-icon-btn {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .master-icon-btn:hover { background: var(--bg-elevated); border-color: var(--primary); }
+    .master-icon-btn.is-fav {
+      color: var(--primary);
+      border-color: rgba(233, 69, 96, 0.4);
+      background: rgba(233, 69, 96, 0.08);
+    }
+    .master-tabs {
+      display: flex;
+      gap: 0.3rem;
+      overflow-x: auto;
+      padding-bottom: 0.2rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .master-tabs::-webkit-scrollbar { display: none; }
+    .master-tab-btn {
+      min-height: 44px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 2px solid transparent;
+      padding: 0.65rem 0.55rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .master-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .profile-tabs-wrap {
+      border-bottom: 1px solid var(--border);
+      margin: 0.25rem 0 0.85rem;
+      padding: 0 0.2rem;
+    }
+    .profile-wrap { padding: 1rem 0 3rem; }
+    .profile-summary {
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 1.1rem;
+    }
+    .profile-ava {
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
     .profile-ava img { width: 100%; height: 100%; object-fit: cover; }
-    .profile-name { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 800; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.2rem; }
-    .profile-sub  { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.65rem; }
-    .profile-meta { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.65rem; }
-    .profile-bio  { color: var(--text-muted); line-height: 1.7; max-width: 580px; font-size: 0.9rem; margin-top: 0.75rem; }
-    .profile-cta  { min-width: 180px; }
-    .svc-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .svc-item { padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .svc-item h4 { margin-bottom: 0.15rem; font-size: 0.95rem; }
-    .svc-item p  { color: var(--text-muted); font-size: 0.82rem; }
-    .svc-item span{ font-size: 0.78rem; color: var(--text-muted); }
-    .svc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
-    .svc-price { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
+    .profile-name {
+      font-size: clamp(1.1rem, 3.4vw, 1.45rem);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.2rem;
+    }
+    .profile-sub  { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.55rem; }
+    .profile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+    .profile-bio {
+      color: var(--text-muted);
+      line-height: 1.65;
+      max-width: 560px;
+      font-size: 0.86rem;
+      margin-top: 0.45rem;
+    }
+    .profile-cta { min-width: 175px; }
+    .review-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+    }
+    .review-head {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 0.6rem;
+    }
+    .review-ava {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
     .portfolio-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; }
-    .review-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; }
-    .review-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
-    .review-ava  { width: 38px; height: 38px; border-radius: 50%; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary); font-size: 0.85rem; flex-shrink: 0; }
-    .avail-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
-    .avail-row:last-child { border-bottom: none; }
-    .avail-row.closed { opacity: 0.5; }
-    .avail-day  { min-width: 110px; font-weight: 500; }
-    .avail-time { color: var(--text-muted); }
     .rating-bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; font-size: 0.82rem; }
     .rating-bar-track { flex: 1; height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
     .rating-bar-fill  { height: 100%; background: var(--gold); border-radius: 3px; }
     .rating-bar-label { min-width: 24px; color: var(--text-muted); }
     .reviews-summary { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: center; margin-bottom: 1.75rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .hours-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .hours-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0.95rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.86rem;
+    }
+    .hours-row:last-child { border-bottom: none; }
+    .hours-row.closed { opacity: 0.5; }
+
+    .services-accordion { display: flex; flex-direction: column; gap: 0.9rem; }
+    .service-group {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .service-group-toggle {
+      width: 100%;
+      min-height: 50px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      padding: 0.65rem 0.95rem;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .service-group-body { padding: 0 0.95rem 0.95rem; }
+    .service-group.collapsed .service-group-body { display: none; }
+    .service-group.collapsed .service-group-toggle { border-bottom: none; }
+    .service-arrow {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .svc-item {
+      padding: 1rem;
+      margin-top: 0.8rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .svc-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.9rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .svc-name {
+      font-size: 0.96rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+    .svc-desc { color: var(--text-muted); font-size: 0.83rem; line-height: 1.55; }
+    .svc-meta { color: var(--text-muted); font-size: 0.77rem; margin-top: 0.35rem; display: block; }
+    .svc-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.45rem;
+      min-width: 130px;
+    }
+    .svc-price { font-size: 1.08rem; font-weight: 800; color: var(--primary); }
+    .svc-discount {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #9a3412;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 999px;
+      padding: 0.16rem 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .svc-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+    .svc-preview-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
     @media (max-width: 768px) {
-      .profile-header { grid-template-columns: 1fr; text-align: center; }
+      .master-sticky-wrap { top: 61px; }
+      .master-topbar { gap: 0.55rem; }
+      .master-title { font-size: 0.92rem; }
+      .profile-summary { grid-template-columns: 1fr; text-align: center; }
       .profile-meta { justify-content: center; }
       .profile-cta  { width: 100%; }
+      .svc-right { width: 100%; align-items: flex-start; min-width: 0; }
+      .svc-head { flex-direction: column; gap: 0.7rem; }
+      .svc-preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .portfolio-grid { grid-template-columns: repeat(2,1fr); }
-      .svc-item { flex-direction: column; align-items: flex-start; }
-      .svc-right { width: 100%; align-items: flex-start; }
-      .avail-row { flex-wrap: wrap; gap: 0.35rem; }
-      .avail-day { min-width: 0; }
       .reviews-summary { grid-template-columns: 1fr; gap: 1rem; }
     }
   </style>
@@ -103,20 +345,115 @@
     renderFooter();
     applyI18n();
 
-    const params   = new URLSearchParams(location.search);
-    const barberId = parseInt(params.get('id'), 10);
-    const user     = Auth.getUser();
+    const params = new URLSearchParams(location.search);
+    const user = Auth.getUser();
     let barber = null;
 
-    let currentTab   = 'services';
+    let currentTab = 'services';
     let reviewRating = 5;
+    let serviceSectionState = { popular: true, other: true };
 
     // Lightbox state
     let lbPhotos = [];
-    let lbIndex  = 0;
+    let lbIndex = 0;
+
+    function resolveBarberId() {
+      const fromQuery = parseInt(params.get('id'), 10);
+      if (Number.isInteger(fromQuery) && fromQuery > 0) return fromQuery;
+      const match = location.pathname.match(/\/barber\/(\d+)\/?$/);
+      if (match) {
+        const fromPath = parseInt(match[1], 10);
+        if (Number.isInteger(fromPath) && fromPath > 0) return fromPath;
+      }
+      return null;
+    }
+
+    const barberId = resolveBarberId();
+
+    function getBarberPublicUrl(id) {
+      const safeId = parseInt(id, 10);
+      const fallback = `profile.html?id=${encodeURIComponent(id)}`;
+      if (!Number.isInteger(safeId) || safeId <= 0) return fallback;
+      if (location.protocol === 'file:') return fallback;
+      return `${location.origin}/barber/${safeId}`;
+    }
+
+    function getServiceImageList(service) {
+      const direct = [
+        ...(Array.isArray(service?.gallery) ? service.gallery : []),
+        ...(Array.isArray(service?.images) ? service.images : []),
+        ...(Array.isArray(service?.preview_images) ? service.preview_images : []),
+      ]
+        .map((img) => (typeof img === 'string' ? img.trim() : ''))
+        .filter(Boolean);
+      if (direct.length) return direct.slice(0, 3);
+
+      const portfolioFallback = (Array.isArray(barber?.portfolio) ? barber.portfolio : [])
+        .map((p) => (typeof p?.url === 'string' ? p.url.trim() : ''))
+        .filter(Boolean);
+      return portfolioFallback.slice(0, 3);
+    }
+
+    function getServiceGroups(services) {
+      const list = Array.isArray(services) ? services.slice() : [];
+      if (!list.length) return [];
+
+      let popular = list.filter((svc) => {
+        const category = String(svc?.category || '').toLowerCase();
+        return Boolean(svc?.popular || svc?.is_popular || category === 'popular services' || category === 'popular');
+      });
+      if (!popular.length) {
+        popular = list.slice(0, Math.min(3, list.length));
+      }
+
+      const popularIds = new Set(popular.map((svc, idx) => String(svc?.id ?? `popular-${idx}`)));
+      const other = list.filter((svc, idx) => !popularIds.has(String(svc?.id ?? `popular-${idx}`)));
+
+      const groups = [];
+      if (popular.length) groups.push({ key: 'popular', title: t('services_popular'), items: popular });
+      if (other.length) groups.push({ key: 'other', title: t('services_other'), items: other });
+      return groups;
+    }
+
+    function goBackToResults() {
+      try {
+        if (document.referrer) {
+          const ref = new URL(document.referrer);
+          if (ref.origin === location.origin) {
+            history.back();
+            return;
+          }
+        }
+      } catch (_) {}
+      location.href = 'barbers.html';
+    }
+
+    async function shareCurrentBarber() {
+      if (!barber) return;
+      const shareUrl = getBarberPublicUrl(barber.id);
+      const title = barber.shop_name || `${barber.first_name} ${barber.last_name}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, text: title, url: shareUrl });
+          return;
+        } catch (_) {}
+      }
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          alert(t('profile_link_copied'));
+          return;
+        } catch (_) {}
+      }
+      window.prompt(t('copy_profile_link_prompt'), shareUrl);
+    }
 
     (async function initProfilePage() {
-      // Render immediately with local data so the page isn't blank
+      if (!barberId) {
+        document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>${t('profile_invalid_link')}</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
+        return;
+      }
+
       barber = getBarber(barberId);
       if (barber) {
         try {
@@ -126,7 +463,6 @@
         }
       }
 
-      // Fetch full data from API in parallel with favorites sync
       const [apiBarber] = await Promise.all([
         loadApiBarberById(barberId),
         (async () => {
@@ -150,7 +486,7 @@
         return;
       }
 
-      document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name}  BarberHub`;
+      document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name} | BarberHub`;
       if (typeof Analytics !== 'undefined') Analytics.track('profile_view', { barber_id: barber.id, city: barber.city });
       try {
         renderProfile();
@@ -162,14 +498,15 @@
 
       if (params.get('review') === '1') {
         setTimeout(() => {
-          document.querySelectorAll('.tab-btn')[2]?.click();
+          const reviewsBtn = document.querySelector('.master-tab-btn[data-tab="reviews"]');
+          switchTab('reviews', reviewsBtn);
           openReviewModal();
-        }, 400);
+        }, 280);
       }
     }());
 
     function renderProfile() {
-      const isFav    = user ? Favorites.isFav(user.id, barber.id) : false;
+      const isFav = user ? Favorites.isFav(user.id, barber.id) : false;
       const services = getBarberServices(barber);
       const minPrice = getBarberMinPrice(barber);
       const initials = getNameInitials(barber?.first_name, barber?.last_name);
@@ -180,126 +517,157 @@
       const bookCta = isCustomer
         ? (services.length
           ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
-          : `<button class="btn btn-ghost btn-lg btn-block" disabled>No services listed yet</button>`)
+          : `<button class="btn btn-ghost btn-lg btn-block" disabled>${t('no_services_listed')}</button>`)
         : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`;
-      const minPriceLabel = minPrice === null
-        ? 'Pricing available on profile'
-        : `${t('profile_from')} ${fmtPrice(minPrice)}`;
+      const minPriceLabel = minPrice === null ? 'Pricing available on profile' : `${t('profile_from')} ${fmtPrice(minPrice)}`;
 
       document.getElementById('main').innerHTML = `
-        <div class="profile-hero">
-          <div class="container">
-            <div style="margin-bottom:0.75rem"><a href="barbers.html" style="color:var(--text-muted);font-size:0.85rem">${t('back_to_barbers')}</a></div>
-            <div class="profile-header fade-in">
-              <div class="profile-ava">${getBarberAvatar(barber) ? `<img src="${getBarberAvatar(barber)}" alt="${escapeHTML(barber.first_name)}">` : initials}</div>
-              <div>
-                <div class="profile-name">
-                  ${escapeHTML(barber.shop_name || barber.first_name + ' ' + barber.last_name)}
-                  ${barber.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
-                </div>
-                <div class="profile-sub">by ${escapeHTML(barber.first_name)} ${escapeHTML(barber.last_name)}</div>
-                <div class="profile-meta">
-                  <span> ${escapeHTML(barber.location)}</span>
-                  ${barber.years_experience ? `<span> ${barber.years_experience} ${t('profile_exp')}</span>` : ''}
-                  <span> ${barber.total_bookings} ${t('profile_bookings')}</span>
-                  ${barber.cancellation_hours ? `<span> ${barber.cancellation_hours}h ${t('profile_cancel')}</span>` : ''}
-                </div>
-                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-                  ${starsHTML(ratingValue, '1.05rem')}
-                  <strong>${ratingValue.toFixed(1)}</strong>
-                  <span class="text-muted text-sm">(${totalReviews} ${t('reviews_count')})</span>
-                  ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:50px;font-weight:700"> ${barber.booked_today} ${t('card_booked_today')}</span>` : ''}
-                  ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" style="margin-left:0.5rem" onclick="toggleFav()">${isFav ? t('profile_saved') : t('profile_save')}</button>` : ''}
-                </div>
-                ${barber.bio ? `<div class="profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
-              </div>
-              <div class="profile-cta">
-                ${bookCta}
-                ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.35rem"> Message Barber</a>` : ''}
-                <a href="${getGoogleBusinessLink(barber)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.5rem">View on Google</a>
-                <p class="text-muted text-sm text-center mt-1">${minPriceLabel}</p>
-                <p class="text-muted text-sm text-center" style="font-size:0.72rem">${t('profile_next')} <strong style="color:var(--green)">${getNextAvailable(barber)}</strong></p>
-              </div>
+        <div class="master-sticky-wrap">
+          <div class="container master-topbar">
+            <button class="master-icon-btn" onclick="goBackToResults()" aria-label="Back">&#8592;</button>
+            <div class="master-title">${escapeHTML(barber.shop_name || `${barber.first_name} ${barber.last_name}`)}</div>
+            <div class="master-actions">
+              <button class="master-icon-btn" onclick="shareCurrentBarber()" aria-label="Share">&#8599;</button>
+              <button class="master-icon-btn ${isFav ? 'is-fav' : ''}" onclick="toggleFav()" aria-label="Favorite">${isFav ? '&#9829;' : '&#9825;'}</button>
             </div>
           </div>
         </div>
 
-        <div class="container" style="margin-top:2rem">
-          <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('services',this)">${t('tab_services')}</button>
-            <button class="tab-btn" onclick="switchTab('portfolio',this)">${t('tab_portfolio')}${portfolio.length ? ` (${portfolio.length})` : ''}</button>
-            <button class="tab-btn" onclick="switchTab('reviews',this)">${t('tab_reviews')}</button>
-            <button class="tab-btn" onclick="switchTab('availability',this)">${t('tab_schedule')}</button>
+        <div class="container profile-wrap">
+          <div class="profile-summary card fade-in">
+            <div class="profile-ava">${getBarberAvatar(barber) ? `<img src="${getBarberAvatar(barber)}" alt="${escapeHTML(barber.first_name)}">` : initials}</div>
+            <div>
+              <div class="profile-name">
+                ${escapeHTML(barber.shop_name || `${barber.first_name} ${barber.last_name}`)}
+                ${barber.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
+              </div>
+              <div class="profile-sub">by ${escapeHTML(barber.first_name)} ${escapeHTML(barber.last_name)}</div>
+              <div class="profile-meta">
+                <span>${escapeHTML(barber.location || barber.city || '')}</span>
+                ${barber.years_experience ? `<span>${barber.years_experience} ${t('profile_exp')}</span>` : ''}
+                <span>${barber.total_bookings} ${t('profile_bookings')}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                ${starsHTML(ratingValue, '1.02rem')}
+                <strong>${ratingValue.toFixed(1)}</strong>
+                <span class="text-muted text-sm">(${totalReviews} ${t('reviews_count')})</span>
+                ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:50px;font-weight:700">${barber.booked_today} ${t('card_booked_today')}</span>` : ''}
+              </div>
+              ${barber.bio ? `<div class="profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
+            </div>
+            <div class="profile-cta">
+              ${bookCta}
+              ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.35rem">${t('msg_barber_btn')}</a>` : ''}
+              <a href="${getGoogleBusinessLink(barber)}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm btn-block" style="margin-top:0.5rem">${t('view_google_btn')}</a>
+              <p class="text-muted text-sm text-center mt-1">${minPriceLabel}</p>
+            </div>
           </div>
+
+          <div class="profile-tabs-wrap">
+            <div class="master-tabs">
+              <button class="master-tab-btn active" data-tab="services" onclick="switchTab('services', this)">${(t('tab_services') || 'Services').trim().toUpperCase()}</button>
+              <button class="master-tab-btn" data-tab="gallery" onclick="switchTab('gallery', this)">${(typeof t === 'function' ? t('sheet_tab_gallery') : 'Gallery').trim().toUpperCase()}</button>
+              <button class="master-tab-btn" data-tab="reviews" onclick="switchTab('reviews', this)">${(t('tab_reviews') || 'Avis').trim().toUpperCase()}</button>
+              <button class="master-tab-btn" data-tab="availability" onclick="switchTab('availability', this)">${(typeof t === 'function' ? t('sheet_tab_schedule') : 'Horaires').trim().toUpperCase()}</button>
+            </div>
+          </div>
+
           <div id="tabContent" style="padding-bottom:3rem"></div>
         </div>`;
 
-      renderTab('services');
+      switchTab(currentTab || 'services');
+    }
+
+    function openPortfolioTab() {
+      const btn = document.querySelector('.master-tab-btn[data-tab="gallery"]');
+      if (!btn) return;
+      switchTab('gallery', btn);
+      document.getElementById('tabContent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function switchTab(tab, btn) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       currentTab = tab;
+      document.querySelectorAll('.master-tab-btn').forEach((tabBtn) => tabBtn.classList.remove('active'));
+      const targetBtn = btn || document.querySelector(`.master-tab-btn[data-tab="${tab}"]`);
+      if (targetBtn) targetBtn.classList.add('active');
       renderTab(tab);
     }
 
-    const CAT_ICONS = { Cuts: '', Beard: '', Kids: '', Specialty: '' };
+    function toggleServiceGroup(groupKey) {
+      serviceSectionState[groupKey] = !serviceSectionState[groupKey];
+      renderTab('services');
+    }
 
     function renderTab(tab) {
       const isCustomer = user && user.role === 'customer';
-      const isBarber   = user && user.role === 'barber' && user.barber_id === barber.id;
+      const isBarber = user && user.role === 'barber' && user.barber_id === barber.id;
       const el = document.getElementById('tabContent');
       const servicesList = getBarberServices(barber);
       const reviewsBase = Array.isArray(barber.reviews) ? barber.reviews : [];
-      const availability = Array.isArray(barber.availability) ? barber.availability : [];
       const portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
+      const availability = Array.isArray(barber.availability) ? barber.availability : [];
 
       if (tab === 'services') {
-        const grouped = {};
-        servicesList.forEach(s => {
-          if (!grouped[s.category]) grouped[s.category] = [];
-          grouped[s.category].push(s);
-        });
-        const cats = Object.keys(grouped);
-
         if (!servicesList.length) {
-          el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>No services listed yet.</p></div>`;
+          el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>${t('no_services_listed')}</p></div>`;
           return;
         }
 
-        const renderServices = (filter) => {
-          const services = filter === 'all' ? servicesList : (grouped[filter] || []);
-          return services.map(s => `
-            <div class="svc-item card">
-              <div>
-                <h4>${escapeHTML(s.name)} <span style="font-size:0.72rem;background:var(--bg-elevated);padding:0.1rem 0.45rem;border-radius:50px;color:var(--text-muted);font-weight:500">${CAT_ICONS[s.category]||''} ${escapeHTML(s.category)}</span></h4>
-                ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
-                <span> ${fmtDur(s.duration)}</span>
-              </div>
-              <div class="svc-right">
-                <span class="svc-price">${fmtPrice(s.price)}</span>
-                ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
-              </div>
-            </div>`).join('');
-        };
+        const groups = getServiceGroups(servicesList);
+        const groupsHtml = groups.map((group) => {
+          const isOpen = serviceSectionState[group.key] !== false;
+          const itemsHtml = group.items.map((service, idx) => {
+            const durationNum = Number(service?.duration);
+            const durationLabel = Number.isFinite(durationNum) && durationNum > 0 ? `${durationNum}m` : '30m';
+            const priceLabel = fmtPrice(service?.price);
+            const serviceDesc = String(service?.desc || service?.description || '').trim();
+            const serviceImages = getServiceImageList(service);
+            const discountPercent = Number(service?.discount_percent);
+            const discountEnabled = Boolean(
+              service?.discount_enabled
+              || service?.has_discount
+              || (Number.isFinite(discountPercent) && discountPercent > 0)
+            );
+            const safeDiscount = Number.isFinite(discountPercent) && discountPercent > 0
+              ? Math.min(10, Math.max(1, Math.round(discountPercent)))
+              : 10;
 
-        el.innerHTML = `
-          <div class="fade-in">
-            <div class="cat-filter-bar" id="catFilterBar">
-              <button class="cat-chip active" onclick="filterCat('all',this)">${t('all_services')} (${servicesList.length})</button>
-              ${cats.map(c => `<button class="cat-chip" onclick="filterCat('${c}',this)">${CAT_ICONS[c]||''} ${c} (${grouped[c].length})</button>`).join('')}
-            </div>
-            <div class="svc-list" id="svcList">${renderServices('all')}</div>
-          </div>`;
+            return `
+              <div class="svc-item">
+                <div class="svc-head">
+                  <div>
+                    <div class="svc-name">${escapeHTML(service?.name || `Service ${idx + 1}`)}</div>
+                    ${serviceDesc ? `<div class="svc-desc">${escapeHTML(serviceDesc)}</div>` : ''}
+                    <span class="svc-meta">${durationLabel}</span>
+                  </div>
+                  <div class="svc-right">
+                    ${discountEnabled ? `<span class="svc-discount">${t('service_save_badge')} ${safeDiscount}%</span>` : ''}
+                    <span class="svc-price">${priceLabel}</span>
+                    <a href="book.html?barber=${barber.id}&service=${service.id}" class="btn btn-primary btn-sm">${t('card_book_now')}</a>
+                  </div>
+                </div>
+                ${serviceImages.length ? `
+                  <div class="svc-preview-grid">
+                    ${serviceImages.map((src, imageIdx) => `<img src="${escapeHTML(src)}" alt="${escapeHTML(service?.name || 'Service photo')} ${imageIdx + 1}" loading="lazy">`).join('')}
+                  </div>` : ''}
+              </div>`;
+          }).join('');
 
-        window.filterCat = (cat, btn) => {
-          document.querySelectorAll('#catFilterBar .cat-chip').forEach(c => c.classList.remove('active'));
-          btn.classList.add('active');
-          document.getElementById('svcList').innerHTML = renderServices(cat);
-        };
+          return `
+            <div class="service-group ${isOpen ? '' : 'collapsed'}">
+              <button class="service-group-toggle" onclick="toggleServiceGroup('${group.key}')">
+                <span>${escapeHTML(group.title)} (${group.items.length})</span>
+                <span class="service-arrow">${isOpen ? '&#9662;' : '&#9656;'}</span>
+              </button>
+              <div class="service-group-body">${itemsHtml}</div>
+            </div>`;
+        }).join('');
 
-      } else if (tab === 'portfolio') {
+        el.innerHTML = `<div class="services-accordion fade-in">${groupsHtml}</div>`;
+        return;
+      }
+
+      if (tab === 'gallery') {
         if (!portfolio.length) {
           el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>${t('no_portfolio')}</p></div>`;
         } else {
@@ -314,8 +682,28 @@
               </div>
             </div>`;
         }
+        return;
+      }
 
-      } else if (tab === 'reviews') {
+      if (tab === 'availability') {
+        if (!availability.length) {
+          el.innerHTML = `<div class="empty-state fade-in"><div class="icon"></div><p>${typeof t === 'function' ? t('sheet_no_schedule') : 'Horaires non definis.'}</p></div>`;
+          return;
+        }
+        el.innerHTML = `
+          <div class="fade-in">
+            <div class="hours-list">
+              ${availability.map((slot) => `
+                <div class="hours-row ${!slot.open ? 'closed' : ''}">
+                  <span style="font-weight:600;min-width:98px">${escapeHTML(slot.label)}</span>
+                  <span style="color:var(--text-muted)">${slot.open ? `${slot.start} - ${slot.end}` : 'Closed'}</span>
+                </div>`).join('')}
+            </div>
+          </div>`;
+        return;
+      }
+
+      if (tab === 'reviews') {
         const userReviews = Reviews.get(barber.id);
         const allReviews  = [...reviewsBase, ...userReviews];
         const avg = allReviews.reduce((s,r) => s + r.rating, 0) / (allReviews.length || 1);
@@ -374,14 +762,6 @@
               ${reviewHTML || `<div class="empty-state"><p>${t('no_reviews')}</p></div>`}
             </div>
           </div>`;
-
-      } else if (tab === 'availability') {
-        const rows = availability.map(a => `
-          <div class="avail-row ${!a.open ? 'closed' : ''}">
-            <span class="avail-day">${a.label}</span>
-            <span class="avail-time">${a.open ? `${a.start}  ${a.end}` : t('closed_day')}</span>
-          </div>`).join('');
-        el.innerHTML = `<div class="card fade-in" style="overflow:hidden">${rows}</div>`;
       }
     }
 
@@ -439,7 +819,8 @@
         return;
       }
       closeReviewModal();
-      document.querySelectorAll('.tab-btn')[2].click();
+      const reviewsBtn = document.querySelector('.master-tab-btn[data-tab="reviews"]');
+      switchTab('reviews', reviewsBtn);
     }
 
     function toggleReplyForm(revId) {

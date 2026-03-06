@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -16,11 +16,11 @@
   <style>
     .hero {
       position: relative;
-      min-height: 88vh;
+      min-height: auto;
       display: flex;
       align-items: center;
       overflow: hidden;
-      background: var(--bg);
+      background: linear-gradient(160deg, #06060f 0%, #0c0c1f 40%, #12122a 70%, #0d0d20 100%);
     }
 
     .hero::before {
@@ -28,8 +28,21 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(233, 69, 96, 0.12) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 50% at 80% 100%, rgba(99, 102, 241, 0.07) 0%, transparent 60%);
+        radial-gradient(ellipse 90% 70% at 50% -10%, rgba(233, 69, 96, 0.18) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 50% at 80% 110%, rgba(99, 102, 241, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 40% at 10% 80%, rgba(233, 69, 96, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Subtle grid overlay for depth */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
       pointer-events: none;
     }
 
@@ -37,7 +50,7 @@
       position: relative;
       z-index: 1;
       max-width: 720px;
-      padding: 4rem 0 3rem;
+      padding: 0.75rem 0 1.1rem;
     }
 
     .hero__tag {
@@ -56,10 +69,11 @@
     }
 
     .hero__title {
-      font-size: clamp(2.4rem, 6vw, 4.2rem);
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 1.1rem;
+      /* Keep semantic h1 but present with h2-like visual scale */
+      font-size: clamp(1.85rem, 4.6vw, 2.7rem);
+      font-weight: 780;
+      line-height: 1.16;
+      margin-bottom: 0.65rem;
     }
 
     .hero__accent {
@@ -72,7 +86,7 @@
     .hero__sub {
       font-size: 1.05rem;
       color: var(--text-muted);
-      margin-bottom: 2rem;
+      margin: 0.95rem 0 1.05rem;
       max-width: 500px;
       line-height: 1.7;
     }
@@ -82,14 +96,23 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 0.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.25rem;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       max-width: 680px;
+      position: relative;
+      overflow: visible;
     }
+
+    .hero__search-wrap { position: relative; }
 
     .hero__search-row {
       display: flex;
       gap: 0;
+    }
+
+    .hero__suggestions {
+      top: calc(100% + 6px);
+      z-index: 550;
     }
 
     .hero__field {
@@ -129,8 +152,8 @@
       color: var(--text-muted);
       border: 1px solid var(--border);
       border-radius: 50px;
-      padding: 0.25rem 0.75rem;
-      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.2s;
@@ -201,14 +224,14 @@
     .local-city-grid {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 0.75rem;
+      gap: 0.4rem;
     }
 
     .local-city-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem;
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.65rem;
       text-decoration: none;
       color: inherit;
       transition: border-color 0.2s, transform 0.2s;
@@ -220,15 +243,15 @@
       text-decoration: none;
     }
 
-    .local-city-card strong { display: block; margin-bottom: 0.2rem; }
-    .local-city-card span { color: var(--text-muted); font-size: 0.82rem; }
+    .local-city-card strong { display: block; margin-bottom: 0; font-size: 0.82rem; }
+    .local-city-card span { color: var(--text-muted); font-size: 0.72rem; }
 
     .hero__field input { font-size: 1rem; }
 
     @media (max-width: 768px) {
       .hero { min-height: auto; }
-      .hero__content { padding: 2rem 0 2rem; }
-      .hero__title { font-size: clamp(1.9rem, 8vw, 3rem); }
+      .hero__content { padding: 1.35rem 0 1.6rem; }
+      .hero__title { font-size: clamp(1.6rem, 7vw, 2.25rem); }
       .hero__sub { font-size: 0.95rem; max-width: 100%; }
       /* Search bar: stack fields vertically, full width */
       .hero__search { max-width: 100%; }
@@ -252,7 +275,7 @@
     }
 
     @media (max-width: 480px) {
-      .hero__content { padding: 1.5rem 0; }
+      .hero__content { padding: 1.05rem 0; }
       .hero__stats { gap: 0.75rem; }
       .hero__stat strong { font-size: 1.1rem; }
       .local-city-grid { grid-template-columns: repeat(2, 1fr); }
@@ -424,151 +447,634 @@
       .sheet-svc-item { flex-direction: column; align-items: flex-start; }
       .sheet-svc-right { width: 100%; align-items: flex-start; flex-direction: row; justify-content: space-between; }
     }
+
+    /* ===== Modern Booking Layout (same design system) ===== */
+    .home-main {
+      padding: 0.5rem 0 6rem;
+    }
+
+    .home-section {
+      padding: 0.62rem 0 0;
+    }
+
+    .home-search-panel {
+      padding: 0.65rem;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .home-hero-title {
+      margin: 0 0 0.38rem;
+      font-size: clamp(1.2rem, 4.6vw, 1.55rem);
+      line-height: 1.18;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .home-search-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      font-weight: 700;
+    }
+
+    .home-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.14rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    .home-search-icon {
+      margin-left: 0.45rem;
+      opacity: 0.8;
+      font-size: 0.84rem;
+      flex-shrink: 0;
+    }
+
+    .home-search-input {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      padding: 0.5rem 0.1rem;
+    }
+
+    .home-search-btn {
+      border-radius: 999px;
+      padding: 0 0.78rem;
+      min-height: 36px;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+    }
+
+    .home-search-panel .quick-tags {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.35rem;
+      overflow-x: auto;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      padding: 0.34rem 0 0;
+    }
+
+    .home-search-panel .quick-tags::-webkit-scrollbar {
+      display: none;
+    }
+
+    .home-search-panel .quick-tag {
+      flex: 0 0 auto;
+      min-height: 30px;
+      padding: 0.22rem 0.56rem;
+      font-size: 0.69rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+    }
+
+    .home-search-panel .quick-tag .quick-tag-pin {
+      color: var(--primary);
+      font-size: 0.66rem;
+      line-height: 1;
+    }
+
+    .home-search-panel .quick-tag.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(233, 69, 96, 0.14);
+    }
+
+    .hero__suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 650;
+    }
+
+    .home-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.7rem;
+    }
+
+    .home-section-head h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .category-row {
+      display: flex;
+      gap: 0.95rem;
+      overflow-x: auto;
+      padding: 0.25rem 0.1rem 0.35rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .category-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-item {
+      width: 86px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .category-thumb {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      transition: border-color 0.16s ease, transform 0.16s ease;
+    }
+
+    .category-item:hover .category-thumb {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .category-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .category-name {
+      text-align: center;
+      font-size: 0.76rem;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .offer-row {
+      display: flex;
+      gap: 0.8rem;
+      overflow-x: auto;
+      padding: 0.05rem 0.1rem 0.5rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .offer-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .offer-filter-row {
+      display: flex;
+      gap: 0.42rem;
+      overflow-x: auto;
+      padding: 0 0.1rem 0.65rem;
+      margin-bottom: 0.25rem;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .offer-filter-row::-webkit-scrollbar { display: none; }
+    .offer-filter-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      padding: 0.36rem 0.88rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      flex-shrink: 0;
+      min-height: 34px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      line-height: 1;
+    }
+    .offer-filter-btn:hover {
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    .offer-filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .offer-card {
+      width: 260px;
+      flex-shrink: 0;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      box-shadow: var(--shadow);
+    }
+
+    .offer-media {
+      position: relative;
+      height: 150px;
+      background: var(--bg-elevated);
+    }
+
+    .offer-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .offer-rating {
+      position: absolute;
+      top: 0.6rem;
+      left: 0.6rem;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .offer-promoted {
+      position: absolute;
+      right: 0.6rem;
+      top: 0.6rem;
+      background: rgba(233, 69, 96, 0.9);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .offer-body {
+      padding: 0.65rem 0.75rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .offer-name {
+      font-size: 0.93rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+
+    .offer-save {
+      display: inline-flex;
+      align-self: flex-start;
+      border-radius: 999px;
+      background: rgba(233, 69, 96, 0.12);
+      color: var(--primary);
+      border: 1px solid rgba(233, 69, 96, 0.32);
+      padding: 0.2rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .recommend-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      padding-bottom: 0.35rem;
+    }
+
+    .recommend-card {
+      display: grid;
+      grid-template-columns: 98px 1fr;
+      gap: 0.75rem;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .recommend-media {
+      width: 98px;
+      height: 98px;
+      background: var(--bg-elevated);
+    }
+
+    .recommend-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .recommend-body {
+      padding: 0.6rem 0.65rem 0.6rem 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.2rem;
+    }
+
+    .recommend-name {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .recommend-meta {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .recommend-price {
+      font-size: 0.83rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 0.15rem;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 920;
+      border-top: 1px solid var(--border);
+      background: rgba(13, 13, 32, 0.98);
+      backdrop-filter: blur(10px);
+    }
+
+    .bottom-nav__inner {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .bottom-nav__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: var(--text-muted);
+      padding: 0.5rem 0.25rem 0.6rem;
+      gap: 0.12rem;
+      min-height: 58px;
+    }
+
+    .bottom-nav__icon {
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .bottom-nav__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .bottom-nav__item.active,
+    .bottom-nav__item:hover {
+      color: var(--primary);
+    }
+
+    @media (min-width: 1025px) {
+      .bottom-nav {
+        display: none;
+      }
+
+      .home-main {
+        padding-bottom: 2rem;
+      }
+
+      .home-search-panel {
+        max-width: 760px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .home-search-btn {
+        min-width: 88px;
+      }
+
+      .offer-card {
+        width: 84vw;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .home-main {
+        padding: 0.32rem 0 5.5rem;
+      }
+
+      .home-search-panel {
+        padding: 0.52rem;
+      }
+
+      .home-hero-title {
+        font-size: 1.14rem;
+        margin-bottom: 0.28rem;
+      }
+
+      .home-search-wrap {
+        gap: 0.28rem;
+        padding: 0.1rem;
+      }
+
+      .home-search-icon {
+        margin-left: 0.34rem;
+        font-size: 0.8rem;
+      }
+
+      .home-search-input {
+        font-size: 0.84rem;
+        padding: 0.42rem 0;
+      }
+
+      .home-search-btn {
+        min-height: 33px;
+        min-width: 74px;
+        padding: 0 0.62rem;
+        font-size: 0.75rem;
+      }
+
+      .home-search-panel .quick-tags {
+        gap: 0.3rem;
+        padding-top: 0.3rem;
+      }
+
+      .home-search-panel .quick-tag {
+        min-height: 27px;
+        padding: 0.19rem 0.48rem;
+        font-size: 0.66rem;
+      }
+
+      .home-section {
+        padding-top: 0.38rem;
+      }
+
+      .home-section-head {
+        margin-bottom: 0.45rem;
+      }
+
+      .category-row {
+        gap: 0.68rem;
+        padding: 0.1rem 0.04rem 0.24rem;
+      }
+
+      .category-item {
+        width: 74px;
+        gap: 0.3rem;
+      }
+
+      .category-thumb {
+        width: 67px;
+        height: 67px;
+      }
+
+      .category-name {
+        font-size: 0.7rem;
+      }
+
+      .offer-row {
+        gap: 0.6rem;
+        padding-bottom: 0.3rem;
+      }
+
+      .offer-card {
+        width: 78vw;
+      }
+
+      .recommend-list {
+        gap: 0.58rem;
+      }
+
+      .recommend-card {
+        grid-template-columns: 84px 1fr;
+        gap: 0.58rem;
+      }
+
+      .recommend-media {
+        width: 84px;
+        height: 84px;
+      }
+
+      .recommend-body {
+        padding: 0.44rem 0.52rem 0.44rem 0;
+      }
+    }
   </style>
 </head>
 <body class="page-wrap">
   <nav class="navbar" id="navbar"></nav>
 
-  <main>
-    <section class="hero">
+  <main class="home-main">
+    <section class="home-search-section">
       <div class="container">
-        <div class="hero__content fade-in">
-          <div class="hero__tag">Professional Barber Marketplace</div>
-          <h1 class="hero__title">
-            Find Your Perfect<br>
-            <span class="hero__accent">Barber Today</span>
-          </h1>
-          <p class="hero__sub">Discover top-rated barbers near you, book appointments online, and get the cut you deserve.</p>
-
-          <div class="hero__search">
-            <div class="hero__search-row">
-              <div class="hero__field">
-                <span>Search</span>
-                <input type="text" id="searchInput" placeholder="Search barbers, styles, services...">
-              </div>
-              <div class="hero__field">
-                <span>City</span>
-                <input type="text" id="cityInput" placeholder="City">
-              </div>
-              <button class="btn btn-primary btn-lg" onclick="doSearch()">Search</button>
-            </div>
-            <div class="quick-tags">
-              <button class="quick-tag" onclick="quickSearch('Fade')">Fade</button>
-              <button class="quick-tag" onclick="quickSearch('Beard Trim')">Beard Trim</button>
-              <button class="quick-tag" onclick="quickSearch('Lineup')">Lineup</button>
-              <button class="quick-tag" onclick="quickSearch('Kids Cut')">Kids Cut</button>
-              <button class="quick-tag" onclick="quickSearch('Hot Shave')">Hot Shave</button>
-            </div>
+        <div class="home-search-panel card fade-in">
+          <h1 class="home-hero-title" data-i18n="home_hero_title">Trouvez et prenez rendez-vous</h1>
+          <div class="home-search-wrap">
+            <span class="home-search-icon" aria-hidden="true">&#128269;</span>
+            <input
+              type="text"
+              id="searchInput"
+              class="home-search-input"
+              placeholder="Search services or barbers"
+              data-i18n-ph="home_search_ph"
+              autocomplete="off"
+              oninput="heroSearchSuggest(this.value)"
+              onkeydown="heroSearchKeydown(event)"
+              onblur="setTimeout(()=>{const b=document.getElementById('heroSuggestions');if(b)b.style.display='none'},300)">
+            <button class="btn btn-primary btn-sm home-search-btn" onclick="doSearch()" data-i18n="home_search_btn">Search</button>
           </div>
-
-          <div class="hero__stats">
-            <div class="hero__stat"><strong>500+</strong><span>Barbers</span></div>
-            <div class="hero__stat-div"></div>
-            <div class="hero__stat"><strong>10k+</strong><span>Bookings</span></div>
-            <div class="hero__stat-div"></div>
-            <div class="hero__stat"><strong>4.9/5</strong><span>Avg Rating</span></div>
-          </div>
-
-          <div style="margin-top:2rem">
-            <h2 style="font-size:1.05rem;margin-bottom:0.35rem">Explore by NYC Area</h2>
-            <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:0.8rem">Local city pages for New York borough search intent</p>
-            <div class="local-city-grid">
-              <a class="local-city-card" href="new-york-barbers.html"><strong>New York</strong><span>City-wide barbers</span></a>
-              <a class="local-city-card" href="brooklyn-barbers.html"><strong>Brooklyn</strong><span>Top rated picks</span></a>
-              <a class="local-city-card" href="manhattan-barbers.html"><strong>Manhattan</strong><span>Popular shops</span></a>
-              <a class="local-city-card" href="queens-barbers.html"><strong>Queens</strong><span>Neighborhood cuts</span></a>
-              <a class="local-city-card" href="bronx-barbers.html"><strong>Bronx</strong><span>Book near you</span></a>
-            </div>
+          <div class="navbar__suggestions hero__suggestions" id="heroSuggestions" style="display:none"></div>
+          <div class="quick-tags">
+            <button class="quick-tag" data-city="" aria-pressed="true" onclick="quickCity('', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>All cities</button>
+            <button class="quick-tag" data-city="New York" aria-pressed="false" onclick="quickCity('New York', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>New York</button>
+            <button class="quick-tag" data-city="Brooklyn" aria-pressed="false" onclick="quickCity('Brooklyn', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Brooklyn</button>
+            <button class="quick-tag" data-city="Manhattan" aria-pressed="false" onclick="quickCity('Manhattan', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Manhattan</button>
+            <button class="quick-tag" data-city="Queens" aria-pressed="false" onclick="quickCity('Queens', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Queens</button>
+            <button class="quick-tag" data-city="Bronx" aria-pressed="false" onclick="quickCity('Bronx', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Bronx</button>
           </div>
         </div>
       </div>
     </section>
-
-    <section class="section" id="recommendedSection" style="padding-top: 0; display: none;">
+    <section class="home-section home-section--categories">
       <div class="container">
-        <div class="section-header">
-          <h2>Recommended For You</h2>
-          <p>Personalized picks based on your location and preferences</p>
+        <div class="home-section-head">
+          <h2 data-i18n="home_categories">Cat&#233;gories</h2>
         </div>
-        <div class="grid-4" id="recommendedGrid"></div>
+        <div class="category-row" id="categoryRow"></div>
       </div>
     </section>
-
-    <section class="section" style="padding-top: 0;">
+    <section class="home-section home-section--offers">
       <div class="container">
-        <div class="section-header" style="margin-bottom:0.75rem">
-          <h2>Featured Barbers</h2>
-          <p>Tap a barber to see their full profile and book instantly</p>
+        <div class="home-section-head">
+          <h2 data-i18n="home_special_offers">Offres sp&#233;ciales</h2>
         </div>
-        <div class="barber-scroll-row" id="featuredScrollRow"></div>
-        <div class="text-center mt-2">
-          <a href="barbers.html" class="btn btn-outline btn-lg">View All Barbers</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" style="padding-top: 0;">
-      <div class="container">
-        <div class="section-header" style="margin-bottom:0.75rem">
-          <h2>Trending Barbers</h2>
-          <p>Most booked this month — tap to book</p>
-        </div>
-        <div class="barber-scroll-row" id="trendingScrollRow"></div>
-      </div>
-    </section>
-
-    <section class="section hiw" style="padding-top: 0;">
-      <div class="container">
-        <div class="section-header">
-          <h2>How It Works</h2>
-          <p>Book your next haircut in 3 simple steps</p>
-        </div>
-        <div class="hiw-steps">
-          <div class="hiw-step">
-            <div class="hiw-icon">1</div>
-            <div class="hiw-num">Step 01</div>
-            <h3>Find a Barber</h3>
-            <p>Browse profiles, compare ratings, and read verified reviews.</p>
-          </div>
-          <div class="hiw-step">
-            <div class="hiw-icon">2</div>
-            <div class="hiw-num">Step 02</div>
-            <h3>Book Online</h3>
-            <p>Choose your service, pick a time, and confirm instantly.</p>
-          </div>
-          <div class="hiw-step">
-            <div class="hiw-icon">3</div>
-            <div class="hiw-num">Step 03</div>
-            <h3>Get Fresh</h3>
-            <p>Show up and enjoy your professional cut.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" style="padding-top: 0;">
-      <div class="container">
-        <div class="cta-box">
-          <div class="cta-box__text">
-            <h2>Are you a Barber?</h2>
-            <p>Join BarberHub and grow your business. Manage bookings, showcase your work, and reach more customers.</p>
-            <div class="cta-box__btns">
-              <a href="signup.html?role=barber" class="btn btn-primary btn-lg">Join as a Barber</a>
-              <a href="barbers.html" class="btn btn-outline btn-lg">Explore Barbers</a>
-            </div>
-          </div>
-          <div class="cta-box__icon">BH</div>
-        </div>
+        <div class="offer-filter-row" id="offerFilterRow"></div>
+        <div class="offer-row" id="offerRow"></div>
       </div>
     </section>
   </main>
+  <nav class="bottom-nav" aria-label="Bottom navigation">
+    <div class="bottom-nav__inner">
+      <a class="bottom-nav__item active" href="index.html">
+        <span class="bottom-nav__icon" aria-hidden="true">&#8962;</span>
+        <span class="bottom-nav__label" data-i18n="bottom_home">Accueil</span>
+      </a>
+      <a class="bottom-nav__item" href="barbers.html">
+        <span class="bottom-nav__icon" aria-hidden="true">&#128269;</span>
+        <span class="bottom-nav__label" data-i18n="bottom_explore">Explorer</span>
+      </a>
+      <a class="bottom-nav__item" id="bottomAppointmentsLink" href="dashboard.html?tab=bookings">
+        <span class="bottom-nav__icon" aria-hidden="true">&#128197;</span>
+        <span class="bottom-nav__label" data-i18n="bottom_appointments">Rendez-vous</span>
+      </a>
+      <a class="bottom-nav__item" id="bottomProfileLink" href="dashboard.html?tab=profile">
+        <span class="bottom-nav__icon" aria-hidden="true">&#128100;</span>
+        <span class="bottom-nav__label" data-i18n="bottom_profile">Profil</span>
+      </a>
+    </div>
+  </nav>
 
   <!-- ===== Profile Sheet Overlay ===== -->
   <div id="profileSheet" class="profile-sheet-overlay" onclick="sheetBgClick(event)">
     <div class="profile-sheet-panel" id="profileSheetPanel">
       <div class="profile-sheet-topbar">
         <div class="profile-sheet-drag"></div>
-        <button class="btn btn-ghost btn-sm" onclick="closeProfileSheet()">✕ Close</button>
+        <button class="btn btn-ghost btn-sm" onclick="closeProfileSheet()" data-i18n="sheet_close">Fermer</button>
       </div>
       <div id="profileSheetContent"></div>
     </div>
@@ -577,22 +1083,22 @@
   <!-- Sheet Review Modal -->
   <div class="modal-overlay" id="sheetReviewModal">
     <div class="modal">
-      <h3>Write a Review</h3>
-      <p class="sub">Rate your experience</p>
+      <h3 data-i18n="review_title">Laisser un avis</h3>
+      <p class="sub" data-i18n="review_sub">&#201;valuez votre exp&#233;rience</p>
       <div class="form-group">
-        <label class="form-label">Rating</label>
+        <label class="form-label" data-i18n="review_rating_label">Note</label>
         <div id="sheetStarPicker" style="display:flex;gap:6px;font-size:1.8rem;cursor:pointer">
           <span data-v="1"></span><span data-v="2"></span><span data-v="3"></span><span data-v="4"></span><span data-v="5"></span>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Comment (optional)</label>
-        <textarea class="form-control" id="sheetReviewComment" placeholder="Share your experience..." rows="3"></textarea>
+        <label class="form-label" data-i18n="review_comment_label">Commentaire (optionnel)</label>
+        <textarea class="form-control" id="sheetReviewComment" placeholder="Share your experience..." data-i18n-ph="review_comment_ph" rows="3"></textarea>
       </div>
       <div id="sheetReviewAlert"></div>
       <div style="display:flex;gap:0.75rem;justify-content:flex-end">
-        <button class="btn btn-ghost" onclick="closeSheetReviewModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitSheetReview()">Submit Review</button>
+        <button class="btn btn-ghost" onclick="closeSheetReviewModal()" data-i18n="btn_cancel">Annuler</button>
+        <button class="btn btn-primary" onclick="submitSheetReview()" data-i18n="review_submit">Soumettre l&#39;avis</button>
       </div>
     </div>
   </div>
@@ -634,86 +1140,515 @@
     applyI18n();
     if (typeof Analytics !== 'undefined') Analytics.track('homepage_view');
 
-    // ── Search ────────────────────────────────────────────────────────────────
+    // Search
+    const DEFAULT_SERVICE_SUGGESTIONS = [
+      'Baby Ear Piercing',
+      'Ear Waxing',
+      'Ear Piercing',
+      'Ear Cleaning',
+      'Ear Candling',
+      'Barber',
+      'Barber Fade'
+    ];
+
+    const HOME_CATEGORIES = [
+      { nameKey: 'cat_barbers',     query: 'Barber',   image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_hair_salon',  query: 'Haircut',  image: 'https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_nails',       query: 'Nails',    image: 'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_brows_lashes',query: 'Brows',    image: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_piercing',    query: 'Piercing', image: 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_massage',     query: 'Massage',  image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=280&h=280&fit=crop' }
+    ];
+
+    let _heroSearchIndex = { services: [], businesses: [] };
+    let _heroCurrentSuggestions = [];
+    let _activeCityFilter = '';
+
+    function _heroEsc(str) {
+      if (typeof escapeHTML === 'function') return escapeHTML(str);
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function _normalizeSearch(value) {
+      return String(value || '').toLowerCase().trim();
+    }
+
+    function _matchScore(value, query) {
+      const text = _normalizeSearch(value);
+      if (!text || !query) return -1;
+      if (text === query) return 0;
+      if (text.startsWith(query)) return 1;
+      const idx = text.indexOf(query);
+      if (idx >= 0) return 2 + (idx / 1000);
+      return -1;
+    }
+
+    function _heroHighlight(name, query) {
+      const text = String(name || '');
+      const q = String(query || '').trim();
+      if (!q) return _heroEsc(text);
+      const lower = text.toLowerCase();
+      const i = lower.indexOf(q.toLowerCase());
+      if (i < 0) return _heroEsc(text);
+      const start = text.slice(0, i);
+      const match = text.slice(i, i + q.length);
+      const end = text.slice(i + q.length);
+      return `${_heroEsc(start)}<span class="navbar__sugg-match">${_heroEsc(match)}</span><span class="navbar__sugg-rest">${_heroEsc(end)}</span>`;
+    }
+
+    function _refreshSearchIndex(barbers) {
+      const serviceMap = new Map();
+      const businessMap = new Map();
+
+      for (const serviceName of DEFAULT_SERVICE_SUGGESTIONS) {
+        const key = _normalizeSearch(serviceName);
+        if (!serviceMap.has(key)) {
+          serviceMap.set(key, { name: serviceName });
+        }
+      }
+
+      for (const b of barbers) {
+        const services = getBarberServices(b);
+        for (const service of services) {
+          const name = String(service?.name || '').trim();
+          if (!name) continue;
+          const key = _normalizeSearch(name);
+          if (!serviceMap.has(key)) {
+            serviceMap.set(key, { name });
+          }
+        }
+
+        const name = String(b.shop_name || `${b.first_name || ''} ${b.last_name || ''}`).trim();
+        if (!name) continue;
+        const key = _normalizeSearch(name);
+        if (!businessMap.has(key)) {
+          businessMap.set(key, {
+            id: b.id,
+            name,
+            city: String(b.city || '').trim(),
+            address: String(b.location || b.city || '').trim()
+          });
+        }
+      }
+
+      _heroSearchIndex = {
+        services: Array.from(serviceMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
+        businesses: Array.from(businessMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      };
+    }
+
+    function heroHideSuggestions() {
+      const box = document.getElementById('heroSuggestions');
+      if (box) box.style.display = 'none';
+      _heroCurrentSuggestions = [];
+    }
+
+    function heroPickSuggestion(index) {
+      const item = _heroCurrentSuggestions[index];
+      if (!item) return;
+      const input = document.getElementById('searchInput');
+      if (input) input.value = item.name || '';
+      heroHideSuggestions();
+      if (item.type === 'business' && item.city) {
+        _activeCityFilter = item.city;
+        _syncCityButtonsUI();
+        renderHomeSections();
+      }
+    }
+
+    function heroSearchSuggest(value) {
+      const box = document.getElementById('heroSuggestions');
+      if (!box) return;
+      const queryRaw = String(value || '').trim();
+      const query = _normalizeSearch(queryRaw);
+      if (!query) {
+        heroHideSuggestions();
+        return;
+      }
+
+      const services = _heroSearchIndex.services
+        .map((item) => ({ ...item, score: _matchScore(item.name, query) }))
+        .filter((item) => item.score >= 0)
+        .sort((a, b) => (a.score - b.score) || a.name.localeCompare(b.name))
+        .slice(0, 6);
+
+      const businesses = _heroSearchIndex.businesses
+        .map((item) => {
+          const scores = [
+            _matchScore(item.name, query),
+            _matchScore(item.city, query),
+            _matchScore(item.address, query)
+          ].filter((score) => score >= 0);
+          return { ...item, score: scores.length ? Math.min(...scores) : -1 };
+        })
+        .filter((item) => item.score >= 0)
+        .sort((a, b) => (a.score - b.score) || a.name.localeCompare(b.name))
+        .slice(0, 6);
+
+      if (!services.length && !businesses.length) {
+        const message = typeof tf === 'function'
+          ? tf('nav_no_results_for', { query: `<strong>${_heroEsc(queryRaw)}</strong>` })
+          : `No results for <strong>${_heroEsc(queryRaw)}</strong>`;
+        box.innerHTML = `<div class="navbar__sugg-empty">${message}</div>`;
+        box.style.display = 'block';
+        _heroCurrentSuggestions = [];
+        return;
+      }
+
+      const serviceLabel = typeof t === 'function' ? t('search_services_group') : 'Services';
+      const businessLabel = typeof t === 'function' ? t('search_businesses_group') : 'Businesses';
+
+      _heroCurrentSuggestions = [];
+      let html = '';
+
+      if (services.length) {
+        html += `<div class="navbar__sugg-group">&#128269; ${_heroEsc(serviceLabel)}</div>`;
+        for (const item of services) {
+          const idx = _heroCurrentSuggestions.push({ type: 'service', name: item.name, city: '' }) - 1;
+          html += `<div class="navbar__sugg-item" onclick="heroPickSuggestion(${idx})"><span>&#128269;</span>${_heroHighlight(item.name, queryRaw)}</div>`;
+        }
+      }
+
+      if (businesses.length) {
+        html += `<div class="navbar__sugg-group">&#128205; ${_heroEsc(businessLabel)}</div>`;
+        for (const item of businesses) {
+          const idx = _heroCurrentSuggestions.push({ type: 'business', name: item.name, city: item.city || '' }) - 1;
+          html += `<div class="navbar__sugg-item" onclick="heroPickSuggestion(${idx})"><span>&#128269;</span>${_heroHighlight(item.name, queryRaw)}${item.address ? `<span class="navbar__sugg-sub">${_heroEsc(item.address)}</span>` : ''}</div>`;
+        }
+      }
+
+      box.innerHTML = html;
+      box.style.display = 'block';
+    }
+
+    function heroSearchKeydown(e) {
+      const box = document.getElementById('heroSuggestions');
+      const items = box ? Array.from(box.querySelectorAll('.navbar__sugg-item')) : [];
+      if (!box || box.style.display === 'none' || !items.length) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          doSearch();
+        }
+        return;
+      }
+
+      const focusedIndex = items.findIndex((el) => el.classList.contains('nav-focused'));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (focusedIndex >= 0) items[focusedIndex].classList.remove('nav-focused');
+        const next = items[(focusedIndex + 1) % items.length];
+        next.classList.add('nav-focused');
+        next.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (focusedIndex >= 0) items[focusedIndex].classList.remove('nav-focused');
+        const prev = items[(focusedIndex - 1 + items.length) % items.length];
+        prev.classList.add('nav-focused');
+        prev.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const target = focusedIndex >= 0 ? items[focusedIndex] : items[0];
+        target.click();
+      } else if (e.key === 'Escape') {
+        heroHideSuggestions();
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.home-search-wrap') && !e.target.closest('#heroSuggestions')) {
+        heroHideSuggestions();
+      }
+    });
+
     function doSearch() {
       const q = document.getElementById('searchInput').value.trim();
-      const city = document.getElementById('cityInput').value.trim();
+      const city = _activeCityFilter.trim();
       if (typeof Analytics !== 'undefined') Analytics.track('barber_search', { source: 'homepage_search', query: q, city });
       const params = new URLSearchParams();
       if (q) params.set('q', q);
       if (city) params.set('city', city);
-      window.location.href = 'barbers.html?' + params.toString();
+      window.location.href = `barbers.html?${params.toString()}`;
     }
 
-    function quickSearch(term) {
-      if (typeof Analytics !== 'undefined') Analytics.track('barber_search', { source: 'homepage_quick_tag', query: term });
-      window.location.href = 'barbers.html?q=' + encodeURIComponent(term);
+    function quickCity(city) {
+      const next = String(city || '').trim();
+      if (!next) {
+        _activeCityFilter = '';
+        _syncCityButtonsUI();
+        if (typeof Analytics !== 'undefined') {
+          Analytics.track('homepage_city_filter', { city: 'all' });
+        }
+        renderHomeSections();
+        return;
+      }
+      _activeCityFilter = _normalizeSearch(_activeCityFilter) === _normalizeSearch(next) ? '' : next;
+      _syncCityButtonsUI();
+      if (typeof Analytics !== 'undefined') {
+        Analytics.track('homepage_city_filter', { city: _activeCityFilter || 'all' });
+      }
+      renderHomeSections();
     }
 
-    document.getElementById('searchInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') doSearch();
-    });
-
-    // ── Circular scroll row renderer ─────────────────────────────────────────
-    function renderCircleRow(barbers, containerId) {
-      const el = document.getElementById(containerId);
-      if (!el) return;
-      el.innerHTML = barbers.map((b) => {
-        const initials = getNameInitials(b.first_name, b.last_name);
-        const avatarSrc = getBarberAvatar(b);
-        const rating = Number.isFinite(Number(b.rating)) ? Number(b.rating).toFixed(1) : '';
-        const minPrice = getBarberMinPrice(b);
+    function renderCategories() {
+      const row = document.getElementById('categoryRow');
+      if (!row) return;
+      row.innerHTML = HOME_CATEGORIES.map((cat) => {
+        const catName = typeof t === 'function' ? t(cat.nameKey) : cat.nameKey;
         return `
-          <div class="barber-circle-item" onclick="openProfileSheet(${b.id})" role="button" tabindex="0" aria-label="View profile for ${escapeHTML(b.first_name)}">
-            <div class="barber-circle-avatar">
-              ${avatarSrc ? `<img src="${avatarSrc}" alt="${escapeHTML(b.first_name)}" loading="lazy">` : initials}
-              ${b.is_verified ? '<div class="barber-circle-verified">✓</div>' : ''}
-            </div>
-            <span class="barber-circle-name">${escapeHTML(b.first_name)}</span>
-            ${rating ? `<span class="barber-circle-sub">★ ${rating}</span>` : ''}
-            ${minPrice !== null ? `<span class="barber-circle-sub barber-circle-price">From ${fmtPrice(minPrice)}</span>` : ''}
-          </div>`;
+        <a class="category-item" href="barbers.html?q=${encodeURIComponent(cat.query)}" aria-label="${_heroEsc(catName)}">
+          <div class="category-thumb">
+            <img src="${cat.image}" alt="${_heroEsc(catName)}" loading="lazy">
+          </div>
+          <div class="category-name">${_heroEsc(catName)}</div>
+        </a>`;
       }).join('');
-      // keyboard accessibility: Enter/Space opens sheet
-      el.querySelectorAll('.barber-circle-item').forEach((item) => {
-        item.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.click(); }
-        });
+    }
+
+    function _barberDisplayName(barber) {
+      return String(barber.shop_name || `${barber.first_name || ''} ${barber.last_name || ''}`).trim() || 'Barber';
+    }
+
+    function _barberCardImage(barber) {
+      if (Array.isArray(barber.portfolio) && barber.portfolio.length && barber.portfolio[0].url) return barber.portfolio[0].url;
+      const avatar = getBarberAvatar(barber);
+      if (avatar) return avatar;
+      return 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=640&h=420&fit=crop';
+    }
+
+    function _offerPercent(barber) {
+      const services = getBarberServices(barber);
+      const max = services.reduce((acc, item) => {
+        const pct = Number(item.discount_percent) || 0;
+        return item.discount_enabled ? Math.max(acc, pct) : acc;
+      }, 0);
+      if (max > 0) return Math.min(50, Math.max(5, Math.round(max)));
+      return 15;
+    }
+
+    const OFFER_CATEGORIES = [
+      { key: 'all',       icon: '',   label: 'All Services' },
+      { key: 'haircut',   icon: '✂️',  label: 'Haircuts',       keywords: ['haircut','hair cut','fade','trim','cut'] },
+      { key: 'beard',     icon: '🧔',  label: 'Beard',           keywords: ['beard','facial hair'] },
+      { key: 'kids',      icon: '👶',  label: 'Kids',            keywords: ['kids','children','child','boy'] },
+      { key: 'specialty', icon: '⭐',  label: 'Specialty',       keywords: ['specialty','special','design'] },
+      { key: 'styling',   icon: '💇',  label: 'Hair Styling',    keywords: ['styling','style','blowout','press'] },
+      { key: 'braids',    icon: '🪮',  label: 'Braids',          keywords: ['braid','twist','loc','dreadlock'] },
+      { key: 'color',     icon: '🎨',  label: 'Hair Color',      keywords: ['color','colour','dye','highlight','tint'] },
+      { key: 'treatment', icon: '🧴',  label: 'Hair Treatment',  keywords: ['treatment','condition','keratin'] },
+      { key: 'nails',     icon: '💅',  label: 'Nails',           keywords: ['nail','manicure','pedicure'] },
+      { key: 'shave',     icon: '🪒',  label: 'Shave',           keywords: ['shave','shaving','razor'] },
+      { key: 'facial',    icon: '🧖',  label: 'Facial',          keywords: ['facial','face clean','cleansing'] },
+      { key: 'skincare',  icon: '🧴',  label: 'Skincare',        keywords: ['skincare','skin care','mask','moistur'] },
+      { key: 'massage',   icon: '💆',  label: 'Massage',         keywords: ['massage','relax'] },
+      { key: 'makeup',    icon: '💄',  label: 'Makeup',          keywords: ['makeup','make up','cosmetic'] },
+      { key: 'brows',     icon: '👁',  label: 'Brows & Lashes',  keywords: ['brow','eyebrow','lash','eyelash'] },
+    ];
+
+    let _activeOfferCat = 'all';
+    let _offerBarbersAll = [];
+
+    function _barberMatchesCat(barber, catKey) {
+      if (catKey === 'all') return true;
+      const cat = OFFER_CATEGORIES.find(c => c.key === catKey);
+      if (!cat || !cat.keywords) return true;
+      const services = getBarberServices(barber);
+      if (!services.length) return false;
+      return services.some(svc => {
+        const text = (String(svc.name || '') + ' ' + String(svc.category || '')).toLowerCase();
+        return cat.keywords.some(kw => text.includes(kw));
       });
     }
 
-    // ── Home render ──────────────────────────────────────────────────────────
-    (async function renderHome() {
-      function renderAll() {
-        const all = getAllBarbers();
-        const featured = [...all].sort((a, b) => b.rating - a.rating);
-        const trending = [...all].sort((a, b) => b.total_bookings - a.total_bookings);
-        renderCircleRow(featured, 'featuredScrollRow');
-        renderCircleRow(trending, 'trendingScrollRow');
-        const user = Auth.getUser();
-        if (user && user.role === 'customer') {
-          document.getElementById('recommendedSection').style.display = 'block';
-          const recommended = [...all].sort((a, b) => {
-            const am = a.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-            const bm = b.city.toLowerCase() === (user.city || '').toLowerCase() ? 1 : 0;
-            return bm !== am ? bm - am : b.rating - a.rating;
-          });
-          document.getElementById('recommendedGrid').innerHTML = recommended.slice(0, 4).map((b) => barberCardHTML(b)).join('');
-        }
+    function _renderOfferCards() {
+      const row = document.getElementById('offerRow');
+      if (!row) return;
+      const barbers = _activeOfferCat === 'all'
+        ? _offerBarbersAll
+        : _offerBarbersAll.filter(b => _barberMatchesCat(b, _activeOfferCat));
+      if (!barbers.length) {
+        row.innerHTML = `<div class="text-muted text-sm" style="padding:0.5rem 0">${typeof t === 'function' ? t('home_no_offers') : 'No results for this category.'}</div>`;
+        return;
       }
-      renderAll();
+      const promotedLabel = typeof t === 'function' ? t('home_promoted') : 'Promoted';
+      row.innerHTML = barbers.map((barber) => {
+        const name = _heroEsc(_barberDisplayName(barber));
+        const rating = Number.isFinite(Number(barber.rating)) ? Number(barber.rating).toFixed(1) : '4.8';
+        const savePct = _offerPercent(barber);
+        const saveLabel = typeof tf === 'function' ? tf('home_save_up_to', { pct: savePct }) : `Save up to ${savePct}%`;
+        return `
+          <a class="offer-card" href="${getBarberProfileUrl(barber.id)}" aria-label="${name}">
+            <div class="offer-media">
+              <img src="${_barberCardImage(barber)}" alt="${name}" loading="lazy">
+              <span class="offer-rating">&#9733; ${rating}</span>
+              <span class="offer-promoted">${_heroEsc(promotedLabel)}</span>
+            </div>
+            <div class="offer-body">
+              <p class="offer-name">${name}</p>
+              <span class="offer-save">${_heroEsc(saveLabel)}</span>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function _renderOfferFilters() {
+      const filterRow = document.getElementById('offerFilterRow');
+      if (!filterRow) return;
+      filterRow.innerHTML = OFFER_CATEGORIES.map(cat => `
+        <button
+          class="offer-filter-btn${_activeOfferCat === cat.key ? ' active' : ''}"
+          onclick="_setOfferCat('${cat.key}')"
+          aria-pressed="${_activeOfferCat === cat.key}"
+        >${cat.icon ? cat.icon + '\u2009' : ''}${_heroEsc(cat.label)}</button>
+      `).join('');
+    }
+
+    function _setOfferCat(key) {
+      _activeOfferCat = key;
+      _renderOfferFilters();
+      _renderOfferCards();
+    }
+
+    function renderSpecialOffers(barbers) {
+      if (!barbers.length) {
+        const row = document.getElementById('offerRow');
+        if (row) row.innerHTML = `<div class="text-muted text-sm">${typeof t === 'function' ? t('home_no_offers') : 'No offers yet.'}</div>`;
+        return;
+      }
+
+      _offerBarbersAll = [...barbers]
+        .sort((a, b) => {
+          const aScore = (Number(a.rating) || 0) * 100 + (Number(a.total_bookings) || 0);
+          const bScore = (Number(b.rating) || 0) * 100 + (Number(b.total_bookings) || 0);
+          return bScore - aScore;
+        })
+        .slice(0, 20);
+
+      _renderOfferFilters();
+      _renderOfferCards();
+    }
+
+    function renderRecommendedList(barbers) {
+      const list = document.getElementById('recommendedList');
+      if (!list) return;
+      if (!barbers.length) {
+        list.innerHTML = `<div class="text-muted text-sm">${typeof t === 'function' ? t('home_no_businesses') : 'No businesses available.'}</div>`;
+        return;
+      }
+
+      const user = Auth.getUser();
+      const userCity = String(user?.city || '').toLowerCase().trim();
+      const recommended = [...barbers]
+        .sort((a, b) => {
+          const cityMatchA = userCity && String(a.city || '').toLowerCase() === userCity ? 1 : 0;
+          const cityMatchB = userCity && String(b.city || '').toLowerCase() === userCity ? 1 : 0;
+          if (cityMatchA !== cityMatchB) return cityMatchB - cityMatchA;
+          const ratingDiff = (Number(b.rating) || 0) - (Number(a.rating) || 0);
+          if (ratingDiff !== 0) return ratingDiff;
+          return (Number(b.total_bookings) || 0) - (Number(a.total_bookings) || 0);
+        })
+        .slice(0, 10);
+
+      list.innerHTML = recommended.map((barber) => {
+        const name = _heroEsc(_barberDisplayName(barber));
+        const rating = Number.isFinite(Number(barber.rating)) ? Number(barber.rating).toFixed(1) : '4.8';
+        const location = _heroEsc(String(barber.location || barber.city || 'Location not set'));
+        const minPrice = getBarberMinPrice(barber);
+        const priceText = minPrice !== null
+          ? (typeof tf === 'function' ? tf('home_from_price', { price: fmtPrice(minPrice) }) : `From ${fmtPrice(minPrice)}`)
+          : (typeof t === 'function' ? t('home_view_services') : 'View services');
+        return `
+          <a class="recommend-card" href="${getBarberProfileUrl(barber.id)}" aria-label="Open ${name}">
+            <div class="recommend-media">
+              <img src="${_barberCardImage(barber)}" alt="${name}" loading="lazy">
+            </div>
+            <div class="recommend-body">
+              <p class="recommend-name">${name}</p>
+              <div class="recommend-meta"><span>&#9733; ${rating}</span><span>${location}</span></div>
+              <div class="recommend-price">${priceText}</div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function _matchesCityFilter(barber, cityFilter) {
+      const cityNeedle = _normalizeSearch(cityFilter);
+      if (!cityNeedle) return true;
+      const cityValue = _normalizeSearch(barber?.city || '');
+      const locationValue = _normalizeSearch(barber?.location || '');
+      return cityValue === cityNeedle || locationValue.includes(cityNeedle);
+    }
+
+    function _filterBarbersByCity(barbers) {
+      if (!_activeCityFilter) return barbers;
+      return barbers.filter((barber) => _matchesCityFilter(barber, _activeCityFilter));
+    }
+
+    function _syncCityButtonsUI() {
+      const active = _normalizeSearch(_activeCityFilter);
+      document.querySelectorAll('.quick-tag[data-city]').forEach((btn) => {
+        const city = _normalizeSearch(btn.getAttribute('data-city'));
+        const isActive = active ? city === active : city === '';
+        btn.classList.toggle('active', Boolean(isActive));
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function renderHomeSections() {
+      const all = getAllBarbers();
+      const filtered = _filterBarbersByCity(all);
+      _refreshSearchIndex(all);
+      renderCategories();
+      renderSpecialOffers(filtered);
+      _syncCityButtonsUI();
+      hydrateBottomNavLinks();
+    }
+
+    function hydrateBottomNavLinks() {
+      const appt = document.getElementById('bottomAppointmentsLink');
+      const profile = document.getElementById('bottomProfileLink');
+      if (!appt || !profile || typeof Auth === 'undefined') return;
+      const user = Auth.getUser();
+      if (!user) {
+        appt.href = 'login.html';
+        profile.href = 'login.html';
+        return;
+      }
+      if (user.role === 'barber') {
+        appt.href = 'barber-dashboard.html?tab=bookings';
+        profile.href = 'barber-dashboard.html';
+        return;
+      }
+      if (user.role === 'admin') {
+        appt.href = 'admin.html';
+        profile.href = 'admin.html';
+        return;
+      }
+      appt.href = 'dashboard.html?tab=bookings';
+      profile.href = 'dashboard.html?tab=profile';
+    }
+
+    (async function renderHome() {
+      renderHomeSections();
       await loadApiBarbers();
-      renderAll();
+      renderHomeSections();
     })();
 
-    // ── Profile Sheet State ───────────────────────────────────────────────────
+    // Profile Sheet State
     let _sheetBarber = null;
     let _sheetTab = 'services';
     let _sheetReviewRating = 5;
     let _sheetLbPhotos = [];
     let _sheetLbIndex = 0;
 
-    const SHEET_CAT_ICONS = { Cuts: '✂', Beard: '🧔', Kids: '👶', Specialty: '⭐' };
+    const SHEET_CAT_ICONS = { Cuts: 'Cut', Beard: 'Beard', Kids: 'Kids', Specialty: 'Pro' };
 
     function openProfileSheet(barberId) {
       const b = getAllBarbers().find((x) => x.id === barberId);
@@ -764,17 +1699,17 @@
                 ${barber.is_verified ? '<span class="verified-check" title="Verified"></span>' : ''}
               </div>
               <div class="sheet-profile-meta">
-                ${barber.location ? `<span>📍 ${escapeHTML(barber.location)}</span>` : ''}
-                ${barber.years_experience ? `<span>✂ ${barber.years_experience} yrs exp</span>` : ''}
-                ${barber.total_bookings ? `<span>📅 ${barber.total_bookings} bookings</span>` : ''}
+                ${barber.location ? `<span>${escapeHTML(barber.location)}</span>` : ''}
+                ${barber.years_experience ? `<span>${barber.years_experience} ${typeof t === 'function' ? t('profile_exp') : 'yrs exp'}</span>` : ''}
+                ${barber.total_bookings ? `<span>${barber.total_bookings} ${typeof t === 'function' ? t('profile_bookings') : 'bookings'}</span>` : ''}
               </div>
               <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.25rem">
                 ${starsHTML(rating, '0.85rem')}
                 <strong style="font-size:0.88rem">${rating.toFixed(1)}</strong>
                 <span class="text-muted text-sm">(${totalReviews})</span>
-                ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.68rem;padding:0.12rem 0.45rem;border-radius:50px;font-weight:700">🔥 ${barber.booked_today} booked today</span>` : ''}
+                ${barber.booked_today > 0 ? `<span style="background:rgba(233,69,96,0.1);color:var(--primary);font-size:0.68rem;padding:0.12rem 0.45rem;border-radius:50px;font-weight:700">${barber.booked_today} ${typeof t === 'function' ? t('card_booked_today') : 'booked today'}</span>` : ''}
               </div>
-              <div class="text-muted text-sm">Next available: <strong style="color:var(--green)">${nextAvail}</strong></div>
+              <div class="text-muted text-sm">${typeof t === 'function' ? t('sheet_next_avail') : 'Next available:'} <strong style="color:var(--green)">${nextAvail}</strong></div>
               ${barber.bio ? `<div class="sheet-profile-bio">${escapeHTML(barber.bio)}</div>` : ''}
             </div>
           </div>
@@ -782,21 +1717,21 @@
 
         <div class="sheet-cta">
           ${isCustomer && services.length
-            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">📅 Book Now${minPrice !== null ? ' · From ' + fmtPrice(minPrice) : ''}</a>`
+            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">${minPrice !== null ? (typeof tf === 'function' ? tf('sheet_book_from', { price: fmtPrice(minPrice) }) : 'Book Now — From ' + fmtPrice(minPrice)) : (typeof t === 'function' ? t('sheet_book_now') : 'Book Now')}</a>`
             : !isCustomer
-              ? `<a href="login.html" class="btn btn-primary">Log in to Book</a>`
-              : `<button class="btn btn-ghost" disabled>No services listed</button>`}
-          <a href="profile.html?id=${barber.id}" class="btn btn-outline">Full Profile</a>
-          ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" onclick="sheetToggleFav()">${isFav ? '♥ Saved' : '♡ Save'}</button>` : ''}
-          ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm" style="flex-basis:100%">💬 Message Barber</a>` : ''}
+              ? `<a href="login.html" class="btn btn-primary">${typeof t === 'function' ? t('profile_login_book') : 'Log in to Book'}</a>`
+              : `<button class="btn btn-ghost" disabled>${typeof t === 'function' ? t('no_services_listed') : 'No services listed'}</button>`}
+          <a href="${getBarberProfileUrl(barber.id)}" class="btn btn-outline">${typeof t === 'function' ? t('sheet_full_profile') : 'Full Profile'}</a>
+          ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" onclick="sheetToggleFav()">${isFav ? (typeof t === 'function' ? t('sheet_saved_btn') : 'Saved') : (typeof t === 'function' ? t('sheet_save_btn') : 'Save')}</button>` : ''}
+          ${isCustomer && barber.user_id ? `<a href="dashboard.html?msg=${barber.user_id}" class="btn btn-ghost btn-sm" style="flex-basis:100%">${typeof t === 'function' ? t('msg_barber_btn') : 'Message Barber'}</a>` : ''}
         </div>
 
         <div class="sheet-tabs">
           <div class="tabs">
-            <button class="tab-btn ${_sheetTab === 'services' ? 'active' : ''}" onclick="switchSheetTab('services',this)">Services</button>
-            <button class="tab-btn ${_sheetTab === 'portfolio' ? 'active' : ''}" onclick="switchSheetTab('portfolio',this)">Gallery</button>
-            <button class="tab-btn ${_sheetTab === 'reviews' ? 'active' : ''}" onclick="switchSheetTab('reviews',this)">Reviews</button>
-            <button class="tab-btn ${_sheetTab === 'availability' ? 'active' : ''}" onclick="switchSheetTab('availability',this)">Schedule</button>
+            <button class="tab-btn ${_sheetTab === 'services' ? 'active' : ''}" onclick="switchSheetTab('services',this)">${typeof t === 'function' ? t('tab_services') : 'Services'}</button>
+            <button class="tab-btn ${_sheetTab === 'portfolio' ? 'active' : ''}" onclick="switchSheetTab('portfolio',this)">${typeof t === 'function' ? t('sheet_tab_gallery') : 'Gallery'}</button>
+            <button class="tab-btn ${_sheetTab === 'reviews' ? 'active' : ''}" onclick="switchSheetTab('reviews',this)">${typeof t === 'function' ? t('tab_reviews') : 'Reviews'}</button>
+            <button class="tab-btn ${_sheetTab === 'availability' ? 'active' : ''}" onclick="switchSheetTab('availability',this)">${typeof t === 'function' ? t('sheet_tab_schedule') : 'Schedule'}</button>
           </div>
         </div>
         <div class="sheet-tab-content" id="sheetTabContent"></div>`;
@@ -825,7 +1760,7 @@
 
       if (tab === 'services') {
         if (!servicesList.length) {
-          el.innerHTML = `<div class="empty-state"><div class="icon">✂</div><p>No services listed yet.</p></div>`;
+          el.innerHTML = `<div class="empty-state"><div class="icon">&#9988;</div><p>${typeof t === 'function' ? t('no_services_listed') : 'No services listed yet.'}</p></div>`;
           return;
         }
         const grouped = {};
@@ -838,11 +1773,11 @@
               <div>
                 <h4>${escapeHTML(s.name)} <span style="font-size:0.68rem;background:var(--bg-elevated);padding:0.1rem 0.4rem;border-radius:50px;color:var(--text-muted)">${SHEET_CAT_ICONS[s.category] || ''} ${escapeHTML(s.category)}</span></h4>
                 ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
-                <span style="font-size:0.72rem;color:var(--text-muted)">⏱ ${fmtDur(s.duration)}</span>
+                <span style="font-size:0.72rem;color:var(--text-muted)">${typeof t === 'function' ? t('sheet_time_label') : 'Time:'} ${fmtDur(s.duration)}</span>
               </div>
               <div class="sheet-svc-right">
                 <span class="sheet-svc-price">${fmtPrice(s.price)}</span>
-                ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
+                ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">${typeof t === 'function' ? t('sheet_book_btn') : 'Book'}</a>` : ''}
               </div>
             </div>`).join('');
         };
@@ -859,12 +1794,12 @@
 
       } else if (tab === 'portfolio') {
         if (!portfolio.length) {
-          el.innerHTML = `<div class="empty-state"><div class="icon">🖼</div><p>No portfolio photos yet.</p></div>`;
+          el.innerHTML = `<div class="empty-state"><div class="icon">&#128247;</div><p>${typeof t === 'function' ? t('no_portfolio') : 'No portfolio photos yet.'}</p></div>`;
         } else {
           _sheetLbPhotos = portfolio;
           el.innerHTML = `
             <div class="fade-in">
-              <p class="text-muted text-sm" style="margin-bottom:0.75rem">Tap to view full size</p>
+              <p class="text-muted text-sm" style="margin-bottom:0.75rem">${typeof t === 'function' ? t('sheet_tap_view') : 'Tap to view full size'}</p>
               <div class="sheet-portfolio-grid">
                 ${portfolio.map((p, i) => `<img class="portfolio-thumb" src="${p.url}" alt="${escapeHTML(p.caption)}" loading="lazy" onclick="openSheetLightbox(${i})">`).join('')}
               </div>
@@ -892,16 +1827,17 @@
                 </div>
               </div>
               ${r.comment ? `<p style="color:var(--text-muted);font-size:0.83rem;line-height:1.55">${escapeHTML(r.comment)}</p>` : ''}
-              ${replyText ? `<div class="review-reply"><strong>${escapeHTML(barber.first_name)} replied:</strong> ${escapeHTML(replyText)}</div>` : ''}
+              ${replyText ? `<div class="review-reply"><strong>${escapeHTML(barber.first_name)} ${typeof t === 'function' ? t('sheet_replied').replace('{name}', '') : 'replied:'}</strong> ${escapeHTML(replyText)}</div>` : ''}
             </div>`;
         }).join('');
+        const reviewsCountLabel = typeof tf === 'function' ? tf('sheet_reviews_plural', { count: allReviews.length }) : `${allReviews.length} reviews`;
         el.innerHTML = `
           <div class="fade-in">
             <div class="sheet-reviews-summary">
               <div style="text-align:center">
                 <div style="font-size:2.8rem;font-weight:800;line-height:1;color:var(--primary)">${avg.toFixed(1)}</div>
                 <div style="margin:0.3rem 0">${starsHTML(avg, '1rem')}</div>
-                <p class="text-muted text-sm">${allReviews.length} reviews</p>
+                <p class="text-muted text-sm">${reviewsCountLabel}</p>
               </div>
               <div>
                 ${counts.map(({ n, cnt }) => `
@@ -912,15 +1848,15 @@
                   </div>`).join('')}
               </div>
             </div>
-            ${isCustomer ? `<button class="btn btn-outline btn-sm" style="margin-bottom:1rem" onclick="openSheetReviewModal()">✍ Write a Review</button>` : ''}
+            ${isCustomer ? `<button class="btn btn-outline btn-sm" style="margin-bottom:1rem" onclick="openSheetReviewModal()">${typeof t === 'function' ? t('write_review') : 'Write a Review'}</button>` : ''}
             <div style="display:flex;flex-direction:column;gap:0.6rem">
-              ${reviewHTML || '<div class="empty-state"><p>No reviews yet. Be the first!</p></div>'}
+              ${reviewHTML || `<div class="empty-state"><p>${typeof t === 'function' ? t('no_reviews') : 'No reviews yet. Be the first!'}</p></div>`}
             </div>
           </div>`;
 
       } else if (tab === 'availability') {
         if (!availability.length) {
-          el.innerHTML = `<div class="empty-state"><p>Schedule not set.</p></div>`;
+          el.innerHTML = `<div class="empty-state"><p>${typeof t === 'function' ? t('sheet_no_schedule') : 'Schedule not set.'}</p></div>`;
           return;
         }
         el.innerHTML = `
@@ -928,7 +1864,7 @@
             ${availability.map((a) => `
               <div class="sheet-avail-row ${!a.open ? 'closed' : ''}">
                 <span style="font-weight:500;min-width:100px">${a.label}</span>
-                <span style="color:var(--text-muted)">${a.open ? `${a.start} – ${a.end}` : 'Closed'}</span>
+                <span style="color:var(--text-muted)">${a.open ? `${a.start} - ${a.end}` : (typeof t === 'function' ? t('cal_legend_closed') : 'Closed')}</span>
               </div>`).join('')}
           </div>`;
       }
@@ -946,11 +1882,11 @@
           <div>
             <h4>${escapeHTML(s.name)} <span style="font-size:0.68rem;background:var(--bg-elevated);padding:0.1rem 0.4rem;border-radius:50px;color:var(--text-muted)">${SHEET_CAT_ICONS[s.category] || ''} ${escapeHTML(s.category)}</span></h4>
             ${s.desc ? `<p>${escapeHTML(s.desc)}</p>` : ''}
-            <span style="font-size:0.72rem;color:var(--text-muted)">⏱ ${fmtDur(s.duration)}</span>
+            <span style="font-size:0.72rem;color:var(--text-muted)">${typeof t === 'function' ? t('sheet_time_label') : 'Time:'} ${fmtDur(s.duration)}</span>
           </div>
           <div class="sheet-svc-right">
             <span class="sheet-svc-price">${fmtPrice(s.price)}</span>
-            ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">Book</a>` : ''}
+            ${isCustomer ? `<a href="book.html?barber=${barber.id}&service=${s.id}" class="btn btn-primary btn-sm">${typeof t === 'function' ? t('sheet_book_btn') : 'Book'}</a>` : ''}
           </div>
         </div>`).join('');
     }
@@ -969,7 +1905,7 @@
       renderSheetContent();
     }
 
-    // ── Sheet Review Modal ────────────────────────────────────────────────────
+    // Sheet Review Modal
     function openSheetReviewModal() {
       _sheetReviewRating = 5;
       sheetUpdateStars(5);
@@ -1014,7 +1950,7 @@
     }
     sheetUpdateStars(5);
 
-    // ── Sheet Lightbox ────────────────────────────────────────────────────────
+    // Sheet Lightbox
     function openSheetLightbox(idx) {
       _sheetLbIndex = idx;
       updateSheetLightbox();

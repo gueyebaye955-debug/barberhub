@@ -140,6 +140,45 @@
     let activeConvId = null;
     let convMessages = [];
     let msgPollTimer = null;
+    const PORTFOLIO_MAX = 12;
+    let portfolioItems = [];
+    let portfolioMode = 'local';
+    let portfolioLoadToken = 0;
+
+    // ── Apply barber onboarding data collected during signup ───────────────────
+    (function applyOnboarding() {
+      const raw = localStorage.getItem('bh_barber_onboarding');
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        localStorage.removeItem('bh_barber_onboarding'); // consume once
+
+        // Apply shop name to local profile store
+        const profiles = JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
+        if (!profiles[barber.id]) profiles[barber.id] = { ...barber, id: barber.id };
+        if (data.shop_name) profiles[barber.id].shop_name = data.shop_name;
+        if (data.instagram) profiles[barber.id].instagram = data.instagram;
+        if (data.years_exp) profiles[barber.id].years_experience = parseInt(data.years_exp, 10);
+        localStorage.setItem('bh_barber_profiles', JSON.stringify(profiles));
+
+        // Apply services with prices
+        if (Array.isArray(data.services) && data.services.length > 0) {
+          const svcs = data.services.map((s, i) => ({
+            id: Date.now() + i,
+            name: s.name,
+            price: s.price,
+            duration: s.duration || 30,
+            description: s.description || '',
+            category: s.name === 'Kids Cut' ? 'Kids' : s.name.toLowerCase().includes('beard') || s.name.toLowerCase().includes('shave') ? 'Beard' : 'Cuts'
+          }));
+          localStorage.setItem(`bh_services_${barber.id}`, JSON.stringify(svcs));
+          // Patch barber object too so render() picks it up immediately
+          barber = { ...barber, ...profiles[barber.id], services: svcs };
+        } else {
+          barber = { ...barber, ...profiles[barber.id] };
+        }
+      } catch (_) {}
+    })();
 
     const SVC_KEY = `bh_services_${barber.id}`;
     function getServices() {
@@ -461,8 +500,34 @@
             <div class="panel-card" style="color:var(--text-muted);font-size:0.875rem">
                This is a demo barber profile. Shop details are managed in data.js.
             </div>`}
+
+            <div class="panel-card portfolio-manager-card" style="padding:1.5rem;margin-top:1.25rem;max-width:760px">
+              <div class="portfolio-manager-head">
+                <h3 style="font-size:0.95rem">${t('portfolio_manage')}</h3>
+                <span class="portfolio-count" id="portfolioCountLabel">0/${PORTFOLIO_MAX}</span>
+              </div>
+              <input type="file" id="portfolioFileInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
+              <button class="btn btn-primary" style="width:100%;margin-bottom:0.75rem;font-size:1rem;padding:0.75rem" onclick="document.getElementById('portfolioFileInput').click()">
+                📷 Upload Photo from Device
+              </button>
+              <div style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-bottom:0.75rem">— or paste an image URL below —</div>
+              <div class="portfolio-add-grid">
+                <input class="form-control" id="portfolioUrlInput" placeholder="${t('portfolio_add_url_ph')}" inputmode="url" autocomplete="off">
+                <input class="form-control" id="portfolioCaptionInput" placeholder="${t('portfolio_caption_ph')}" maxlength="160" autocomplete="off">
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;margin-top:0.75rem">
+                <button class="btn btn-primary btn-sm" id="portfolioAddBtn" onclick="addPortfolioPhoto()">${t('portfolio_add_btn')}</button>
+                <span class="text-muted text-sm">${t('portfolio_reorder_hint')}</span>
+              </div>
+              <div id="portfolioManagerAlert" style="margin-top:0.75rem"></div>
+              <div id="portfolioManagerList" class="portfolio-manager-list" style="margin-top:0.9rem"></div>
+            </div>
           </div>
         </div>`;
+
+      if (activeTab === 'profile') {
+        loadPortfolioManager();
+      }
     }
 
     function timeAgo(iso) {
@@ -556,6 +621,395 @@
 
     function stopMsgPoll() {
       if (msgPollTimer) { clearInterval(msgPollTimer); msgPollTimer = null; }
+    }
+
+    function isValidPortfolioImageUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      try {
+        const parsed = new URL(raw);
+        if (parsed.protocol === 'https:') return true;
+        if (parsed.protocol !== 'http:') return false;
+        const host = parsed.hostname.toLowerCase();
+        return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function normalizePortfolioItem(item, index) {
+      const rawUrl = typeof item?.url === 'string' ? item.url : item?.image_url;
+      if (typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+      const numericId = Number.parseInt(item?.id, 10);
+      return {
+        id: Number.isInteger(numericId) && numericId > 0 ? numericId : (Date.now() + index),
+        url: rawUrl.trim(),
+        caption: typeof item?.caption === 'string' ? item.caption : '',
+        sort_order: Number.isFinite(Number(item?.sort_order)) ? Number(item.sort_order) : index,
+        created_at: item?.created_at || new Date().toISOString()
+      };
+    }
+
+    function getBarberProfilesStore() {
+      return JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
+    }
+
+    function saveBarberProfilesStore(store) {
+      localStorage.setItem('bh_barber_profiles', JSON.stringify(store));
+    }
+
+    function ensureLocalBarberProfile(store) {
+      if (!store[barber.id]) {
+        store[barber.id] = {
+          ...barber,
+          id: barber.id,
+          _dynamic: true
+        };
+      }
+      if (!Array.isArray(store[barber.id].portfolio)) {
+        store[barber.id].portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
+      }
+      return store[barber.id];
+    }
+
+    function syncBarberPortfolioState(items) {
+      barber = {
+        ...barber,
+        portfolio: items,
+        portfolio_count: items.length
+      };
+    }
+
+    function setLocalPortfolio(items) {
+      const normalized = items
+        .map((item, idx) => normalizePortfolioItem(item, idx))
+        .filter(Boolean)
+        .slice(0, PORTFOLIO_MAX)
+        .map((item, idx) => ({ ...item, sort_order: idx }));
+
+      const profiles = getBarberProfilesStore();
+      const profile = ensureLocalBarberProfile(profiles);
+      profile.portfolio = normalized.map((item, idx) => ({
+        id: item.id,
+        url: item.url,
+        caption: item.caption || '',
+        sort_order: idx,
+        created_at: item.created_at || new Date().toISOString()
+      }));
+      profile.portfolio_count = profile.portfolio.length;
+      saveBarberProfilesStore(profiles);
+      syncBarberPortfolioState(profile.portfolio);
+      return profile.portfolio;
+    }
+
+    function getLocalPortfolio() {
+      const profiles = getBarberProfilesStore();
+      const profile = ensureLocalBarberProfile(profiles);
+      saveBarberProfilesStore(profiles);
+      const list = Array.isArray(profile.portfolio) ? profile.portfolio : [];
+      return list
+        .map((item, idx) => normalizePortfolioItem(item, idx))
+        .filter(Boolean)
+        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+        .slice(0, PORTFOLIO_MAX)
+        .map((item, idx) => ({ ...item, sort_order: idx }));
+    }
+
+    function showPortfolioAlert(message, type = 'success') {
+      const el = document.getElementById('portfolioManagerAlert');
+      if (!el) return;
+      const cls = type === 'error' ? 'alert-danger' : (type === 'warning' ? 'alert-warning' : 'alert-success');
+      el.innerHTML = `<div class="alert ${cls}">${escapeHTML(message)}</div>`;
+      if (type !== 'error') {
+        setTimeout(() => {
+          const target = document.getElementById('portfolioManagerAlert');
+          if (target) target.innerHTML = '';
+        }, 2800);
+      }
+    }
+
+    function renderPortfolioManager() {
+      const listEl = document.getElementById('portfolioManagerList');
+      const countEl = document.getElementById('portfolioCountLabel');
+      const addBtn = document.getElementById('portfolioAddBtn');
+      if (!listEl || !countEl) return;
+
+      const safeItems = portfolioItems
+        .map((item, idx) => normalizePortfolioItem(item, idx))
+        .filter(Boolean)
+        .slice(0, PORTFOLIO_MAX)
+        .map((item, idx) => ({ ...item, sort_order: idx }));
+
+      portfolioItems = safeItems;
+      syncBarberPortfolioState(safeItems);
+      countEl.textContent = `${safeItems.length}/${PORTFOLIO_MAX}`;
+      if (addBtn) addBtn.disabled = safeItems.length >= PORTFOLIO_MAX;
+
+      if (!safeItems.length) {
+        listEl.innerHTML = `<div class="empty-state" style="padding:1.2rem 0.5rem"><p>${t('no_portfolio')}</p></div>`;
+        return;
+      }
+
+      listEl.innerHTML = safeItems.map((item, index) => `
+        <div class="portfolio-manager-item card">
+          <img class="portfolio-manager-thumb" src="${escapeHTML(item.url)}" alt="${escapeHTML(item.caption || 'Portfolio photo')}" loading="lazy">
+          <div class="portfolio-manager-body">
+            <input class="form-control portfolio-caption-input" id="portfolioCaptionEdit_${index}" maxlength="160" value="${escapeHTML(item.caption || '')}" placeholder="${t('portfolio_caption_ph')}">
+            <div class="portfolio-manager-actions">
+              <button class="btn btn-ghost btn-sm" onclick="savePortfolioCaption(${index})">${t('btn_save')}</button>
+              <button class="btn btn-ghost btn-sm" onclick="movePortfolioPhoto(${index}, -1)" ${index === 0 ? 'disabled' : ''}>${t('portfolio_move_up')}</button>
+              <button class="btn btn-ghost btn-sm" onclick="movePortfolioPhoto(${index}, 1)" ${index === safeItems.length - 1 ? 'disabled' : ''}>${t('portfolio_move_down')}</button>
+              <button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3)" onclick="deletePortfolioPhoto(${index})">${t('portfolio_delete')}</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadPortfolioManager() {
+      const listEl = document.getElementById('portfolioManagerList');
+      if (!listEl) return;
+
+      const token = ++portfolioLoadToken;
+      listEl.innerHTML = `<div class="loading-box" style="padding:1rem"><div class="spinner"></div><p>Loading portfolio...</p></div>`;
+
+      if (window.BH_API) {
+        try {
+          const rows = await window.BH_API.getMyPortfolio();
+          if (token !== portfolioLoadToken) return;
+          portfolioMode = 'api';
+          portfolioItems = (Array.isArray(rows) ? rows : [])
+            .map((row, idx) => normalizePortfolioItem(row, idx))
+            .filter(Boolean)
+            .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+          setLocalPortfolio(portfolioItems);
+          renderPortfolioManager();
+          return;
+        } catch (error) {
+          console.warn('Portfolio API unavailable, switching to local fallback:', error.message);
+          portfolioMode = 'local';
+          showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+        }
+      } else {
+        portfolioMode = 'local';
+      }
+
+      if (token !== portfolioLoadToken) return;
+      portfolioItems = getLocalPortfolio();
+      setLocalPortfolio(portfolioItems);
+      renderPortfolioManager();
+    }
+
+    async function addPortfolioPhoto() {
+      const urlInput = document.getElementById('portfolioUrlInput');
+      const captionInput = document.getElementById('portfolioCaptionInput');
+      if (!urlInput || !captionInput) return;
+
+      const imageUrl = urlInput.value.trim();
+      const caption = captionInput.value.trim();
+      if (!isValidPortfolioImageUrl(imageUrl)) {
+        showPortfolioAlert(t('portfolio_invalid_url'), 'error');
+        return;
+      }
+      if (caption.length > 160) {
+        showPortfolioAlert(t('portfolio_caption_too_long'), 'error');
+        return;
+      }
+      if (portfolioItems.length >= PORTFOLIO_MAX) {
+        showPortfolioAlert(t('portfolio_max_reached'), 'error');
+        return;
+      }
+
+      if (portfolioMode === 'api' && window.BH_API) {
+        try {
+          await window.BH_API.addMyPortfolioPhoto(imageUrl, caption);
+          urlInput.value = '';
+          captionInput.value = '';
+          showPortfolioAlert(t('portfolio_add_success'));
+          await loadPortfolioManager();
+          return;
+        } catch (error) {
+          console.warn('Portfolio add via API failed, using local fallback:', error.message);
+          portfolioMode = 'local';
+          showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+        }
+      }
+
+      const localAdded = [
+        ...portfolioItems,
+        {
+          id: Date.now(),
+          url: imageUrl,
+          caption,
+          sort_order: portfolioItems.length,
+          created_at: new Date().toISOString()
+        }
+      ];
+      portfolioItems = setLocalPortfolio(localAdded);
+      renderPortfolioManager();
+      urlInput.value = '';
+      captionInput.value = '';
+      showPortfolioAlert(t('portfolio_add_success'));
+    }
+
+    function handlePhotoUpload(input) {
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showPortfolioAlert('Please select an image file.', 'error');
+        return;
+      }
+      if (portfolioItems.length >= PORTFOLIO_MAX) {
+        showPortfolioAlert(t('portfolio_max_reached'), 'error');
+        return;
+      }
+
+      showPortfolioAlert('Resizing photo…', 'info');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = async function() {
+          // Resize to max 800px on longest side
+          const MAX = 800;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+          else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+          // Compress as JPEG quality 0.78 (typically ~60-120 KB)
+          const base64 = canvas.toDataURL('image/jpeg', 0.78);
+
+          const caption = document.getElementById('portfolioCaptionInput')?.value?.trim() || '';
+
+          if (portfolioMode === 'api' && window.BH_API) {
+            try {
+              await window.BH_API.uploadMyPortfolioPhoto(base64, caption);
+              if (document.getElementById('portfolioCaptionInput')) document.getElementById('portfolioCaptionInput').value = '';
+              showPortfolioAlert(t('portfolio_add_success'));
+              await loadPortfolioManager();
+              return;
+            } catch (err) {
+              console.warn('Upload via API failed, saving locally:', err.message);
+              portfolioMode = 'local';
+              showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+            }
+          }
+
+          // Local fallback
+          const localAdded = [
+            ...portfolioItems,
+            { id: Date.now(), url: base64, caption, sort_order: portfolioItems.length, created_at: new Date().toISOString() }
+          ];
+          portfolioItems = setLocalPortfolio(localAdded);
+          renderPortfolioManager();
+          if (document.getElementById('portfolioCaptionInput')) document.getElementById('portfolioCaptionInput').value = '';
+          showPortfolioAlert(t('portfolio_add_success'));
+        };
+        img.onerror = () => showPortfolioAlert('Could not read image. Try a different file.', 'error');
+        img.src = e.target.result;
+      };
+      reader.onerror = () => showPortfolioAlert('Could not read file. Try again.', 'error');
+      reader.readAsDataURL(file);
+    }
+
+    async function savePortfolioCaption(index) {
+      const item = portfolioItems[index];
+      const input = document.getElementById(`portfolioCaptionEdit_${index}`);
+      if (!item || !input) return;
+      const caption = input.value.trim();
+
+      if (caption.length > 160) {
+        showPortfolioAlert(t('portfolio_caption_too_long'), 'error');
+        return;
+      }
+
+      if (portfolioMode === 'api' && window.BH_API) {
+        try {
+          await window.BH_API.updateMyPortfolioPhoto(item.id, caption);
+          showPortfolioAlert(t('portfolio_save_success'));
+          await loadPortfolioManager();
+          return;
+        } catch (error) {
+          console.warn('Caption update via API failed, using local fallback:', error.message);
+          portfolioMode = 'local';
+          showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+        }
+      }
+
+      const next = [...portfolioItems];
+      next[index] = { ...next[index], caption };
+      portfolioItems = setLocalPortfolio(next);
+      renderPortfolioManager();
+      showPortfolioAlert(t('portfolio_save_success'));
+    }
+
+    async function applyPortfolioReorder(nextItems) {
+      const normalized = nextItems
+        .map((item, idx) => ({ ...item, sort_order: idx }))
+        .slice(0, PORTFOLIO_MAX);
+
+      if (portfolioMode === 'api' && window.BH_API) {
+        const ids = normalized.map((item) => Number.parseInt(item.id, 10));
+        const validIds = ids.every((id) => Number.isInteger(id) && id > 0);
+        if (validIds) {
+          try {
+            await window.BH_API.reorderMyPortfolio(ids);
+            showPortfolioAlert(t('portfolio_reorder_success'));
+            await loadPortfolioManager();
+            return true;
+          } catch (error) {
+            console.warn('Reorder via API failed, using local fallback:', error.message);
+            portfolioMode = 'local';
+            showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+          }
+        } else {
+          portfolioMode = 'local';
+        }
+      }
+
+      portfolioItems = setLocalPortfolio(normalized);
+      renderPortfolioManager();
+      showPortfolioAlert(t('portfolio_reorder_success'));
+      return true;
+    }
+
+    async function movePortfolioPhoto(index, direction) {
+      const target = index + direction;
+      if (target < 0 || target >= portfolioItems.length) return;
+
+      const next = [...portfolioItems];
+      const [moved] = next.splice(index, 1);
+      next.splice(target, 0, moved);
+      await applyPortfolioReorder(next);
+    }
+
+    async function deletePortfolioPhoto(index) {
+      const item = portfolioItems[index];
+      if (!item) return;
+      if (!confirm(t('portfolio_delete_confirm'))) return;
+
+      if (portfolioMode === 'api' && window.BH_API) {
+        try {
+          await window.BH_API.deleteMyPortfolioPhoto(item.id);
+          showPortfolioAlert(t('portfolio_delete_success'));
+          await loadPortfolioManager();
+          return;
+        } catch (error) {
+          console.warn('Delete via API failed, using local fallback:', error.message);
+          portfolioMode = 'local';
+          showPortfolioAlert(t('portfolio_api_fallback'), 'warning');
+        }
+      }
+
+      const next = portfolioItems.filter((_, idx) => idx !== index);
+      portfolioItems = setLocalPortfolio(next);
+      renderPortfolioManager();
+      showPortfolioAlert(t('portfolio_delete_success'));
     }
 
     function saveAvatar() {

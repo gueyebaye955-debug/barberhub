@@ -18,6 +18,37 @@ function cleanString(value, options = {}) {
   return trimmed;
 }
 
+function parseImageUrl(value) {
+  const raw = cleanString(value, { max: 2000 });
+  if (!raw) return null;
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  const protocol = parsed.protocol.toLowerCase();
+  if (protocol === 'https:') return parsed.toString();
+  if (protocol !== 'http:') return null;
+
+  const host = parsed.hostname.toLowerCase();
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  if (isLocalHost && process.env.NODE_ENV !== 'production') return parsed.toString();
+  return null;
+}
+
+// Max ~1.5 MB actual image → ~2 MB base64 string
+const BASE64_IMAGE_RE = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/;
+const BASE64_MAX_BYTES = 2_097_152; // 2 MB
+function parseBase64Image(value) {
+  if (typeof value !== 'string') return null;
+  if (value.length > BASE64_MAX_BYTES) return null;
+  if (!BASE64_IMAGE_RE.test(value)) return null;
+  return value;
+}
+
 function parsePositiveInt(value) {
   let number;
   if (typeof value === 'number') {
@@ -66,7 +97,9 @@ module.exports = {
   cleanString,
   normalizeDbTime,
   normalizeEmail,
+  parseBase64Image,
   parseHHMM,
+  parseImageUrl,
   parseISODate,
   parsePositiveInt,
   timeToMinutes,

@@ -79,6 +79,18 @@
     renderFooter();
     applyI18n();
 
+    function formatLoginError(rawMessage) {
+      const msg = String(rawMessage || '').trim();
+      const lower = msg.toLowerCase();
+      if (/failed to fetch|networkerror|load failed|timeout|cors|network request failed/.test(lower)) {
+        return 'We could not reach the server. Check your internet connection and try again.';
+      }
+      if (/invalid email or password|invalid credentials|unauthorized/.test(lower)) {
+        return 'Incorrect email or password.';
+      }
+      return msg || 'Unable to sign in. Please try again.';
+    }
+
     // Handle Google OAuth redirect (token comes back in URL params)
     (function handleOAuthRedirect() {
       const p = new URLSearchParams(location.search);
@@ -117,15 +129,24 @@
 
       let result;
       try {
-        result = window.BH_API
-          ? await window.BH_API.login(email, password)
-          : await Auth.login(email, password);
+        if (window.BH_API) {
+          try {
+            result = await window.BH_API.login(email, password);
+          } catch (apiErr) {
+            const msg = String(apiErr?.message || '');
+            const isNetworkIssue = !apiErr?.status || /failed to fetch|networkerror|load failed|timeout/i.test(msg);
+            if (!isNetworkIssue) throw apiErr;
+            result = await Auth.login(email, password);
+          }
+        } else {
+          result = await Auth.login(email, password);
+        }
       } catch (err) {
         result = { ok: false, error: err.message || 'Unable to sign in. Please try again.' };
       }
 
       if (!result || result.ok === false || !result.user) {
-        document.getElementById('alertBox').innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+        document.getElementById('alertBox').innerHTML = `<div class="alert alert-danger">${formatLoginError(result?.error)}</div>`;
         btn.disabled = false;
         btn.textContent = t('login_btn');
         return;
@@ -147,4 +168,3 @@
   </script>
 </body>
 </html>
-

@@ -18,7 +18,17 @@
   const grid = document.getElementById('cityBarbersGrid');
   const empty = document.getElementById('cityEmpty');
   const count = document.getElementById('cityCount');
-  if (count) count.textContent = `${results.length} barber${results.length === 1 ? '' : 's'} in ${city}`;
+  if (count) {
+    count.textContent = results.length === 1
+      ? tf('city_count_one', { count: results.length, city })
+      : tf('city_count_many', { count: results.length, city });
+  }
+  if (empty) {
+    const emptyTitle = empty.querySelector('h3');
+    const emptyText = empty.querySelector('p');
+    if (emptyTitle) emptyTitle.textContent = t('no_barbers');
+    if (emptyText) emptyText.textContent = t('city_try_other');
+  }
 
   if (!results.length) {
     if (grid) grid.innerHTML = '';
@@ -41,14 +51,14 @@
         ratingValue: b.rating,
         reviewCount: b.total_reviews
       },
-      url: `profile.html?id=${b.id}`
+      url: (typeof getBarberProfileUrl === 'function' ? getBarberProfileUrl(b.id) : `profile.html?id=${b.id}`)
     }
   }));
 
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: `${city} Barbers | BarberHub`,
+    name: `${tf('city_best_title', { city })} | BarberHub`,
     url: `/${citySlug}.html`,
     mainEntity: {
       '@type': 'ItemList',
@@ -64,8 +74,8 @@
 
   const titleEl = document.getElementById('cityTitle');
   const introEl = document.getElementById('cityIntro');
-  if (titleEl) titleEl.textContent = `Best Barbers in ${city}`;
+  if (titleEl) titleEl.textContent = tf('city_best_title', { city });
   if (introEl) {
-    introEl.innerHTML = `Compare ratings, next open slots, and prices for trusted barbers in <strong>${esc(city)}</strong>.`;
+    introEl.innerHTML = tf('city_intro', { city: `<strong>${esc(city)}</strong>` });
   }
 })();

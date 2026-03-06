@@ -4,8 +4,11 @@
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
   const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
-  // Use relative /api when on localhost or Railway itself; use full URL on Netlify/other hosts
-  const DEFAULT_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.includes('railway.app'))
+  // Use relative /api only when served by the Express backend (port 4000) or on Railway itself.
+  // All other contexts (file://, Live Server, etc.) use the full Railway URL.
+  const _h = location.hostname;
+  // Netlify uses a same-origin /api proxy to Railway (see netlify.toml).
+  const DEFAULT_BASE = (location.port === '4000' || _h.includes('railway.app') || _h.endsWith('netlify.app'))
     ? '/api'
     : RAILWAY_API;
 
@@ -134,6 +137,49 @@
 
     async getBarber(id) {
       return request(`/barbers/${encodeURIComponent(id)}`);
+    },
+
+    async getMyPortfolio() {
+      return request('/barbers/me/portfolio', { auth: true });
+    },
+
+    async addMyPortfolioPhoto(imageUrl, caption = '') {
+      return request('/barbers/me/portfolio', {
+        method: 'POST',
+        auth: true,
+        body: { image_url: imageUrl, caption },
+      });
+    },
+
+    async uploadMyPortfolioPhoto(imageData, caption = '') {
+      return request('/barbers/me/portfolio/upload', {
+        method: 'POST',
+        auth: true,
+        body: { image_data: imageData, caption },
+      });
+    },
+
+    async updateMyPortfolioPhoto(photoId, caption) {
+      return request(`/barbers/me/portfolio/${encodeURIComponent(photoId)}`, {
+        method: 'PATCH',
+        auth: true,
+        body: { caption },
+      });
+    },
+
+    async reorderMyPortfolio(photoIds) {
+      return request('/barbers/me/portfolio/reorder', {
+        method: 'PUT',
+        auth: true,
+        body: { photo_ids: photoIds },
+      });
+    },
+
+    async deleteMyPortfolioPhoto(photoId) {
+      return request(`/barbers/me/portfolio/${encodeURIComponent(photoId)}`, {
+        method: 'DELETE',
+        auth: true,
+      });
     },
 
     async getBookedSlots(barberId, date) {

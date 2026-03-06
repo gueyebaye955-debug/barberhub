@@ -25,6 +25,16 @@
     .auth-footer a { color: var(--primary); text-decoration: none; }
     .barber-notice { background: rgba(233,69,96,0.07); border: 1px solid rgba(233,69,96,0.2); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem; display: none; }
     .barber-notice.show { display: block; }
+    .barber-extras { display: none; margin-bottom: 1.25rem; }
+    .barber-extras.show { display: block; }
+    .barber-extras__title { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+    .svc-price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .svc-price-item { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem; }
+    .svc-price-item label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.3rem; }
+    .svc-price-row { display: flex; align-items: center; gap: 0.4rem; }
+    .svc-price-row span { color: var(--text-muted); font-size: 0.9rem; }
+    .svc-price-input { background: none; border: none; outline: none; color: var(--text); font-size: 1rem; font-weight: 700; width: 100%; font-family: inherit; }
+    .svc-price-input::placeholder { color: var(--border); font-weight: 400; }
     .pw-strength { margin-top: 0.4rem; }
     .pw-strength-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-bottom: 0.3rem; }
     .pw-strength-fill { height: 100%; border-radius: 2px; width: 0; transition: width 0.3s, background 0.3s; }
@@ -80,8 +90,60 @@
         </div>
       </div>
 
-      <div class="barber-notice" id="barberNotice" data-i18n="signup_barber_notice">
-         Barber accounts require admin approval before your profile goes live. You'll be able to set up your profile after registration.
+      <div class="barber-notice" id="barberNotice">
+        ✅ Barber accounts require admin approval before your profile goes live.
+      </div>
+
+      <!-- Barber-only extras: shop info + service prices -->
+      <div class="barber-extras" id="barberExtras">
+        <div class="barber-extras__title">Your Shop Info</div>
+        <div class="form-group">
+          <label class="form-label">Shop / Business Name</label>
+          <input type="text" class="form-control" id="shopName" placeholder="e.g. Carlos Cuts, The Fade Factory" oninput="checkShopName(this.value)">
+          <div id="shopNameHint" style="margin-top:0.5rem;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);display:none"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Years of Experience</label>
+          <select class="form-control" id="yearsExp">
+            <option value="">Select...</option>
+            <option value="1">Less than 1 year</option>
+            <option value="1">1–2 years</option>
+            <option value="3">3–5 years</option>
+            <option value="6">6–10 years</option>
+            <option value="11">10+ years</option>
+          </select>
+        </div>
+        <div class="barber-extras__title" style="margin-top:1rem">Your Starting Prices <span style="font-weight:400;color:var(--text-muted)">(optional — you can change later)</span></div>
+        <div class="svc-price-grid">
+          <div class="svc-price-item">
+            <label>✂️ Fade</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_fade" type="number" min="5" max="500" placeholder="30"></div>
+          </div>
+          <div class="svc-price-item">
+            <label>🧔 Beard Trim</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_beard" type="number" min="5" max="500" placeholder="20"></div>
+          </div>
+          <div class="svc-price-item">
+            <label>💈 Lineup</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_lineup" type="number" min="5" max="500" placeholder="15"></div>
+          </div>
+          <div class="svc-price-item">
+            <label>👶 Kids Cut</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_kids" type="number" min="5" max="500" placeholder="20"></div>
+          </div>
+          <div class="svc-price-item">
+            <label>🪒 Hot Shave</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_shave" type="number" min="5" max="500" placeholder="25"></div>
+          </div>
+          <div class="svc-price-item">
+            <label>⭐ Full Service</label>
+            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_full" type="number" min="5" max="500" placeholder="50"></div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:0.75rem">
+          <label class="form-label">Instagram Handle <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+          <input type="text" class="form-control" id="instagram" placeholder="@yourhandle">
+        </div>
       </div>
 
       <form id="signupForm">
@@ -192,6 +254,60 @@
       document.getElementById('roleCustomer').classList.toggle('selected', role === 'customer');
       document.getElementById('roleBarber').classList.toggle('selected', role === 'barber');
       document.getElementById('barberNotice').classList.toggle('show', role === 'barber');
+      document.getElementById('barberExtras').classList.toggle('show', role === 'barber');
+      document.getElementById('shopName').required = role === 'barber';
+    }
+
+    /* ── Shop name duplicate check + suggestions ── */
+    function checkShopName(val) {
+      const hint = document.getElementById('shopNameHint');
+      if (!hint) return;
+      const name = val.trim();
+      if (!name || name.length < 2) { hint.style.display = 'none'; return; }
+
+      // Collect all existing shop/barber names
+      const existing = new Set();
+      if (typeof getAllBarbers === 'function') {
+        for (const b of getAllBarbers()) {
+          const sn = (b.shop_name || '').trim().toLowerCase();
+          const fn = (`${b.first_name || ''} ${b.last_name || ''}`).trim().toLowerCase();
+          if (sn) existing.add(sn);
+          if (fn) existing.add(fn);
+        }
+      }
+
+      const key = name.toLowerCase();
+      if (!existing.has(key)) {
+        // Name is available
+        hint.style.display = 'block';
+        hint.style.background = 'rgba(16,185,129,0.1)';
+        hint.style.border = '1px solid rgba(16,185,129,0.3)';
+        hint.innerHTML = `<span style="color:#10b981;font-weight:600">✓ "${name}" is available!</span>`;
+        return;
+      }
+
+      // Name taken — generate suggestions
+      const suffixes = ['1','2','3','NYC','BK','Pro','Official','Cuts','Barbers','Shop'];
+      const suggestions = [];
+      for (const sfx of suffixes) {
+        const candidate = name + sfx;
+        if (!existing.has(candidate.toLowerCase())) {
+          suggestions.push(candidate);
+          if (suggestions.length >= 4) break;
+        }
+      }
+
+      const chips = suggestions.map(s => {
+        const safe = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<button type="button" onclick="document.getElementById('shopName').value='${safe}';checkShopName('${safe}');"
+          style="background:var(--bg-elevated);border:1px solid var(--primary);color:var(--primary);border-radius:50px;padding:0.25rem 0.7rem;font-size:0.8rem;cursor:pointer;font-family:inherit;margin:0.3rem 0.2rem 0 0;display:inline-block">${s}</button>`;
+      }).join('');
+
+      hint.style.display = 'block';
+      hint.style.background = 'rgba(245,158,11,0.1)';
+      hint.style.border = '1px solid rgba(245,158,11,0.3)';
+      hint.innerHTML = `<span style="color:#f59e0b;font-weight:600">⚠ "${name}" is already taken.</span>
+        ${suggestions.length ? `<div style="margin-top:0.35rem;color:var(--text-muted);font-size:0.78rem">Try one of these:</div><div style="margin-top:0.2rem">${chips}</div>` : ''}`;
     }
 
     /* ── EmailJS helper ── */
@@ -347,7 +463,10 @@
       document.getElementById('verifyStep').style.display        = 'none';
       document.querySelector('.role-cards').style.display        = 'grid';
       document.getElementById('signupForm').style.display        = 'block';
-      if (selectedRole === 'barber') document.getElementById('barberNotice').classList.add('show');
+      if (selectedRole === 'barber') {
+        document.getElementById('barberNotice').classList.add('show');
+        document.getElementById('barberExtras').classList.add('show');
+      }
       const btn = document.getElementById('signupBtn');
       btn.disabled    = false;
       btn.textContent = t('signup_btn');
@@ -384,6 +503,25 @@
         password,
         role: selectedRole
       };
+
+      // Save barber onboarding extras to localStorage (applied in barber-dashboard on first load)
+      if (selectedRole === 'barber') {
+        const parsePrice = (id) => { const v = parseFloat(document.getElementById(id)?.value); return v > 0 ? Math.round(v * 100) : null; };
+        const onboarding = {
+          shop_name:      document.getElementById('shopName')?.value.trim() || '',
+          years_exp:      document.getElementById('yearsExp')?.value || '',
+          instagram:      (document.getElementById('instagram')?.value.trim() || '').replace(/^@/, ''),
+          services: [
+            { name: 'Fade',         price: parsePrice('price_fade'),  duration: 45, description: 'Classic fade haircut' },
+            { name: 'Beard Trim',   price: parsePrice('price_beard'), duration: 20, description: 'Beard shaping and trim' },
+            { name: 'Lineup',       price: parsePrice('price_lineup'),duration: 15, description: 'Edge up and lineup' },
+            { name: 'Kids Cut',     price: parsePrice('price_kids'),  duration: 30, description: 'Haircut for kids 12 and under' },
+            { name: 'Hot Shave',    price: parsePrice('price_shave'), duration: 30, description: 'Traditional hot towel shave' },
+            { name: 'Full Service', price: parsePrice('price_full'),  duration: 60, description: 'Haircut + beard + lineup' },
+          ].filter((s) => s.price !== null),
+        };
+        localStorage.setItem('bh_barber_onboarding', JSON.stringify(onboarding));
+      }
 
       await startVerification();
     });
