@@ -7,7 +7,9 @@
     "dev": "nodemon server.js",
     "db:migrate": "node database/migrate.js",
     "db:seed": "node database/seed.js",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "db:backup": "node database/backup.js",
+    "db:restore": "node database/restore.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
