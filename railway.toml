@@ -3,4 +3,4 @@ builder = "nixpacks"
 buildCommand = "cd backend && npm install"
 
 [deploy]
-startCommand = "cd backend && npm run db:migrate && npm start"
+startCommand = "cd backend && (node database/migrate.js || echo 'Migration warning - server starting anyway') && npm start"
