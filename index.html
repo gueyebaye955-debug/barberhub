@@ -759,6 +759,20 @@
       font-weight: 700;
     }
 
+    .offer-book {
+      display: inline-flex;
+      align-self: flex-start;
+      margin-top: 0.15rem;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      border: 1px solid var(--primary);
+      padding: 0.24rem 0.68rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
     .recommend-list {
       display: grid;
       grid-template-columns: 1fr;
@@ -1481,6 +1495,7 @@
         const rating = Number.isFinite(Number(barber.rating)) ? Number(barber.rating).toFixed(1) : '4.8';
         const savePct = _offerPercent(barber);
         const saveLabel = typeof tf === 'function' ? tf('home_save_up_to', { pct: savePct }) : `Save up to ${savePct}%`;
+        const bookNowLabel = typeof t === 'function' ? t('card_book_now') : 'Book Now';
         return `
           <a class="offer-card" href="${getBarberProfileUrl(barber.id)}" aria-label="${name}">
             <div class="offer-media">
@@ -1491,6 +1506,7 @@
             <div class="offer-body">
               <p class="offer-name">${name}</p>
               <span class="offer-save">${_heroEsc(saveLabel)}</span>
+              <span class="offer-book">${_heroEsc(bookNowLabel)}</span>
             </div>
           </a>
         `;
@@ -1636,9 +1652,11 @@
     }
 
     (async function renderHome() {
-      renderHomeSections();
-      await loadApiBarbers();
-      renderHomeSections();
+      try { renderHomeSections(); } catch(e) { console.error('renderHome init:', e); }
+      try {
+        await loadApiBarbers();
+        renderHomeSections();
+      } catch(e) { console.error('renderHome api:', e); }
     })();
 
     // Profile Sheet State

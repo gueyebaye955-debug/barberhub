@@ -344,14 +344,16 @@ function _apiTimeout(ms) {
 }
 
 async function loadApiBarbers(params = {}) {
-  if (!window.BH_API) return API_BARBERS;
+  if (!window.BH_API) return API_BARBERS.length ? API_BARBERS : BARBERS;
   try {
     const rows = await Promise.race([window.BH_API.getBarbers(params), _apiTimeout(5000)]);
-    API_BARBERS = Array.isArray(rows) ? rows.map(normalizeApiBarber) : [];
+    if (Array.isArray(rows) && rows.length) {
+      API_BARBERS = rows.map(normalizeApiBarber);
+    }
   } catch (error) {
     console.warn('Unable to load API barbers:', error.message);
   }
-  return API_BARBERS;
+  return API_BARBERS.length ? API_BARBERS : BARBERS;
 }
 
 async function loadApiBarberById(id) {

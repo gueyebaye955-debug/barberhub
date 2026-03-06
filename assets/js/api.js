@@ -4,13 +4,13 @@
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
   const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
-  // Use relative /api only when served by the Express backend (port 4000) or on Railway itself.
-  // All other contexts (file://, Live Server, etc.) use the full Railway URL.
+  // Use relative /api for all real HTTP servers (production, custom domains, local Express).
+  // Only fall back to full Railway URL when opening files directly or via a dev server
+  // that is NOT the Express backend (e.g. VSCode Live Server on port 5500).
   const _h = location.hostname;
-  // Netlify uses a same-origin /api proxy to Railway (see netlify.toml).
-  const DEFAULT_BASE = (location.port === '4000' || _h.includes('railway.app') || _h.endsWith('netlify.app'))
-    ? '/api'
-    : RAILWAY_API;
+  const _isDevServer = location.protocol === 'file:' ||
+    ((_h === 'localhost' || _h === '127.0.0.1') && location.port !== '4000' && location.port !== '80' && location.port !== '443' && location.port !== '');
+  const DEFAULT_BASE = _isDevServer ? RAILWAY_API : '/api';
 
   function getBaseUrl() {
     const fromStorage = localStorage.getItem('bh_api_base');
