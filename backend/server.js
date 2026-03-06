@@ -30,8 +30,7 @@ if (isProduction && jwtSecret.length < 32) {
   process.exit(1);
 }
 if (isProduction && !process.env.SESSION_SECRET) {
-  console.error('Missing SESSION_SECRET in production.');
-  process.exit(1);
+  console.warn('SESSION_SECRET not set; falling back to JWT_SECRET for sessions.');
 }
 
 if (process.env.TRUST_PROXY === 'true' || isProduction) {

@@ -1031,8 +1031,8 @@
               onkeydown="heroSearchKeydown(event)"
               onblur="setTimeout(()=>{const b=document.getElementById('heroSuggestions');if(b)b.style.display='none'},300)">
             <button class="btn btn-primary btn-sm home-search-btn" onclick="doSearch()" data-i18n="home_search_btn">Search</button>
+            <div class="navbar__suggestions hero__suggestions" id="heroSuggestions" style="display:none"></div>
           </div>
-          <div class="navbar__suggestions hero__suggestions" id="heroSuggestions" style="display:none"></div>
           <div class="quick-tags">
             <button class="quick-tag" data-city="" aria-pressed="true" onclick="quickCity('', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>All cities</button>
             <button class="quick-tag" data-city="New York" aria-pressed="false" onclick="quickCity('New York', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>New York</button>

@@ -488,7 +488,7 @@
         const name = b.shop_name || b.first_name+' '+b.last_name;
         if (name.toLowerCase().includes(q))
           matches.push({ type: 'barber', label: name, sub: b.city, id: b.id });
-        b.services.forEach(s => {
+        (b.services || []).forEach(s => {
           if (s.name.toLowerCase().includes(q) && !matches.find(m => m.label === s.name))
             matches.push({ type: 'service', label: s.name, sub: s.category });
         });
