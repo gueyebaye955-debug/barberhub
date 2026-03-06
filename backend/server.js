@@ -36,8 +36,24 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// The frontend currently relies on inline scripts/event handlers across pages.
+// Keep Helmet protections, but relax CSP enough so production matches localhost behavior.
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      fontSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https:'],
+    },
+  },
 }));
 
 app.use(cors({
