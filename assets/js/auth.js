@@ -2,6 +2,16 @@
 // Auth  localStorage-based login/signup simulation
 // ============================================================
 
+function isProductionRuntime() {
+  const host = String(location.hostname || '').toLowerCase();
+  const isFile = location.protocol === 'file:';
+  const isLocalHost = host === 'localhost'
+    || host === '127.0.0.1'
+    || host === '::1'
+    || host.startsWith('192.168.');
+  return !isFile && !isLocalHost;
+}
+
 //  Password hashing (SHA-256 via Web Crypto API) 
 async function hashPassword(pw) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
@@ -41,6 +51,11 @@ const Auth = {
 
   // Current logged-in user (clears session if timed out)
   getUser() {
+    if (isProductionRuntime() && !localStorage.getItem('bh_token')) {
+      localStorage.removeItem('bh_user');
+      localStorage.removeItem('bh_last_activity');
+      return null;
+    }
     const u = localStorage.getItem('bh_user');
     if (!u) return null;
     const last = parseInt(localStorage.getItem('bh_last_activity') || '0');
@@ -57,6 +72,9 @@ const Auth = {
 
   // Login (async  rate-limited, hashes password before comparing)
   async login(email, password) {
+    if (isProductionRuntime()) {
+      return { ok: false, error: 'Local demo sign-in is disabled in production.' };
+    }
     const key      = email.toLowerCase();
     const attempts = JSON.parse(localStorage.getItem('bh_login_attempts') || '{}');
     const rec      = attempts[key] || { count: 0, lockedUntil: 0 };
@@ -101,6 +119,9 @@ const Auth = {
 
   // Register (async  hashes password before storing)
   async register(data) {
+    if (isProductionRuntime()) {
+      return { ok: false, error: 'Local demo sign-up is disabled in production.' };
+    }
     const accounts = this.getAccounts();
     if (accounts.find(a => a.email === data.email.toLowerCase())) {
       return { ok: false, error: 'Email is already registered.' };
@@ -380,6 +401,11 @@ const Analytics = {
       meta
     });
     this.saveAll(events);
+    try {
+      if (window.BH_API && typeof window.BH_API.trackEvent === 'function') {
+        window.BH_API.trackEvent(eventName, meta).catch(() => {});
+      }
+    } catch (_) {}
   },
 
   getWeeklyFunnel() {
@@ -433,6 +459,17 @@ const Monitoring = {
       meta
     });
     this._write(this._errorKey, rows, this._maxErrors);
+    try {
+      if (window.BH_API && typeof window.BH_API.trackError === 'function') {
+        window.BH_API.trackError({
+          source: 'client',
+          message,
+          stack,
+          page: location.pathname.split('/').pop() || 'index.html',
+          meta,
+        }).catch(() => {});
+      }
+    } catch (_) {}
   },
 
   getRecentErrors(limit = 30) {
@@ -473,6 +510,18 @@ const Monitoring = {
       error
     });
     this._write(this._uptimeKey, checks, this._maxChecks);
+    try {
+      const user = Auth.getUser();
+      if (user && user.role === 'admin' && window.BH_API && typeof window.BH_API.reportUptime === 'function') {
+        window.BH_API.reportUptime({
+          target: url,
+          ok,
+          status_code: status,
+          latency_ms: latency,
+          error,
+        }).catch(() => {});
+      }
+    } catch (_) {}
 
     return { ok, status, latency, error };
   },

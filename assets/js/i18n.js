@@ -40,7 +40,7 @@ const TRANSLATIONS = {
     footer_cancel_policy: 'Cancellation Policy',
     footer_nyc_guide:     'NYC Barber Guide',
     footer_brooklyn_barbers:'Brooklyn Barbers',
-    footer_rights:        ' 2025 BarberHub. All rights reserved.',
+    footer_rights:        ' 2025 Jelall. All rights reserved.',
     footer_made:          'Made with  for the barber community',
 
     //  Index 
@@ -74,13 +74,13 @@ const TRANSLATIONS = {
     trend_title:          ' Trending Barbers',
     trend_sub:            'Most booked this month',
     cta_title:            'Are you a Barber?',
-    cta_sub:              'Join BarberHub and grow your business. Manage bookings, showcase your work, and reach thousands of customers in your area.',
+    cta_sub:              'Join Jelall and grow your business. Manage bookings, showcase your work, and reach thousands of customers in your area.',
     cta_join:             'Join as a Barber',
     cta_explore:          'Explore Barbers',
     promo_text:           'New barbers joining daily  Book today and save!',
     promo_cta:            'Browse Barbers ',
-    search_page_document_title:'Search - BarberHub',
-    search_page_eyebrow:  'BarberHub Search',
+    search_page_document_title:'Search - Jelall',
+    search_page_eyebrow:  'Jelall Search',
     search_page_title:    'Find your next appointment',
     search_page_sub:      'Book top-rated barbers and beauty professionals near you.',
     search_label_services_businesses:'Services or businesses',
@@ -97,9 +97,9 @@ const TRANSLATIONS = {
     err_page_not_found:   'Page Not Found',
     err_404_desc:         "Looks like this page got a bad cut. The page you're looking for doesn't exist or has moved.",
     err_back_home:        'Back Home',
-    terms_intro:          'By using BarberHub, you agree to these terms.',
+    terms_intro:          'By using Jelall, you agree to these terms.',
     terms_platform_role:  'Platform Role',
-    terms_platform_role_desc:'BarberHub provides discovery and booking tools. Services are delivered by independent barbers and shops.',
+    terms_platform_role_desc:'Jelall provides discovery and booking tools. Services are delivered by independent barbers and shops.',
     terms_accounts:       'Accounts',
     terms_accounts_1:     'Keep account details accurate and secure.',
     terms_accounts_2:     'Do not impersonate others or misuse platform features.',
@@ -111,11 +111,11 @@ const TRANSLATIONS = {
     terms_acceptable_1:   'No abusive content, spam, fraud, or unauthorized scraping.',
     terms_acceptable_2:   'No attempts to disrupt service operation or security controls.',
     terms_liability:      'Liability',
-    terms_liability_desc: 'To the extent allowed by law, BarberHub is not liable for indirect damages arising from platform use.',
+    terms_liability_desc: 'To the extent allowed by law, Jelall is not liable for indirect damages arising from platform use.',
     terms_changes:        'Changes',
     terms_changes_desc:   'We may update these terms and will post the revised date on this page.',
     terms_questions_contact:'For questions about these terms, contact',
-    privacy_intro_long:   'BarberHub is committed to protecting your privacy. This policy describes what information we collect and how we use it.',
+    privacy_intro_long:   'Jelall is committed to protecting your privacy. This policy describes what information we collect and how we use it.',
     privacy_information_collect:'Information We Collect',
     privacy_collect_1:    'Account details such as name, email, phone number, and city.',
     privacy_collect_2:    'Booking details including service, barber, date, time, and notes.',
@@ -302,7 +302,7 @@ const TRANSLATIONS = {
 
     //  Login 
     login_title:          'Welcome back',
-    login_sub:            'Sign in to your BarberHub account',
+    login_sub:            'Sign in to your Jelall account',
     login_email:          'Email Address',
     login_password:       'Password',
     login_btn:            'Sign In',
@@ -313,7 +313,7 @@ const TRANSLATIONS = {
 
     //  Signup 
     signup_title:         'Create your account',
-    signup_sub:           'Join thousands of users on BarberHub',
+    signup_sub:           'Join thousands of users on Jelall',
     signup_role_customer: 'Customer',
     signup_role_barber:   'Barber',
     signup_role_cust_sub: 'Book appointments',
@@ -386,7 +386,7 @@ const TRANSLATIONS = {
 
     //  Admin 
     admin_stats:          'Platform Statistics',
-    admin_stats_sub:      'Real-time overview of BarberHub activity',
+    admin_stats_sub:      'Real-time overview of Jelall activity',
     admin_barbers:        'Barber Management',
     admin_users:          'User Management',
     admin_bookings:       'All Bookings',
@@ -485,7 +485,7 @@ const TRANSLATIONS = {
     footer_cancel_policy: "Politique d'annulation",
     footer_nyc_guide:     'Guide des barbiers NYC',
     footer_brooklyn_barbers:'Barbiers de Brooklyn',
-    footer_rights:        ' 2025 BarberHub. Tous droits rservs.',
+    footer_rights:        ' 2025 Jelall. Tous droits rservs.',
     footer_made:          "Fait avec  pour la communaut des barbiers",
 
     //  Index 
@@ -519,13 +519,13 @@ const TRANSLATIONS = {
     trend_title:          ' Barbiers tendance',
     trend_sub:            'Les plus rservs ce mois-ci',
     cta_title:            'Vous tes barbier ?',
-    cta_sub:              "Rejoignez BarberHub et dveloppez votre activit. Grez vos rservations, prsentez votre travail et atteignez des milliers de clients dans votre rgion.",
+    cta_sub:              "Rejoignez Jelall et dveloppez votre activit. Grez vos rservations, prsentez votre travail et atteignez des milliers de clients dans votre rgion.",
     cta_join:             'Rejoindre en tant que barbier',
     cta_explore:          'Explorer les barbiers',
     promo_text:           'De nouveaux barbiers chaque jour  Rservez aujourd\'hui et conomisez!',
     promo_cta:            'Voir les barbiers ',
-    search_page_document_title:'Recherche - BarberHub',
-    search_page_eyebrow:  'Recherche BarberHub',
+    search_page_document_title:'Recherche - Jelall',
+    search_page_eyebrow:  'Recherche Jelall',
     search_page_title:    'Trouvez votre prochain rendez-vous',
     search_page_sub:      'Reservez des barbiers et pros beaute pres de vous.',
     search_label_services_businesses:'Services ou etablissements',
@@ -542,9 +542,9 @@ const TRANSLATIONS = {
     err_page_not_found:   'Page introuvable',
     err_404_desc:         "On dirait que cette page a rate sa coupe. La page que vous cherchez n'existe pas ou a ete deplacee.",
     err_back_home:        "Retour a l'accueil",
-    terms_intro:          'En utilisant BarberHub, vous acceptez ces conditions.',
+    terms_intro:          'En utilisant Jelall, vous acceptez ces conditions.',
     terms_platform_role:  'Role de la plateforme',
-    terms_platform_role_desc:'BarberHub fournit des outils de recherche et de reservation. Les services sont assures par des barbiers et salons independants.',
+    terms_platform_role_desc:'Jelall fournit des outils de recherche et de reservation. Les services sont assures par des barbiers et salons independants.',
     terms_accounts:       'Comptes',
     terms_accounts_1:     'Gardez les informations de compte exactes et securisees.',
     terms_accounts_2:     "N'usurpez pas l'identite d'autrui et n'abusez pas des fonctionnalites de la plateforme.",
@@ -556,11 +556,11 @@ const TRANSLATIONS = {
     terms_acceptable_1:   'Aucun contenu abusif, spam, fraude ou extraction non autorisee.',
     terms_acceptable_2:   'Aucune tentative de perturber le service ou les controles de securite.',
     terms_liability:      'Responsabilite',
-    terms_liability_desc: "Dans la limite autorisee par la loi, BarberHub n'est pas responsable des dommages indirects lies a l'utilisation de la plateforme.",
+    terms_liability_desc: "Dans la limite autorisee par la loi, Jelall n'est pas responsable des dommages indirects lies a l'utilisation de la plateforme.",
     terms_changes:        'Modifications',
     terms_changes_desc:   'Nous pouvons mettre a jour ces conditions et publierons la date revisee sur cette page.',
     terms_questions_contact:'Pour toute question sur ces conditions, contactez',
-    privacy_intro_long:   "BarberHub s'engage a proteger votre vie privee. Cette politique decrit les informations que nous collectons et comment nous les utilisons.",
+    privacy_intro_long:   "Jelall s'engage a proteger votre vie privee. Cette politique decrit les informations que nous collectons et comment nous les utilisons.",
     privacy_information_collect:'Informations que nous collectons',
     privacy_collect_1:    'Informations de compte telles que nom, e-mail, numero de telephone et ville.',
     privacy_collect_2:    'Details de reservation incluant service, barbier, date, heure et notes.',
@@ -747,7 +747,7 @@ const TRANSLATIONS = {
 
     //  Login 
     login_title:          'Bon retour',
-    login_sub:            'Connectez-vous  votre compte BarberHub',
+    login_sub:            'Connectez-vous  votre compte Jelall',
     login_email:          'Adresse e-mail',
     login_password:       'Mot de passe',
     login_btn:            'Se connecter',
@@ -758,7 +758,7 @@ const TRANSLATIONS = {
 
     //  Signup 
     signup_title:         'Crer votre compte',
-    signup_sub:           'Rejoignez des milliers d\'utilisateurs sur BarberHub',
+    signup_sub:           'Rejoignez des milliers d\'utilisateurs sur Jelall',
     signup_role_customer: 'Client',
     signup_role_barber:   'Barbier',
     signup_role_cust_sub: 'Rserver des rendez-vous',
@@ -831,7 +831,7 @@ const TRANSLATIONS = {
 
     //  Admin 
     admin_stats:          'Statistiques de la plateforme',
-    admin_stats_sub:      'Vue en temps rel de l\'activit BarberHub',
+    admin_stats_sub:      'Vue en temps rel de l\'activit Jelall',
     admin_barbers:        'Gestion des barbiers',
     admin_users:          'Gestion des utilisateurs',
     admin_bookings:       'Toutes les rservations',
@@ -931,7 +931,7 @@ const TRANSLATIONS = {
     footer_cancel_policy: 'Politig anulasion',
     footer_nyc_guide:     'NYC Barber Guide',
     footer_brooklyn_barbers:'Brooklyn Barber yi',
-    footer_rights:        ' 2025 BarberHub. Mbolo am seen ygl.',
+    footer_rights:        ' 2025 Jelall. Mbolo am seen ygl.',
     footer_made:          'Def ak  ci barber yi',
 
     // Index
@@ -965,13 +965,13 @@ const TRANSLATIONS = {
     trend_title:          ' Barber yi trend',
     trend_sub:            'Yi gna jl rendez-vous ci wergi ji',
     cta_title:            'Yaa barber?',
-    cta_sub:              'Jkkl ci BarberHub ngir yokk sa liggey. Fale rendez-vous yi, wone sa liggey, dem ak mi ci sa dkk.',
+    cta_sub:              'Jkkl ci Jelall ngir yokk sa liggey. Fale rendez-vous yi, wone sa liggey, dem ak mi ci sa dkk.',
     cta_join:             'Ygl ci barber',
     cta_explore:          'Xool barber yi',
     promo_text:           'Barber yp dau w  Jfl tey, waaw ci kanam!',
     promo_cta:            'Xool barber yi ',
-    search_page_document_title:'Seet - BarberHub',
-    search_page_eyebrow:  'Seet ci BarberHub',
+    search_page_document_title:'Seet - Jelall',
+    search_page_eyebrow:  'Seet ci Jelall',
     search_page_title:    'Seet sa rendez-vous bi ci kanam',
     search_page_sub:      'Jl barber yi ak beauty professionals yi ci sa wet.',
     search_label_services_businesses:'Services walla businesses',
@@ -1127,7 +1127,7 @@ const TRANSLATIONS = {
 
     // Login
     login_title:          'Dalal ngir dugg',
-    login_sub:            'Dugg ci sa konte BarberHub',
+    login_sub:            'Dugg ci sa konte Jelall',
     login_email:          'Adress email',
     login_password:       'Mot de passe',
     login_btn:            'Dugg',
@@ -1138,7 +1138,7 @@ const TRANSLATIONS = {
 
     // Signup
     signup_title:         'Samp sa konte',
-    signup_sub:           'Jkkl ak mi yi ci BarberHub',
+    signup_sub:           'Jkkl ak mi yi ci Jelall',
     signup_role_customer: 'Jaamu',
     signup_role_barber:   'Barber',
     signup_role_cust_sub: 'Jl rendez-vous',
@@ -1211,7 +1211,7 @@ const TRANSLATIONS = {
 
     // Admin
     admin_stats:          'Statistiques plateforme',
-    admin_stats_sub:      'Panorama tey ci activit BarberHub',
+    admin_stats_sub:      'Panorama tey ci activit Jelall',
     admin_barbers:        'Fale barber yi',
     admin_users:          'Fale utilisateurs yi',
     admin_bookings:       'Rendez-vous ypp',

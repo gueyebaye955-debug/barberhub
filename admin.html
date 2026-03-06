@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel  BarberHub</title>
+  <title>Admin Panel  Jelall</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -125,6 +125,42 @@
     let activeTab = 'stats';
     let userFilter = '';
     let bookingFilter = '';
+    let apiWeeklyFunnel = null;
+    let apiUptimeSummary = null;
+    let apiRecentErrors = null;
+    let apiMetricsLoading = false;
+
+    async function refreshApiMetrics() {
+      if (apiMetricsLoading || !window.BH_API || typeof window.BH_API.getFunnel !== 'function') return;
+      apiMetricsLoading = true;
+      try {
+        const [funnel, uptime, errors] = await Promise.all([
+          window.BH_API.getFunnel(7),
+          window.BH_API.getUptimeSummary(24),
+          window.BH_API.getRecentErrors(12),
+        ]);
+        if (funnel?.ok) {
+          apiWeeklyFunnel = {
+            counts: funnel.counts || {},
+            conversion: funnel.conversion || {},
+          };
+        }
+        if (uptime?.ok) {
+          apiUptimeSummary = {
+            ...(uptime.summary || {}),
+            checks: Array.isArray(uptime.rows) ? uptime.rows : [],
+          };
+        }
+        if (errors?.ok) {
+          apiRecentErrors = Array.isArray(errors.rows) ? errors.rows : [];
+        }
+      } catch (_) {
+        // Fall back to local dashboard metrics.
+      } finally {
+        apiMetricsLoading = false;
+        render();
+      }
+    }
 
     function render() {
       const allAccounts = Auth.getAccounts();
@@ -137,18 +173,18 @@
       const totalRev  = allBookings.filter(b => b.status === 'completed').reduce((s,b) => s + parseFloat(b.price||0), 0);
       const registered = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
       const pBadge    = pending.length ? ` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${pending.length}</span>` : '';
-      const weeklyFunnel = (typeof Analytics !== 'undefined')
+      const weeklyFunnel = apiWeeklyFunnel || ((typeof Analytics !== 'undefined')
         ? Analytics.getWeeklyFunnel()
         : {
             counts: { homepage_view: 0, barber_search: 0, profile_view: 0, booking_start: 0, booking_complete: 0 },
             conversion: { barber_search: 0, profile_view: 0, booking_start: 0, booking_complete: 0 }
-          };
-      const uptimeSummary = (typeof Monitoring !== 'undefined')
+          });
+      const uptimeSummary = apiUptimeSummary || ((typeof Monitoring !== 'undefined')
         ? Monitoring.getUptimeSummary(24)
-        : { total: 0, success: 0, failure: 0, rate: 0, avgLatency: 0, checks: [] };
-      const recentErrors = (typeof Monitoring !== 'undefined')
+        : { total: 0, success: 0, failure: 0, rate: 0, avgLatency: 0, checks: [] });
+      const recentErrors = apiRecentErrors || ((typeof Monitoring !== 'undefined')
         ? Monitoring.getRecentErrors(12)
-        : [];
+        : []);
 
       document.getElementById('dashLayout').innerHTML = `
         <!-- Sidebar -->
@@ -430,7 +466,11 @@
         </div>`;
     }
 
-    function switchTab(tab) { activeTab = tab; render(); }
+    function switchTab(tab) {
+      activeTab = tab;
+      render();
+      if (tab === 'stats') refreshApiMetrics();
+    }
 
     async function runUptimeChecksNow() {
       if (typeof Monitoring === 'undefined') {
@@ -457,8 +497,8 @@
           localStorage.setItem('bh_accounts', JSON.stringify(stored));
           render(); // re-render first so the pending list updates
 
-          const subject = ' Your BarberHub application is approved!';
-          const message = `Hi ${account.first_name}!\n\nGreat news  your barber profile on BarberHub has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The BarberHub Team`;
+          const subject = ' Your Jelall application is approved!';
+          const message = `Hi ${account.first_name}!\n\nGreat news  your barber profile on Jelall has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The Jelall Team`;
           const sent = await sendEmailJS(account.email, account.first_name, subject, message);
           showNotifModal(
             'Notify Barber ',
@@ -526,8 +566,8 @@
       if (!cfg.publicKey) { alert('Save your EmailJS settings first.'); return; }
       const sent = await sendEmailJS(
         user.email, user.first_name,
-        'BarberHub Email Test ',
-        `Hi ${user.first_name}! This is a test from your BarberHub admin panel.\n\nEmail notifications are working correctly. `
+        'Jelall Email Test ',
+        `Hi ${user.first_name}! This is a test from your Jelall admin panel.\n\nEmail notifications are working correctly. `
       );
       alert(sent ? ' Test email sent  check your inbox!' : ' Send failed. Double-check your EmailJS keys.');
     }
@@ -568,7 +608,7 @@
 
       if (newStatus === 'confirmed') {
         const subject = `Booking Confirmed with ${booking.barber_name}`;
-        const message = `Hi ${customer.first_name}!\n\nYour appointment is confirmed:\n- Service: ${booking.service_name}\n- Barber: ${booking.barber_name}\n- Date: ${booking.date}\n- Time: ${booking.time}\n- Price: ${booking.price}\n\nSee you then!\n- BarberHub`;
+        const message = `Hi ${customer.first_name}!\n\nYour appointment is confirmed:\n- Service: ${booking.service_name}\n- Barber: ${booking.barber_name}\n- Date: ${booking.date}\n- Time: ${booking.time}\n- Price: ${booking.price}\n\nSee you then!\n- Jelall`;
         const sent = await sendEmailJS(customer.email, customer.first_name, subject, message);
 
         Notifs.add(customer.id, {
@@ -609,7 +649,7 @@
     }
 
     render();
+    refreshApiMetrics();
   </script>
 </body>
 </html>
-

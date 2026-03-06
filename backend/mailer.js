@@ -39,7 +39,7 @@ function toWhatsAppNumber(rawPhone) {
 
 function buildWhatsAppBookingText(data = {}) {
   const bookingId = data.bookingId ? `#${data.bookingId}` : '';
-  const title = bookingId ? `New BarberHub booking ${bookingId}` : 'New BarberHub booking';
+  const title = bookingId ? `New Jelall booking ${bookingId}` : 'New Jelall booking';
   const lines = [
     title,
     `Service: ${formatText(data.serviceName) || '-'}`,
@@ -94,11 +94,11 @@ async function sendCode(toEmail, code) {
   if (!transporter) return false;
   try {
     await transporter.sendMail({
-      from: process.env.MAIL_FROM || 'BarberHub <noreply@barberhub.com>',
+      from: process.env.MAIL_FROM || 'Jelall <noreply@jelall.com>',
       to: toEmail,
-      subject: 'BarberHub - Your verification code',
+      subject: 'Jelall - Your verification code',
       text: `Your verification code is: ${code}\n\nExpires in 10 minutes.`,
-      html: `<p>Your BarberHub verification code is:</p>
+      html: `<p>Your Jelall verification code is:</p>
              <h2 style="letter-spacing:0.4rem">${code}</h2>
              <p>Expires in 10 minutes.</p>`,
     });
@@ -113,7 +113,7 @@ async function sendMail(toEmail, subject, text) {
   if (!transporter) return false;
   try {
     await transporter.sendMail({
-      from: process.env.MAIL_FROM || 'BarberHub <noreply@barberhub.com>',
+      from: process.env.MAIL_FROM || 'Jelall <noreply@jelall.com>',
       to: toEmail,
       subject,
       text,
@@ -127,15 +127,15 @@ async function sendMail(toEmail, subject, text) {
 
 async function sendBookingEmail(type, toEmail, data) {
   if (!transporter) return false;
-  const from = process.env.MAIL_FROM || 'BarberHub <noreply@barberhub.com>';
+  const from = process.env.MAIL_FROM || 'Jelall <noreply@jelall.com>';
   const base = `
     <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#111;color:#eee;border-radius:12px;overflow:hidden">
       <div style="background:#e94560;padding:1.2rem 2rem">
-        <h1 style="margin:0;font-size:1.4rem;color:#fff">BarberHub</h1>
+        <h1 style="margin:0;font-size:1.4rem;color:#fff">Jelall</h1>
       </div>
       <div style="padding:1.5rem 2rem">`;
   const footer = `</div><div style="background:#1a1a2e;padding:0.8rem 2rem;font-size:0.75rem;color:#888">
-        BarberHub - <a href="https://barberhub-production.up.railway.app" style="color:#e94560">Open app</a>
+        Jelall - <a href="https://jelall-production.up.railway.app" style="color:#e94560">Open app</a>
       </div></div>`;
 
   const customerPhoneRow = data.customerPhone

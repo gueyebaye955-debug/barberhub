@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// Mock Data  BarberHub Simple
+// Mock Data  Jelall Simple
 // No database needed  all data lives here + localStorage
 // ============================================================
 
@@ -606,7 +606,7 @@ function getBookingCalendarEvent(booking, barber = null) {
   const end = new Date(start.getTime() + duration * 60000);
   const title = `${booking.service_name} with ${booking.barber_name || b?.shop_name || 'Barber'}`;
   const location = b?.location || b?.city || '';
-  const description = `BarberHub booking #${booking.id}`;
+  const description = `Jelall booking #${booking.id}`;
   return { title, start, end, location, description };
 }
 
@@ -614,12 +614,12 @@ function buildICSContent(events) {
   const rows = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//BarberHub//Appointments//EN'
+    'PRODID:-//Jelall//Appointments//EN'
   ];
 
   events.filter(Boolean).forEach((ev, idx) => {
     rows.push('BEGIN:VEVENT');
-    rows.push(`UID:barberhub-${Date.now()}-${idx}@barberhub.local`);
+    rows.push(`UID:jelall-${Date.now()}-${idx}@jelall.local`);
     rows.push(`DTSTAMP:${_toGoogleCalStamp(new Date())}`);
     rows.push(`DTSTART:${_toICSStamp(ev.start)}`);
     rows.push(`DTEND:${_toICSStamp(ev.end)}`);
@@ -639,7 +639,7 @@ function downloadICS(filename, events) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename || 'barberhub-booking.ics';
+  a.download = filename || 'jelall-booking.ics';
   document.body.appendChild(a);
   a.click();
   a.remove();

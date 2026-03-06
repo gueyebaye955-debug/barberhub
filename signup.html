@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up  BarberHub</title>
+  <title>Sign Up  Jelall</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -51,7 +51,7 @@
       <div class="auth-logo">
         <span></span>
         <h1 data-i18n="signup_title">Create your account</h1>
-        <p data-i18n="signup_sub">Join thousands of users on BarberHub</p>
+        <p data-i18n="signup_sub">Join thousands of users on Jelall</p>
       </div>
 
       <div id="alertBox"></div>
@@ -181,6 +181,10 @@
           <label class="form-label" data-i18n="signup_confirm_pw">Confirm Password</label>
           <input type="password" class="form-control" id="confirmPassword" placeholder="" required>
         </div>
+        <div class="form-group" id="captchaSignupWrap" style="display:none">
+          <div id="captchaSignup"></div>
+          <p id="captchaSignupHint" style="margin-top:0.4rem;font-size:0.78rem;color:var(--text-muted)"></p>
+        </div>
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem" id="signupBtn" data-i18n="signup_btn">Create Account</button>
       </form>
 
@@ -216,12 +220,61 @@
     if (Auth.isLoggedIn()) {
       window.location.href = 'index.html';
     }
+    const STRICT_AUTH = (typeof isProductionRuntime === 'function')
+      ? isProductionRuntime()
+      : (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
 
     let selectedRole  = 'customer';
     let pendingData   = null;
     let verifyExpiry  = null;
     let countdownTimer = null;
     let lastDemoCode = null;
+    let signupCaptchaToken = '';
+    let signupCaptchaEnabled = false;
+
+    function ensureTurnstileLoaded() {
+      if (window.turnstile) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-turnstile="1"]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Unable to load CAPTCHA script')), { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstile = '1';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Unable to load CAPTCHA script'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initSignupCaptcha() {
+      if (!window.BH_API) return;
+      try {
+        const cfg = await window.BH_API.getCaptchaConfig();
+        if (!cfg?.enabled || !cfg?.site_key) return;
+        signupCaptchaEnabled = true;
+        document.getElementById('captchaSignupWrap').style.display = 'block';
+        await ensureTurnstileLoaded();
+        window.turnstile.render('#captchaSignup', {
+          sitekey: cfg.site_key,
+          callback(token) {
+            signupCaptchaToken = token || '';
+            const hint = document.getElementById('captchaSignupHint');
+            if (hint) hint.textContent = '';
+          },
+          'expired-callback'() {
+            signupCaptchaToken = '';
+            const hint = document.getElementById('captchaSignupHint');
+            if (hint) hint.textContent = 'Please verify CAPTCHA again.';
+          },
+        });
+      } catch (_) {}
+    }
 
     /* ── Password strength ── */
     function checkStrength(pw) {
@@ -319,8 +372,8 @@
         await emailjs.send(cfg.serviceId, cfg.templateId, {
           to_email: email,
           to_name:  name,
-          subject:  'BarberHub — Your verification code',
-          message:  `Your BarberHub verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`
+          subject:  'Jelall — Your verification code',
+          message:  `Your Jelall verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`
         });
         return true;
       } catch(err) {
@@ -357,10 +410,17 @@
       lastDemoCode = null;
       try {
         if (window.BH_API) {
-          const response = await window.BH_API.sendRegisterCode(pendingData.email);
+          if (signupCaptchaEnabled && !signupCaptchaToken) {
+            throw new Error('Please complete CAPTCHA verification.');
+          }
+          const response = await window.BH_API.sendRegisterCode(pendingData.email, signupCaptchaToken);
+          if (STRICT_AUTH && response.demo) {
+            throw new Error('Email service is not configured. Please contact support.');
+          }
           sent = !response.demo;
           lastDemoCode = response.code || null;
         } else {
+          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
           lastDemoCode = String(Math.floor(100000 + Math.random() * 900000));
           sent = await sendVerificationEmail(pendingData.email, pendingData.first_name, lastDemoCode);
         }
@@ -412,10 +472,14 @@
       clearInterval(countdownTimer);
 
       try {
-        const payload = { ...pendingData, code: input, role: selectedRole };
-        const result = window.BH_API
-          ? await window.BH_API.register(payload)
-          : await Auth.register(payload);
+        const payload = { ...pendingData, code: input, role: selectedRole, captcha_token: signupCaptchaToken || undefined };
+        let result;
+        if (window.BH_API) {
+          result = await window.BH_API.register(payload);
+        } else {
+          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
+          result = await Auth.register(payload);
+        }
 
         if (!result || result.ok === false || !result.user) {
           throw new Error(result?.error || 'Registration failed. Please try again.');
@@ -439,9 +503,19 @@
       verifyExpiry = Date.now() + 10 * 60 * 1000;
 
       try {
-        const response = window.BH_API
-          ? await window.BH_API.sendRegisterCode(pendingData.email)
-          : { demo: true, code: String(Math.floor(100000 + Math.random() * 900000)) };
+        let response;
+        if (window.BH_API) {
+          if (signupCaptchaEnabled && !signupCaptchaToken) {
+            throw new Error('Please complete CAPTCHA verification.');
+          }
+          response = await window.BH_API.sendRegisterCode(pendingData.email, signupCaptchaToken);
+          if (STRICT_AUTH && response.demo) {
+            throw new Error('Email service is not configured. Please contact support.');
+          }
+        } else {
+          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
+          response = { demo: true, code: String(Math.floor(100000 + Math.random() * 900000)) };
+        }
         lastDemoCode = response.code || null;
 
         if (response.demo) {
@@ -530,6 +604,7 @@
     document.getElementById('codeInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') { e.preventDefault(); submitCode(); }
     });
+    initSignupCaptcha();
   </script>
 </body>
 </html>

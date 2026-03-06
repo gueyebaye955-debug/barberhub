@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login  BarberHub</title>
+  <title>Login  Jelall</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -34,7 +34,7 @@
       <div class="auth-logo">
         <span></span>
         <h1 data-i18n="login_title">Welcome back</h1>
-        <p data-i18n="login_sub">Sign in to your BarberHub account</p>
+        <p data-i18n="login_sub">Sign in to your Jelall account</p>
       </div>
 
       <div id="alertBox"></div>
@@ -47,6 +47,10 @@
         <div class="form-group">
           <label class="form-label" data-i18n="login_password">Password</label>
           <input type="password" class="form-control" id="password" placeholder="" required>
+        </div>
+        <div class="form-group" id="captchaLoginWrap" style="display:none">
+          <div id="captchaLogin"></div>
+          <p id="captchaLoginHint" style="margin-top:0.4rem;font-size:0.78rem;color:var(--text-muted)"></p>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem" id="loginBtn" data-i18n="login_btn">Sign In</button>
       </form>
@@ -78,6 +82,55 @@
     renderNav('login');
     renderFooter();
     applyI18n();
+    const STRICT_AUTH = (typeof isProductionRuntime === 'function')
+      ? isProductionRuntime()
+      : (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
+    let loginCaptchaToken = '';
+    let loginCaptchaEnabled = false;
+
+    function ensureTurnstileLoaded() {
+      if (window.turnstile) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-turnstile="1"]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve(), { once: true });
+          existing.addEventListener('error', () => reject(new Error('Unable to load CAPTCHA script')), { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.async = true;
+        script.defer = true;
+        script.dataset.turnstile = '1';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Unable to load CAPTCHA script'));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function initLoginCaptcha() {
+      if (!window.BH_API) return;
+      try {
+        const cfg = await window.BH_API.getCaptchaConfig();
+        if (!cfg?.enabled || !cfg?.site_key) return;
+        loginCaptchaEnabled = true;
+        document.getElementById('captchaLoginWrap').style.display = 'block';
+        await ensureTurnstileLoaded();
+        window.turnstile.render('#captchaLogin', {
+          sitekey: cfg.site_key,
+          callback(token) {
+            loginCaptchaToken = token || '';
+            const hint = document.getElementById('captchaLoginHint');
+            if (hint) hint.textContent = '';
+          },
+          'expired-callback'() {
+            loginCaptchaToken = '';
+            const hint = document.getElementById('captchaLoginHint');
+            if (hint) hint.textContent = 'Please verify CAPTCHA again.';
+          },
+        });
+      } catch (_) {}
+    }
 
     function formatLoginError(rawMessage) {
       const msg = String(rawMessage || '').trim();
@@ -131,14 +184,18 @@
       try {
         if (window.BH_API) {
           try {
-            result = await window.BH_API.login(email, password);
+            if (loginCaptchaEnabled && !loginCaptchaToken) {
+              throw new Error('Please complete CAPTCHA verification.');
+            }
+            result = await window.BH_API.login(email, password, loginCaptchaToken);
           } catch (apiErr) {
             const msg = String(apiErr?.message || '');
             const isNetworkIssue = !apiErr?.status || /failed to fetch|networkerror|load failed|timeout/i.test(msg);
-            if (!isNetworkIssue) throw apiErr;
+            if (!isNetworkIssue || STRICT_AUTH) throw apiErr;
             result = await Auth.login(email, password);
           }
         } else {
+          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
           result = await Auth.login(email, password);
         }
       } catch (err) {
@@ -165,6 +222,7 @@
         window.location.href = map[result.user.role] || 'index.html';
       }
     });
+    initLoginCaptcha();
   </script>
 </body>
 </html>

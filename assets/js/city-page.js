@@ -58,7 +58,7 @@
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: `${tf('city_best_title', { city })} | BarberHub`,
+    name: `${tf('city_best_title', { city })} | Jelall`,
     url: `/${citySlug}.html`,
     mainEntity: {
       '@type': 'ItemList',

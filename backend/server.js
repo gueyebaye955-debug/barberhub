@@ -1,33 +1,40 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
-const passport = require('./utils/passport');
 const path = require('path');
 
+const passport = require('./utils/passport');
 const pool = require('./db');
 const asyncHandler = require('./utils/asyncHandler');
+const { sendOpsAlert } = require('./utils/alerts');
 
 const app = express();
 app.disable('x-powered-by');
 
-// Session + Passport (only needed for Google OAuth redirect flow)
-app.use(session({
-  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 5 * 60 * 1000 },
-}));
-app.use(passport.initialize());
+const isProduction = process.env.NODE_ENV === 'production';
+const jwtSecret = String(process.env.JWT_SECRET || '');
+const sessionSecret = String(process.env.SESSION_SECRET || process.env.JWT_SECRET || '');
+const defaultProdOrigins = ['https://jelall.com', 'https://www.jelall.com'];
+const sessionMaxAgeMs = Number(process.env.SESSION_MAX_AGE_MS || (60 * 60 * 1000));
 
-if (!process.env.JWT_SECRET) {
+if (!jwtSecret) {
   console.error('Missing JWT_SECRET in environment. Set it in backend/.env before starting the server.');
   process.exit(1);
 }
+if (isProduction && jwtSecret.length < 32) {
+  console.error('JWT_SECRET is too short for production (minimum: 32 chars).');
+  process.exit(1);
+}
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.error('Missing SESSION_SECRET in production.');
+  process.exit(1);
+}
 
-if (process.env.TRUST_PROXY === 'true') {
+if (process.env.TRUST_PROXY === 'true' || isProduction) {
   app.set('trust proxy', 1);
 }
 
@@ -35,9 +42,40 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+if (isProduction && allowedOrigins.length === 0) {
+  allowedOrigins.push(...defaultProdOrigins);
+}
 
-// The frontend currently relies on inline scripts/event handlers across pages.
-// Keep Helmet protections, but relax CSP enough so production matches localhost behavior.
+// Session + Passport (only needed for Google OAuth redirect flow)
+app.use(session({
+  name: 'bh_sid',
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: isProduction,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: sessionMaxAgeMs,
+  },
+}));
+app.use(passport.initialize());
+
+// Add request id and lightweight API timing logs.
+app.use((req, res, next) => {
+  const requestId = crypto.randomUUID();
+  req.requestId = requestId;
+  res.setHeader('x-request-id', requestId);
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    if (!req.originalUrl.startsWith('/api')) return;
+    const ms = Date.now() - startedAt;
+    console.log(`[${new Date().toISOString()}] ${requestId} ${req.method} ${req.originalUrl} ${res.statusCode} ${ms}ms`);
+  });
+  next();
+});
+
+// Frontend currently relies on inline handlers/scripts. Keep CSP strict but compatible.
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
@@ -52,24 +90,28 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:', 'https:'],
       fontSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https:'],
+      formAction: ["'self'"],
     },
   },
 }));
 
 app.use(cors({
   origin(origin, callback) {
-    // Allow requests with no origin (server-to-server, curl)
-    // and 'null' origin which browsers send for file:// pages
-    if (!origin || origin === 'null' || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // Allow same-origin/non-browser requests (curl, server-to-server).
+    if (!origin) return callback(null, true);
+    if (origin === 'null') {
+      if (isProduction) return callback(new Error('Origin not allowed by CORS'));
       return callback(null, true);
     }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (!isProduction && allowedOrigins.length === 0) return callback(null, true);
     return callback(new Error('Origin not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
 }));
 
-app.use(express.json({ limit: '3mb' })); // 3mb to allow base64 image uploads
+app.use(express.json({ limit: '3mb' }));
 
 app.use('/api', rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -78,16 +120,40 @@ app.use('/api', rateLimit({
   legacyHeaders: false,
 }));
 
+app.use('/api/auth/login', rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: Number(process.env.LOGIN_RATE_LIMIT_MAX || 8),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+}));
+
+app.use('/api/auth/register/send-code', rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: Number(process.env.SEND_CODE_RATE_LIMIT_MAX || 6),
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
 app.use('/api/auth', rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20),
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX || 12),
   standardHeaders: true,
   legacyHeaders: false,
 }));
 
 app.get('/api/health', asyncHandler(async (_req, res) => {
+  const startedAt = Date.now();
   await pool.query('SELECT 1');
-  res.json({ ok: true, service: 'barberhub-backend' });
+  const dbLatencyMs = Date.now() - startedAt;
+  res.json({
+    ok: true,
+    service: 'jelall-backend',
+    env: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    uptime_seconds: Math.round(process.uptime()),
+    db_latency_ms: dbLatencyMs,
+  });
 }));
 
 app.use('/api/auth', require('./routes/auth'));
@@ -95,6 +161,7 @@ app.use('/api/barbers', require('./routes/barbers'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
+app.use('/api/metrics', require('./routes/metrics'));
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });
@@ -103,23 +170,45 @@ app.use('/api', (_req, res) => {
 const frontendDir = path.join(__dirname, '..');
 app.use(express.static(frontendDir));
 
-app.get('/barber/:id', (req, res) => {
+app.get('/barber/:id', (_req, res) => {
   res.sendFile(path.join(frontendDir, 'profile.html'));
 });
 
-app.get('*', (req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (err.message === 'Origin not allowed by CORS') {
     return res.status(403).json({ error: 'CORS origin denied' });
   }
-  console.error(err.stack || err.message);
+
+  const requestId = req?.requestId || 'unknown';
+  console.error(`[${requestId}]`, err.stack || err.message);
+  sendOpsAlert('Unhandled backend error', {
+    request_id: requestId,
+    path: req?.originalUrl || '',
+    method: req?.method || '',
+    message: err?.message || 'Unknown error',
+  }).catch(() => {});
   return res.status(500).json({ error: 'Internal server error' });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+  sendOpsAlert('Unhandled rejection', {
+    reason: String(reason && reason.message ? reason.message : reason),
+  }).catch(() => {});
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  sendOpsAlert('Uncaught exception', {
+    message: error?.message || 'Unknown',
+  }).finally(() => process.exit(1));
 });
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`BarberHub backend running on http://localhost:${PORT}`);
+  console.log(`Jelall backend running on http://localhost:${PORT}`);
 });

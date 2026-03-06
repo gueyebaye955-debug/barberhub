@@ -1,18 +1,20 @@
 /* global window, localStorage, location, fetch */
-(function attachBarberHubApi(global) {
+(function attachJelallApi(global) {
   const TOKEN_KEY = 'bh_token';
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
-  const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
+  const RAILWAY_API = 'https://jelall-production.up.railway.app/api';
   // Use relative /api for all real HTTP servers (production, custom domains, local Express).
   // Only fall back to full Railway URL when opening files directly or via a dev server
   // that is NOT the Express backend (e.g. VSCode Live Server on port 5500).
   const _h = location.hostname;
+  const _isProductionRuntime = location.protocol !== 'file:' && _h !== 'localhost' && _h !== '127.0.0.1';
   const _isDevServer = location.protocol === 'file:' ||
     ((_h === 'localhost' || _h === '127.0.0.1') && location.port !== '4000' && location.port !== '80' && location.port !== '443' && location.port !== '');
   const DEFAULT_BASE = _isDevServer ? RAILWAY_API : '/api';
 
   function getBaseUrl() {
+    if (_isProductionRuntime) return DEFAULT_BASE;
     const fromStorage = localStorage.getItem('bh_api_base');
     if (fromStorage) return fromStorage.replace(/\/+$/, '');
     return DEFAULT_BASE;
@@ -90,19 +92,19 @@
     setSession,
     clearSession,
 
-    async login(email, password) {
+    async login(email, password, captchaToken = '') {
       const data = await request('/auth/login', {
         method: 'POST',
-        body: { email, password },
+        body: { email, password, captcha_token: captchaToken || undefined },
       });
       if (data?.token && data?.user) setSession(data.token, data.user);
       return data;
     },
 
-    async sendRegisterCode(email) {
+    async sendRegisterCode(email, captchaToken = '') {
       return request('/auth/register/send-code', {
         method: 'POST',
-        body: { email },
+        body: { email, captcha_token: captchaToken || undefined },
       });
     },
 
@@ -270,6 +272,46 @@
         method: 'PATCH',
         auth: true,
       });
+    },
+
+    async getCaptchaConfig() {
+      return request('/auth/captcha-config');
+    },
+
+    async trackEvent(name, meta = {}) {
+      return request('/metrics/events', {
+        method: 'POST',
+        body: { name, meta },
+        auth: !!getToken(),
+      });
+    },
+
+    async trackError(payload = {}) {
+      return request('/metrics/errors', {
+        method: 'POST',
+        body: payload,
+        auth: !!getToken(),
+      });
+    },
+
+    async reportUptime(payload = {}) {
+      return request('/metrics/uptime', {
+        method: 'POST',
+        body: payload,
+        auth: true,
+      });
+    },
+
+    async getFunnel(days = 7) {
+      return request(`/metrics/funnel?days=${encodeURIComponent(days)}`, { auth: true });
+    },
+
+    async getUptimeSummary(hours = 24) {
+      return request(`/metrics/uptime?hours=${encodeURIComponent(hours)}`, { auth: true });
+    },
+
+    async getRecentErrors(limit = 20) {
+      return request(`/metrics/errors?limit=${encodeURIComponent(limit)}`, { auth: true });
     },
   };
 

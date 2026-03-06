@@ -1,14 +1,19 @@
 {
-  "name": "barberhub",
+  "name": "jelall",
   "version": "1.0.0",
   "scripts": {
     "build": "npm install --prefix backend",
     "start": "node backend/server.js",
     "db:migrate": "node backend/database/migrate.js",
     "db:seed": "node backend/database/seed.js",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "qa:e2e": "playwright test tests/e2e/mobile-home.spec.js tests/e2e/booking-guard.spec.js",
+    "qa:e2e:headed": "playwright test --headed tests/e2e/mobile-home.spec.js tests/e2e/booking-guard.spec.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
   }
 }

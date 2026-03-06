@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 
+const JWT_ISSUER = process.env.JWT_ISSUER || 'jelall';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jelall-web';
+
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;
   if (typeof header !== 'string' || !header.startsWith('Bearer ')) {
@@ -7,7 +10,11 @@ function requireAuth(req, res, next) {
   }
   try {
     const token = header.slice(7);
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: JWT_ISSUER,
+      audience: JWT_AUDIENCE,
+    });
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Appointment  BarberHub</title>
+  <title>Book Appointment  Jelall</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -490,7 +490,7 @@
       })();
       const cleanPhone = barberPhone.replace(/\D/g, '');
       const waMsg = encodeURIComponent(
-        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via BarberHub`
+        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via Jelall`
       );
       const manualWaLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMsg}` : '';
       const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
@@ -540,7 +540,7 @@
       const booking = lastCreatedBooking;
       if (!booking) return;
       const ev = getBookingCalendarEvent(booking, barber);
-      downloadICS(`barberhub-booking-${booking.id}.ics`, [ev]);
+      downloadICS(`jelall-booking-${booking.id}.ics`, [ev]);
     }
 
     initBookingPage();
