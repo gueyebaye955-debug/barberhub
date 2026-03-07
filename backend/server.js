@@ -200,7 +200,8 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/metrics', require('./routes/metrics'));
-app.post('/api/chat', require('express-rate-limit')({ windowMs: 60000, max: 20 }), asyncHandler(async (req, res) => {
+const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
+const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
   const model = getGeminiModel();
@@ -226,7 +227,9 @@ app.post('/api/chat', require('express-rate-limit')({ windowMs: 60000, max: 20 }
   const data = JSON.parse(result.body);
   const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response generated.';
   res.json({ reply });
-}));
+});
+app.post('/api/chat', chatLimit, handleChat);
+app.post('/api/ai', chatLimit, handleChat);
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });

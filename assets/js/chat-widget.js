@@ -19,10 +19,11 @@
 
   function resolveChatEndpoints() {
     const endpoints = [];
-    function pushEndpoint(base, toEnd = false) {
+    function pushEndpoint(base, suffix, toEnd = false) {
       if (!base) return;
       const clean = String(base).replace(/\/+$/, '');
-      const url = clean.endsWith('/chat') ? clean : `${clean}/chat`;
+      const baseUrl = clean.endsWith('/chat') || clean.endsWith('/ai') ? clean : `${clean}${suffix}`;
+      const url = baseUrl;
       const idx = endpoints.indexOf(url);
       if (idx >= 0) {
         if (toEnd) {
@@ -33,6 +34,10 @@
       }
       endpoints.push(url);
     }
+    function pushBase(base, toEnd = false) {
+      pushEndpoint(base, '/chat', toEnd);
+      pushEndpoint(base, '/ai', toEnd);
+    }
 
     const host = location.hostname;
     const isLocalHost = host === 'localhost' || host === '127.0.0.1';
@@ -40,19 +45,19 @@
       (isLocalHost && !['', '80', '443', '4000'].includes(location.port));
 
     // Local first for dev server workflows (e.g., Live Server on :5500).
-    if (isDevServer) pushEndpoint('http://localhost:4000/api');
+    if (isDevServer) pushBase('http://localhost:4000/api');
 
     // Try same-origin API before hosted fallback.
-    pushEndpoint('/api');
+    pushBase('/api');
 
     try {
       if (window.BH_API && typeof window.BH_API.getBaseUrl === 'function') {
-        pushEndpoint(window.BH_API.getBaseUrl() || '/api');
+        pushBase(window.BH_API.getBaseUrl() || '/api');
       }
     } catch (_) {}
 
     // Ensure hosted API is always the final fallback candidate.
-    pushEndpoint(FALLBACK_API_BASE, true);
+    pushBase(FALLBACK_API_BASE, true);
     return endpoints;
   }
 
