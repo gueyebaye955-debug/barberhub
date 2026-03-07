@@ -21,6 +21,30 @@ const sessionSecret = String(process.env.SESSION_SECRET || process.env.JWT_SECRE
 const defaultProdOrigins = ['https://jotma.net', 'https://www.jotma.net'];
 const sessionMaxAgeMs = Number(process.env.SESSION_MAX_AGE_MS || (60 * 60 * 1000));
 
+function normalizeOrigin(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    const u = new URL(raw);
+    return `${u.protocol}//${u.host}`.toLowerCase();
+  } catch (_) {
+    return raw.replace(/\/+$/, '').toLowerCase();
+  }
+}
+
+function getGeminiApiKey() {
+  return String(
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    ''
+  ).trim();
+}
+
+function getGeminiModel() {
+  return String(process.env.GEMINI_MODEL || 'gemini-flash-latest').trim();
+}
+
 if (!jwtSecret) {
   console.error('Missing JWT_SECRET in environment. Set it in backend/.env before starting the server.');
   process.exit(1);
@@ -39,10 +63,23 @@ if (process.env.TRUST_PROXY === 'true' || isProduction) {
 
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => normalizeOrigin(origin))
   .filter(Boolean);
-if (isProduction && allowedOrigins.length === 0) {
-  allowedOrigins.push(...defaultProdOrigins);
+if (isProduction) {
+  const set = new Set(allowedOrigins);
+  defaultProdOrigins.forEach((origin) => set.add(normalizeOrigin(origin)));
+  const appUrl = normalizeOrigin(process.env.APP_URL || '');
+  if (appUrl) {
+    set.add(appUrl);
+    if (appUrl.includes('://www.')) {
+      set.add(appUrl.replace('://www.', '://'));
+    } else {
+      const [protocol, host] = appUrl.split('://');
+      if (protocol && host) set.add(`${protocol}://www.${host}`);
+    }
+  }
+  allowedOrigins.length = 0;
+  allowedOrigins.push(...Array.from(set));
 }
 
 // Session + Passport (only needed for Google OAuth redirect flow)
@@ -102,8 +139,10 @@ app.use(cors({
       if (isProduction) return callback(new Error('Origin not allowed by CORS'));
       return callback(null, true);
     }
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
     if (!isProduction && allowedOrigins.length === 0) return callback(null, true);
+    console.warn(`CORS denied origin: ${origin}`);
     return callback(new Error('Origin not allowed by CORS'));
   },
   credentials: true,
@@ -163,8 +202,9 @@ app.use('/api/messages', require('./routes/messages'));
 app.use('/api/metrics', require('./routes/metrics'));
 app.post('/api/chat', require('express-rate-limit')({ windowMs: 60000, max: 20 }), asyncHandler(async (req, res) => {
   const https = require('https');
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'AI service not configured.' });
+  const apiKey = getGeminiApiKey();
+  const model = getGeminiModel();
+  if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
   const { message, history = [] } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
   if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
@@ -176,7 +216,7 @@ app.post('/api/chat', require('express-rate-limit')({ windowMs: 60000, max: 20 }
   contents.push({ role: 'user', parts: [{ text: message.trim() }] });
   const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 300, temperature: 0.7 } });
   const result = await new Promise((resolve, reject) => {
-    const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`);
+    const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
     const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
       let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d }));
     });

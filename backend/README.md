@@ -7,6 +7,8 @@ npm install
 
 ## 2) Configure environment
 Copy `.env.example` to `.env` and fill in your PostgreSQL credentials and JWT secret.
+If you want Baye chat enabled, also set `GEMINI_API_KEY`.
+Optional: set `GEMINI_MODEL` (default: `gemini-flash-latest`).
 
 ## 3) Create database
 Create a PostgreSQL database named in `DB_NAME` (default: `jelall`).
@@ -29,7 +31,9 @@ Set these required environment variables in production:
 - `NODE_ENV=production`
 - `JWT_SECRET` (minimum 32 chars)
 - `SESSION_SECRET` (minimum 32 chars, different from JWT secret)
-- `CORS_ORIGINS=https://jelall.com,https://www.jelall.com`
+- `CORS_ORIGINS=https://jotma.net,https://www.jotma.net`
+- `GEMINI_API_KEY` (required for `POST /api/chat`)
+- `GEMINI_MODEL` (optional, defaults to `gemini-flash-latest`)
 
 Recommended hardening variables:
 

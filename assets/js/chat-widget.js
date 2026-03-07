@@ -7,6 +7,7 @@
     fr: { title: 'Baye', placeholder: 'Posez votre question...', send: 'Envoyer', open: 'Chat avec Baye', welcome: 'Bonjour! Je suis Baye, votre assistant JOTMA. Posez-moi vos questions sur les réservations, les prestataires ou les services.' },
     wo: { title: 'Baye', placeholder: 'Laaj sa laaj...', send: 'Yónnee', open: 'Chat ak Baye', welcome: 'Asalaamalekum! Maa ngi Baye, sa jëfandikukat JOTMA. Laajal ma ci réservation, prestataire, walla sarwiis yi.' },
   };
+  const FALLBACK_API_BASE = 'https://jotma.net/api';
 
   function getLang() {
     return localStorage.getItem('bh_lang') || 'en';
@@ -14,6 +15,45 @@
   function L(key) {
     const lang = getLang();
     return (LABELS[lang] || LABELS.en)[key] || LABELS.en[key];
+  }
+
+  function resolveChatEndpoints() {
+    const endpoints = [];
+    function pushEndpoint(base, toEnd = false) {
+      if (!base) return;
+      const clean = String(base).replace(/\/+$/, '');
+      const url = clean.endsWith('/chat') ? clean : `${clean}/chat`;
+      const idx = endpoints.indexOf(url);
+      if (idx >= 0) {
+        if (toEnd) {
+          endpoints.splice(idx, 1);
+          endpoints.push(url);
+        }
+        return;
+      }
+      endpoints.push(url);
+    }
+
+    const host = location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+    const isDevServer = location.protocol === 'file:' ||
+      (isLocalHost && !['', '80', '443', '4000'].includes(location.port));
+
+    // Local first for dev server workflows (e.g., Live Server on :5500).
+    if (isDevServer) pushEndpoint('http://localhost:4000/api');
+
+    // Try same-origin API before hosted fallback.
+    pushEndpoint('/api');
+
+    try {
+      if (window.BH_API && typeof window.BH_API.getBaseUrl === 'function') {
+        pushEndpoint(window.BH_API.getBaseUrl() || '/api');
+      }
+    } catch (_) {}
+
+    // Ensure hosted API is always the final fallback candidate.
+    pushEndpoint(FALLBACK_API_BASE, true);
+    return endpoints;
   }
 
   // ---- Inject styles ----
@@ -129,15 +169,41 @@
     const typing = addMessage('...', 'ai typing');
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history }),
-      });
-      const raw = await res.text();
+      const endpoints = resolveChatEndpoints();
+      let res = null;
+      let raw = '';
+      let lastNetworkError = null;
+      const attempts = [];
+      for (const endpoint of endpoints) {
+        try {
+          const candidateRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, history }),
+          });
+          const candidateRaw = await candidateRes.text();
+          attempts.push({ endpoint, status: candidateRes.status });
+          // Keep trying fallback endpoints until one succeeds.
+          if (!candidateRes.ok && endpoint !== endpoints[endpoints.length - 1]) continue;
+          res = candidateRes;
+          raw = candidateRaw;
+          break;
+        } catch (err) {
+          attempts.push({ endpoint, error: true });
+          lastNetworkError = err;
+        }
+      }
+      if (!res) throw lastNetworkError || new Error('Unable to reach chat API.');
+      if (!res.ok && attempts.length > 1) console.warn('Baye chat attempts:', attempts);
+
       let data = {};
-      try { data = JSON.parse(raw); } catch (_) {}
-      const reply = data.reply || data.error || (res.ok ? 'Something went wrong.' : `Server error ${res.status}. Please try again.`);
+      try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+      const fallbackError = res.status === 404
+        ? 'Chat route not found on this server. Please redeploy backend and try again.'
+        : (res.status === 503
+            ? 'AI service is not configured yet. Please set GEMINI_API_KEY on the backend.'
+            : `Server error ${res.status}. Please try again.`);
+      const reply = data.reply || data.error || (res.ok ? 'Something went wrong.' : fallbackError);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(reply).replace(/\n/g, '<br>');
       if (data.reply) {
@@ -147,7 +213,7 @@
       }
     } catch (err) {
       typing.className = 'bh-msg ai';
-      typing.textContent = 'Network error — check your connection and try again.';
+      typing.textContent = 'Network error. Baye could not reach the server. If testing locally, run backend on http://localhost:4000.';
     }
 
     messages.scrollTop = messages.scrollHeight;

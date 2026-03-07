@@ -3,6 +3,19 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const https = require('https');
 
+function getGeminiApiKey() {
+  return String(
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    ''
+  ).trim();
+}
+
+function getGeminiModel() {
+  return String(process.env.GEMINI_MODEL || 'gemini-flash-latest').trim();
+}
+
 function httpsPost(url, body) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify(body);
@@ -51,8 +64,9 @@ Never discuss topics unrelated to JOTMA, barbers, bookings, or services in Seneg
 If unsure, suggest the user visit the Support page or contact JOTMA directly.`;
 
 router.post('/', chatLimit, async (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'AI service not configured.' });
+  const apiKey = getGeminiApiKey();
+  const model = getGeminiModel();
+  if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
 
   const { message, history = [] } = req.body;
   if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -72,7 +86,7 @@ router.post('/', chatLimit, async (req, res) => {
   contents.push({ role: 'user', parts: [{ text: message.trim() }] });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
     const result = await httpsPost(url, {
       system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents,
