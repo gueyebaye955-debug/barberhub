@@ -495,17 +495,17 @@ app.use('/api/metrics', require('./routes/metrics'));
 const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
-  const apiKey = getGeminiApiKey();
-  const models = getGeminiModelCandidates();
+  const groqKey = String(process.env.GROQ_API_KEY || '').trim();
+  const geminiKey = getGeminiApiKey();
   const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
   if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
-  if (!apiKey) return res.json({ reply: buildContextualFallbackReply(message, lang, history), fallback: true, warning: 'Gemini key missing' });
+  if (!groqKey && !geminiKey) return res.json({ reply: buildContextualFallbackReply(message, lang, history), fallback: true, warning: 'No AI key configured' });
   const langName = { en: 'English', fr: 'French', wo: 'Wolof' }[lang] || 'French';
   const offTopic = {
-    en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, contact us:\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
-    fr: "Je suis ici pour vous aider à trouver et réserver des services sur JOTMA.\n\nPour plus de questions, contactez-nous :\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
-    wo: "Maa ngi fi ngir la jàpp ci JOTMA.\n\nSu am na laaj, jokkoo ak nun :\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
+    en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, contact us:\n+1 313 989 6811\ngueyebaye955@gmail.com",
+    fr: "Je suis ici pour vous aider à trouver et réserver des services sur JOTMA.\n\nPour plus de questions, contactez-nous :\n+1 313 989 6811\ngueyebaye955@gmail.com",
+    wo: "Maa ngi fi ngir la jàpp ci JOTMA.\n\nSu am na laaj, jokkoo ak nun :\n+1 313 989 6811\ngueyebaye955@gmail.com",
   }[lang] || "I'm here to help you find and book services on JOTMA. Contact: +1 313 989 6811 or gueyebaye955@gmail.com";
   const SYSTEM_PROMPT = `Your name is Awa. You are the virtual assistant for JOTMA, a service booking platform in Senegal.
 
@@ -519,53 +519,75 @@ Booking policy: Arrive 10 min early. 10% deposit required. Cancel up to 8 hours 
 
 OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal, or anything unrelated to JOTMA, respond ONLY with this exact text:
 "${offTopic}"`;
-  const contents = [];
-  for (const turn of history.slice(-6)) {
-    if (turn.role && turn.text) {
-      contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
+
+  // --- Try Groq first (free, reliable) ---
+  if (groqKey) {
+    const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
+    for (const turn of history.slice(-6)) {
+      if (turn.role && turn.text) {
+        const role = turn.role === 'model' ? 'assistant' : turn.role;
+        messages.push({ role, content: String(turn.text).slice(0, 500) });
+      }
+    }
+    messages.push({ role: 'user', content: message.trim() });
+    const groqModel = String(process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim();
+    const payload = JSON.stringify({ model: groqModel, messages, max_tokens: 350, temperature: 0.6 });
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const req2 = https.request({
+          hostname: 'api.groq.com',
+          path: '/openai/v1/chat/completions',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}`, 'Content-Length': Buffer.byteLength(payload) },
+        }, (r) => { let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d })); });
+        req2.on('error', reject); req2.write(payload); req2.end();
+      });
+      if (result.status === 200) {
+        const data = JSON.parse(result.body);
+        const reply = data?.choices?.[0]?.message?.content || 'Sorry, no response generated.';
+        return res.json({ reply });
+      }
+      console.error('Groq error:', result.status, result.body.slice(0, 300));
+    } catch (err) {
+      console.error('Groq request error:', err.message);
     }
   }
-  contents.push({ role: 'user', parts: [{ text: message.trim() }] });
-  const payload = JSON.stringify({
-    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents,
-    generationConfig: { maxOutputTokens: 350, temperature: 0.6 },
-  });
 
-  let result = null;
-  const attempts = [];
-  for (const model of models) {
-    const candidate = await new Promise((resolve, reject) => {
-      const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
-      const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
-        let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d, model }));
+  // --- Fallback: try Gemini ---
+  if (geminiKey) {
+    const models = getGeminiModelCandidates();
+    const contents = [];
+    for (const turn of history.slice(-6)) {
+      if (turn.role && turn.text) contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
+    }
+    contents.push({ role: 'user', parts: [{ text: message.trim() }] });
+    const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 350, temperature: 0.6 } });
+    let result = null;
+    for (const model of models) {
+      const candidate = await new Promise((resolve, reject) => {
+        const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${geminiKey}`);
+        const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
+          let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d, model }));
+        });
+        req2.on('error', reject); req2.write(payload); req2.end();
       });
-      req2.on('error', reject); req2.write(payload); req2.end();
-    });
-
-    attempts.push({ model, status: candidate.status });
-    result = candidate;
-    if (candidate.status === 200) break;
-    if (!shouldTryNextGeminiModel(candidate.status, candidate.body)) break;
+      result = candidate;
+      if (candidate.status === 200) break;
+      if (!shouldTryNextGeminiModel(candidate.status, candidate.body)) break;
+    }
+    if (result && result.status === 200) {
+      const data = JSON.parse(result.body);
+      return res.json({ reply: data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response generated.' });
+    }
+    console.error('Gemini error:', result?.status, String(result?.body || '').slice(0, 300));
   }
 
-  if (!result || result.status !== 200) {
-    const bodyText = String(result?.body || '');
-    const isBusy = result?.status === 429 || result?.status === 503 || /high demand|unavailable/i.test(bodyText);
-    const isQuota = /quota exceeded|rate limit|limit:\s*0/i.test(bodyText);
-    console.error('Gemini error:', JSON.stringify({ attempts, body: bodyText.slice(0, 500) }));
-    return res.json({
-      reply: buildContextualFallbackReply(message, lang, history),
-      fallback: true,
-      warning: isQuota
-        ? 'Gemini quota exceeded'
-        : (isBusy ? 'Gemini temporarily busy' : 'Gemini request failed'),
-    });
-  }
-
-  const data = JSON.parse(result.body);
-  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response generated.';
-  res.json({ reply });
+  // Both failed — use rule-based fallback
+  return res.json({
+    reply: buildContextualFallbackReply(message, lang, history),
+    fallback: true,
+    warning: 'All AI providers failed',
+  });
 });
 app.post('/api/chat', chatLimit, handleChat);
 app.post('/api/ai', chatLimit, handleChat);
