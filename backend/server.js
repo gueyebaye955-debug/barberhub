@@ -204,7 +204,7 @@ const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
-  const model = String(process.env.GEMINI_MODEL || 'gemini-pro').trim();
+  const model = String(process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim();
   if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
   const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
@@ -227,24 +227,20 @@ Booking policy: Arrive 10 min early. 10% deposit required. Cancel up to 8 hours 
 
 OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal, or anything unrelated to JOTMA, respond ONLY with this exact text:
 "${offTopic}"`;
-  // Prepend system prompt to first user message (works with all Gemini models)
   const contents = [];
-  const turns = history.slice(-6);
-  for (let i = 0; i < turns.length; i++) {
-    const turn = turns[i];
-    if (!turn.role || !turn.text) continue;
-    const text = i === 0 && turn.role === 'user'
-      ? `[SYSTEM INSTRUCTIONS]\n${SYSTEM_PROMPT}\n[/SYSTEM INSTRUCTIONS]\n\n${String(turn.text).slice(0, 500)}`
-      : String(turn.text).slice(0, 500);
-    contents.push({ role: turn.role, parts: [{ text }] });
+  for (const turn of history.slice(-6)) {
+    if (turn.role && turn.text) {
+      contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
+    }
   }
-  const userText = contents.length === 0
-    ? `[SYSTEM INSTRUCTIONS]\n${SYSTEM_PROMPT}\n[/SYSTEM INSTRUCTIONS]\n\n${message.trim()}`
-    : message.trim();
-  contents.push({ role: 'user', parts: [{ text: userText }] });
-  const payload = JSON.stringify({ contents, generationConfig: { maxOutputTokens: 350, temperature: 0.6 } });
+  contents.push({ role: 'user', parts: [{ text: message.trim() }] });
+  const payload = JSON.stringify({
+    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents,
+    generationConfig: { maxOutputTokens: 350, temperature: 0.6 },
+  });
   const result = await new Promise((resolve, reject) => {
-    const u = new URL(`https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
+    const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
     const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
       let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d }));
     });
