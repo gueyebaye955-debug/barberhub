@@ -296,15 +296,15 @@
 
     if (provider && wantsBooking) {
       const link = `/book.html?barber=${provider.id}`;
-      if (lang === 'en') return `Great choice. Book ${provider.name} here: ${link}\n\nTell me your service and city to confirm.`;
-      if (lang === 'wo') return `${provider.name} baax na. Tekkal fii: ${link}\n\nWax ma sarwiis bi ak dëkk bi ngir confirme.`;
-      return `Tres bon choix. Reservez ${provider.name} ici: ${link}\n\nDites-moi le service et la ville pour confirmer.`;
+      if (lang === 'en') return `Great choice!\nBook ${provider.name} directly:\nBOOK_LINK:${link}`;
+      if (lang === 'wo') return `${provider.name} baax na!\nTekkal ci ay réserver:\nBOOK_LINK:${link}`;
+      return `Excellent choix !\nRéservez ${provider.name} directement :\nBOOK_LINK:${link}`;
     }
 
     if (wantsBooking) {
-      if (lang === 'en') return 'I can help you book now.\nTell me: service, date/time, and city.\nBrowse providers: /barbers.html';
-      if (lang === 'wo') return 'Maa ngi fi ngir jappale la booking.\nWax ma sarwiis bi, date/time, ak dëkk bi.\nSeet prestataire yi: /barbers.html';
-      return 'Je peux vous aider a reserver.\nDites-moi: service, date/heure, et ville.\nVoir les prestataires: /barbers.html';
+      if (lang === 'en') return 'I can help you book!\nTell me: service, date/time, and city.\nBOOK_LINK:/barbers.html';
+      if (lang === 'wo') return 'Maa ngi fi ngir jappale la!\nWax ma sarwiis bi, date/time, ak dëkk bi.\nBOOK_LINK:/barbers.html';
+      return 'Je peux vous aider à réserver !\nDites-moi : service, date/heure, et ville.\nBOOK_LINK:/barbers.html';
     }
 
     if (lang === 'en') {
@@ -348,6 +348,33 @@
       xhr.ontimeout = () => reject(new Error('XHR timeout'));
       xhr.send(payload);
     });
+  }
+
+  // ---- Book link helpers ----
+  function extractBookLink(reply) {
+    const match = String(reply || '').match(/BOOK_LINK:(\/\S+)/);
+    if (!match) return { cleanReply: reply, bookUrl: null };
+    const bookUrl = match[1];
+    const cleanReply = reply.replace(/\n?BOOK_LINK:\/\S+/g, '').trim();
+    return { cleanReply, bookUrl };
+  }
+
+  function appendBookCard(bookUrl, lang) {
+    const labels = {
+      en: { btn: 'Book Now →', sub: 'Tap to open the booking page' },
+      fr: { btn: 'Réserver maintenant →', sub: 'Appuyez pour ouvrir la page de réservation' },
+      wo: { btn: 'Tekkal leegi →', sub: 'Seet page réservation bi' },
+    };
+    const lb = labels[lang] || labels.fr;
+    const card = document.createElement('div');
+    card.className = 'bh-msg ai';
+    card.style.cssText = 'padding:0;overflow:hidden;background:transparent;';
+    card.innerHTML = `<a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.65rem;background:var(--primary,#e94560);color:#fff;text-decoration:none;padding:0.65rem 0.9rem;border-radius:14px;border-bottom-left-radius:4px;font-size:0.87rem;font-weight:700;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div><div>${escapeHTML(lb.btn)}</div><div style="font-size:0.75rem;opacity:0.85;font-weight:400">${escapeHTML(lb.sub)}</div></div>
+    </a>`;
+    messages.appendChild(card);
+    messages.scrollTop = messages.scrollHeight;
   }
 
   // ---- Send ----
@@ -422,8 +449,10 @@
       const reply = shouldUseLocalFallback(rawReply, res.status)
         ? buildLocalFallbackReply(text, _chatLang)
         : rawReply;
+      const { cleanReply, bookUrl } = extractBookLink(reply);
       typing.className = 'bh-msg ai';
-      typing.innerHTML = escapeHTML(reply).replace(/\n/g, '<br>');
+      typing.innerHTML = escapeHTML(cleanReply).replace(/\n/g, '<br>');
+      if (bookUrl) appendBookCard(bookUrl, _chatLang);
 
       if (reply) {
         chatHistory.push({ role: 'user', text });
@@ -437,7 +466,9 @@
         const h = await fetch('/api/health', { cache: 'no-store' });
         if (!h || !h.ok) msg = buildLocalFallbackReply(text, _chatLang || 'fr');
       } catch (_2) {}
-      typing.textContent = msg;
+      const { cleanReply: cleanMsg, bookUrl: fallbackUrl } = extractBookLink(msg);
+      typing.innerHTML = escapeHTML(cleanMsg).replace(/\n/g, '<br>');
+      if (fallbackUrl) appendBookCard(fallbackUrl, _chatLang || 'fr');
     }
 
     messages.scrollTop = messages.scrollHeight;
