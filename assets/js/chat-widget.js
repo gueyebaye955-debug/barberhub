@@ -134,16 +134,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history }),
       });
-      const data = await res.json();
-      const reply = data.reply || data.error || 'Something went wrong.';
+      const raw = await res.text();
+      let data = {};
+      try { data = JSON.parse(raw); } catch (_) {}
+      const reply = data.reply || data.error || (res.ok ? 'Something went wrong.' : `Server error ${res.status}. Please try again.`);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(reply).replace(/\n/g, '<br>');
-      history.push({ role: 'user', text });
-      history.push({ role: 'model', text: reply });
-      if (history.length > 12) history.splice(0, 2);
-    } catch (_) {
+      if (data.reply) {
+        history.push({ role: 'user', text });
+        history.push({ role: 'model', text: data.reply });
+        if (history.length > 12) history.splice(0, 2);
+      }
+    } catch (err) {
       typing.className = 'bh-msg ai';
-      typing.textContent = 'Connection error. Please try again.';
+      typing.textContent = 'Network error — check your connection and try again.';
     }
 
     messages.scrollTop = messages.scrollHeight;
