@@ -17,6 +17,7 @@ function normalizeGeminiModel(value) {
   if (!model) return '';
   const alias = {
     'gemini-flash-latest': 'gemini-2.0-flash',
+    'gemini-1.5-flash': 'gemini-2.0-flash',
     'gemini-1.5-flash-latest': 'gemini-1.5-flash',
   };
   return alias[model.toLowerCase()] || model;
@@ -24,7 +25,7 @@ function normalizeGeminiModel(value) {
 
 function getGeminiModels() {
   const configured = normalizeGeminiModel(process.env.GEMINI_MODEL || '');
-  const candidates = [configured || 'gemini-2.0-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const candidates = [configured || 'gemini-2.0-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
   return candidates.filter((model, index, arr) => model && arr.indexOf(model) === index);
 }
 
