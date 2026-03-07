@@ -1,6 +1,7 @@
 {
   "name": "JOTMA",
   "short_name": "JOTMA",
+  "id": "./",
   "description": "Quickly launch JOTMA from your home screen.",
   "start_url": "./index.html",
   "scope": "./",
@@ -8,6 +9,18 @@
   "background_color": "#0b1020",
   "theme_color": "#0d9488",
   "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "assets/icon.svg",
       "sizes": "any",

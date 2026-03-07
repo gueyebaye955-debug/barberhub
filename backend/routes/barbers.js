@@ -138,6 +138,46 @@ router.get('/me/portfolio', requireAuth, requireRole('barber'), asyncHandler(asy
   return res.json(portfolio);
 }));
 
+router.post('/me/avatar', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const remove = req.body?.remove === true;
+  const imageData = parseBase64Image(req.body?.image_data);
+  const imageUrl = parseImageUrl(req.body?.image_url);
+  if (!remove && !imageData && !imageUrl) {
+    return res.status(400).json({ error: 'Provide image_data, image_url, or remove=true' });
+  }
+
+  const existing = await pool.query('SELECT avatar FROM barber_profiles WHERE id = $1', [barberProfileId]);
+  if (!existing.rows.length) return res.status(404).json({ error: 'Barber profile not found' });
+  const oldAvatar = existing.rows[0].avatar;
+
+  let nextAvatar = null;
+  if (remove) {
+    nextAvatar = null;
+  } else if (imageData) {
+    if (cloudinaryConfigured()) {
+      nextAvatar = await uploadImage(imageData, 'jotma/avatars');
+    } else {
+      // Fallback for environments without Cloudinary configured.
+      nextAvatar = imageData;
+    }
+  } else {
+    nextAvatar = imageUrl;
+  }
+
+  if (oldAvatar && oldAvatar !== nextAvatar && oldAvatar.includes('cloudinary.com')) {
+    deleteImage(oldAvatar).catch(() => {});
+  }
+
+  const updated = await pool.query(
+    'UPDATE barber_profiles SET avatar = $1 WHERE id = $2 RETURNING id, avatar',
+    [nextAvatar, barberProfileId]
+  );
+  return res.json(updated.rows[0]);
+}));
+
 router.post('/me/portfolio', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
   const barberProfileId = await resolveBarberProfileId(req.user.id);
   if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });

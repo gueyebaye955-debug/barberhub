@@ -166,6 +166,30 @@
       });
     },
 
+    async updateMyAvatar(imageUrl) {
+      return request('/barbers/me/avatar', {
+        method: 'POST',
+        auth: true,
+        body: { image_url: imageUrl },
+      });
+    },
+
+    async uploadMyAvatar(imageData) {
+      return request('/barbers/me/avatar', {
+        method: 'POST',
+        auth: true,
+        body: { image_data: imageData },
+      });
+    },
+
+    async removeMyAvatar() {
+      return request('/barbers/me/avatar', {
+        method: 'POST',
+        auth: true,
+        body: { remove: true },
+      });
+    },
+
     async updateMyPortfolioPhoto(photoId, caption) {
       return request(`/barbers/me/portfolio/${encodeURIComponent(photoId)}`, {
         method: 'PATCH',

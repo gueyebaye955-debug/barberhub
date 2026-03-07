@@ -483,10 +483,14 @@
                 </div>
                 <div style="flex:1">
                   <input class="form-control" id="avatarUrlInput" placeholder="https://example.com/photo.jpg" value="${getBarberAvatar(barber)||''}" style="margin-bottom:0.4rem">
-                  <p style="font-size:0.75rem;color:var(--text-muted)">Paste a direct image URL</p>
+                  <p style="font-size:0.75rem;color:var(--text-muted)">Paste an image URL, or upload/take a photo from your phone.</p>
+                  <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+                  <input type="file" id="avatarCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleAvatarUpload(this)">
                 </div>
               </div>
               <div class="profile-photo-actions">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('avatarFileInput').click()">Upload from device</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('avatarCameraInput').click()">Take photo</button>
                 <button class="btn btn-primary btn-sm" onclick="saveAvatar()"> Save Photo</button>
                 ${getBarberAvatar(barber) ? `<button class="btn btn-ghost btn-sm" onclick="removeAvatar()">Remove</button>` : ''}
                 <a class="btn btn-ghost btn-sm" href="https://www.google.com/business/" target="_blank" rel="noopener">Manage Google Business Profile</a>
@@ -1040,23 +1044,131 @@
       showPortfolioAlert(t('portfolio_delete_success'));
     }
 
-    function saveAvatar() {
-      const url = document.getElementById('avatarUrlInput')?.value.trim();
-      if (url) {
-        localStorage.setItem('bh_avatar_' + barber.id, url);
-        // Also persist to dynamic profile if applicable
-        if (barber._dynamic) {
-          const profiles = JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
-          if (profiles[barber.id]) { profiles[barber.id].avatar = url; localStorage.setItem('bh_barber_profiles', JSON.stringify(profiles)); }
-        }
-        showProfileAlert('Photo saved!');
-        setTimeout(render, 1200);
+    function isDataImageUri(value) {
+      return /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/i.test(String(value || '').trim());
+    }
+
+    function isValidAvatarValue(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      if (isDataImageUri(raw)) return true;
+      try {
+        const parsed = new URL(raw);
+        if (parsed.protocol === 'https:') return true;
+        if (parsed.protocol !== 'http:') return false;
+        const host = parsed.hostname.toLowerCase();
+        return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      } catch (_) {
+        return false;
       }
     }
 
-    function removeAvatar() {
-      localStorage.removeItem('bh_avatar_' + barber.id);
+    function persistLocalAvatar(avatarValue) {
+      const value = typeof avatarValue === 'string' ? avatarValue.trim() : '';
+      if (value) {
+        localStorage.setItem('bh_avatar_' + barber.id, value);
+      } else {
+        localStorage.removeItem('bh_avatar_' + barber.id);
+      }
+      if (barber._dynamic) {
+        const profiles = JSON.parse(localStorage.getItem('bh_barber_profiles') || '{}');
+        if (profiles[barber.id]) {
+          profiles[barber.id].avatar = value || null;
+          localStorage.setItem('bh_barber_profiles', JSON.stringify(profiles));
+        }
+      }
+      barber = { ...barber, avatar: value || null };
+    }
+
+    async function saveAvatar() {
+      const url = document.getElementById('avatarUrlInput')?.value.trim();
+      if (!url) {
+        showProfileAlert('Please add an image URL or upload a photo.', 'error');
+        return;
+      }
+      if (!isValidAvatarValue(url)) {
+        showProfileAlert('Use a valid image URL or upload a JPG/PNG/WebP photo.', 'error');
+        return;
+      }
+
+      let finalAvatar = url;
+      let localOnly = false;
+      if (window.BH_API) {
+        try {
+          const result = isDataImageUri(url)
+            ? await window.BH_API.uploadMyAvatar(url)
+            : await window.BH_API.updateMyAvatar(url);
+          if (result && typeof result.avatar === 'string' && result.avatar.trim()) {
+            finalAvatar = result.avatar.trim();
+          }
+        } catch (err) {
+          console.warn('Avatar API save failed, using local fallback:', err.message);
+          localOnly = true;
+        }
+      }
+
+      persistLocalAvatar(finalAvatar);
+      const input = document.getElementById('avatarUrlInput');
+      if (input) input.value = finalAvatar;
+      showProfileAlert(localOnly ? 'Photo saved on this device only.' : 'Photo saved!', localOnly ? 'warning' : 'success');
+      setTimeout(render, 900);
+    }
+
+    async function removeAvatar() {
+      let localOnly = false;
+      if (window.BH_API) {
+        try {
+          await window.BH_API.removeMyAvatar();
+        } catch (err) {
+          console.warn('Avatar remove API failed, using local fallback:', err.message);
+          localOnly = true;
+        }
+      }
+      persistLocalAvatar('');
+      showProfileAlert(localOnly ? 'Photo removed on this device only.' : 'Photo removed.', localOnly ? 'warning' : 'success');
       render();
+    }
+
+    function handleAvatarUpload(input) {
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showProfileAlert('Please select an image file.', 'error');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        showProfileAlert('Photo must be under 8 MB.', 'error');
+        return;
+      }
+
+      showProfileAlert('Processing photo...', 'info');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const SIZE = 480;
+          const side = Math.min(img.width, img.height);
+          const sx = Math.floor((img.width - side) / 2);
+          const sy = Math.floor((img.height - side) / 2);
+          const canvas = document.createElement('canvas');
+          canvas.width = SIZE;
+          canvas.height = SIZE;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+
+          let dataUri = canvas.toDataURL('image/jpeg', 0.8);
+          if (dataUri.length > 800000) dataUri = canvas.toDataURL('image/jpeg', 0.65);
+
+          const urlInput = document.getElementById('avatarUrlInput');
+          if (urlInput) urlInput.value = dataUri;
+          await saveAvatar();
+        };
+        img.onerror = () => showProfileAlert('Could not read image. Try a different photo.', 'error');
+        img.src = event.target.result;
+      };
+      reader.onerror = () => showProfileAlert('Could not read file. Try again.', 'error');
+      reader.readAsDataURL(file);
     }
 
     function saveShopInfo() {
@@ -1076,9 +1188,12 @@
       setTimeout(render, 1800);
     }
 
-    function showProfileAlert(msg) {
+    function showProfileAlert(msg, type = 'success') {
       const el = document.getElementById('bdashProfileAlert');
-      if (el) el.innerHTML = `<div class="alert alert-success">${msg}</div>`;
+      const cls = type === 'error'
+        ? 'alert-danger'
+        : (type === 'warning' ? 'alert-warning' : (type === 'info' ? 'alert-info' : 'alert-success'));
+      if (el) el.innerHTML = `<div class="alert ${cls}">${msg}</div>`;
       setTimeout(() => { const e = document.getElementById('bdashProfileAlert'); if(e) e.innerHTML=''; }, 2500);
     }
 

@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Book Appointment  JOTMA</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JOTMA">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -95,6 +101,7 @@
     let calendarPrefs = { ...DEFAULT_CALENDAR_PREFS };
     let remoteBookedSlots = new Set();
     let lastCreatedBooking = null;
+    let deferredInstallPrompt = null;
 
     let step = 0;
     let sel  = { service: null, date: todayStr(), slot: null, notes: '', recurring: 'once' };
@@ -102,6 +109,81 @@
     const now = new Date();
     calYear  = now.getFullYear();
     calMonth = now.getMonth();
+
+    function isStandaloneMode() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function isIOSDevice() {
+      return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    }
+
+    function isIOSSafari() {
+      const ua = window.navigator.userAgent.toLowerCase();
+      if (!isIOSDevice()) return false;
+      if (ua.includes('crios') || ua.includes('fxios') || ua.includes('edgios') || ua.includes('opr')) return false;
+      return ua.includes('safari');
+    }
+
+    function renderPostBookingInstallOffer() {
+      if (isStandaloneMode()) return '';
+
+      const hint = isIOSSafari()
+        ? 'Add JOTMA to your home screen: tap Share, then "Add to Home Screen".'
+        : 'Install JOTMA on your home screen for faster rebooking.';
+
+      return `
+        <div id="postBookingInstall" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1.1rem;text-align:left">
+          <p id="postBookingInstallHint" style="margin:0 0 0.8rem;color:var(--text-muted);font-size:0.84rem">${hint}</p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="promptInstallFromBooking()">${isIOSSafari() ? 'How to add' : 'Add to home screen'}</button>
+          </div>
+        </div>`;
+    }
+
+    async function promptInstallFromBooking() {
+      if (isIOSSafari()) {
+        alert('On iPhone: tap Share, then Add to Home Screen.');
+        return;
+      }
+      if (!deferredInstallPrompt) {
+        alert('Open browser menu and choose Install app or Add to Home screen.');
+        return;
+      }
+
+      try {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        const hintEl = document.getElementById('postBookingInstallHint');
+        if (hintEl && choice && choice.outcome === 'accepted') {
+          hintEl.textContent = 'Great. JOTMA is being added to your home screen.';
+        }
+      } catch (_) {}
+    }
+
+    function setupInstallPromptHooks() {
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        const hintEl = document.getElementById('postBookingInstallHint');
+        if (hintEl) hintEl.textContent = 'Installed. You can open JOTMA from your home screen anytime.';
+      });
+
+      if ('serviceWorker' in navigator) {
+        const isSecureContext = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (isSecureContext) {
+          navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+        }
+      }
+    }
+
+    window.promptInstallFromBooking = promptInstallFromBooking;
+    setupInstallPromptHooks();
 
     function applyPreselectedService() {
       if (!preService || !barber) return;
@@ -534,6 +616,7 @@
               ? '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.8rem">Provider email notification was also sent.</p>'
               : ''}
           </div>` : ''}
+          ${renderPostBookingInstallOffer()}
           <a href="dashboard.html" style="color:var(--text-muted);font-size:0.875rem">
             Go to Dashboard 
           </a>

@@ -1,18 +1,13 @@
-// Cleanup service worker.
-// This unregisters itself and deletes old caches from previous versions.
-self.addEventListener("install", () => {
+// Minimal service worker for installability.
+// Keeps all requests network-first to avoid stale UI issues.
+self.addEventListener('install', function () {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map((key) => caches.delete(key)));
-    await self.registration.unregister();
+self.addEventListener('activate', function (event) {
+  event.waitUntil(self.clients.claim());
+});
 
-    const clients = await self.clients.matchAll({ type: "window" });
-    for (const client of clients) {
-      client.navigate(client.url);
-    }
-  })());
+self.addEventListener('fetch', function (event) {
+  event.respondWith(fetch(event.request));
 });
