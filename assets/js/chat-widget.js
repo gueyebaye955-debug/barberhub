@@ -1,98 +1,145 @@
 (function () {
-  // Only init once
   if (document.getElementById('bh-chat-widget')) return;
 
-  const LABELS = {
-    en: { title: 'Baye', placeholder: 'Ask me anything...', send: 'Send', open: 'Chat with Baye', welcome: 'Hi! I\'m Baye, your JOTMA assistant. Ask me anything about bookings, barbers, or services.' },
-    fr: { title: 'Baye', placeholder: 'Posez votre question...', send: 'Envoyer', open: 'Chat avec Baye', welcome: 'Bonjour! Je suis Baye, votre assistant JOTMA. Posez-moi vos questions sur les réservations, les prestataires ou les services.' },
-    wo: { title: 'Baye', placeholder: 'Laaj sa laaj...', send: 'Yónnee', open: 'Chat ak Baye', welcome: 'Asalaamalekum! Maa ngi Baye, sa jëfandikukat JOTMA. Laajal ma ci réservation, prestataire, walla sarwiis yi.' },
-  };
   const FALLBACK_API_BASE = 'https://jotma.net/api';
+  const VOICE_MAX_MS = 30000;
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
-  function getLang() {
-    return localStorage.getItem('bh_lang') || 'en';
-  }
+  // Per-language UI labels
+  const LABELS = {
+    en: {
+      title: 'Awa — JOTMA',
+      placeholder: 'Type your message...',
+      send: 'Send',
+      open: 'Chat with Awa',
+      mic_start: 'Record voice message',
+      mic_stop: 'Stop recording',
+      voice_unsupported: 'Voice input is not supported in this browser.',
+      voice_no_speech: 'No voice detected. Please try again.',
+      voice_limit: 'Voice message reached 30 seconds.',
+      voice_denied: 'Microphone access was denied. Please allow it and try again.',
+      voice_error: 'Unable to capture voice right now. Please try again.',
+    },
+    fr: {
+      title: 'Awa — JOTMA',
+      placeholder: 'Écrivez votre message...',
+      send: 'Envoyer',
+      open: 'Chat avec Awa',
+      mic_start: 'Enregistrer un message vocal',
+      mic_stop: "Arrêter l'enregistrement",
+      voice_unsupported: "La saisie vocale n'est pas prise en charge dans ce navigateur.",
+      voice_no_speech: 'Aucune voix détectée. Réessayez.',
+      voice_limit: 'Le message vocal a atteint 30 secondes.',
+      voice_denied: 'Accès micro refusé. Autorisez le micro puis réessayez.',
+      voice_error: 'Impossible de capter la voix pour le moment. Réessayez.',
+    },
+    wo: {
+      title: 'Awa — JOTMA',
+      placeholder: 'Bind sa xbaar...',
+      send: 'Yónnee',
+      open: 'Chat ak Awa',
+      mic_start: 'Taanne message vocal',
+      mic_stop: 'Taxawal enregistrement bi',
+      voice_unsupported: 'Voice input amul ci navigateur bii.',
+      voice_no_speech: 'Benn baat deggu nu ko. Jemaat.',
+      voice_limit: 'Message vocal bi matna 30 secondes.',
+      voice_denied: 'Microphone bi nanguwul. Maye ndigal te jemaat.',
+      voice_error: 'Mennuma jot baat leegi. Jemaat.',
+    },
+  };
+
+  // Intro messages shown after language is selected
+  const INTRO = {
+    en: 'Nanga def! 🇸🇳\n\nI\'m Awa, your JOTMA Assistant. I can help you find and book services near you.\n\nTo get started, tell me:\n• What service do you need?\n• When would you like the appointment?\n• Which city are you in?',
+    fr: 'Nanga def! 🇸🇳\n\nJe suis Awa, votre assistante JOTMA. Je peux vous aider à trouver et réserver des services près de chez vous.\n\nPour commencer, dites-moi :\n• Quel service vous faut-il ?\n• Quand souhaitez-vous le rendez-vous ?\n• Dans quelle ville êtes-vous ?',
+    wo: 'Nanga def! 🇸🇳\n\nMaa ngi Awa, sa jappale JOTMA. Manuma la jàpp prestataire yi te tëral sa rendez-vous.\n\nNu doon ci kanam, xoolal ma :\n• Ana sarwiis bu la neex ?\n• Kañ bëgg nga rendez-vous bi ?\n• Ana dëkk bi nga am ?',
+  };
+
+  // State
+  let _chatLang = null; // null = not yet selected
+  let isOpen = false;
+  let isBusy = false;
+  let recognition = null;
+  let isRecording = false;
+  let recordStartedAt = 0;
+  let recordTimer = null;
+  let hardStopTimer = null;
+  let finalTranscript = '';
+  let liveTranscript = '';
+  let shouldSendAfterStop = false;
+  let stopReason = '';
+
+  function getLang() { return _chatLang || localStorage.getItem('bh_lang') || 'fr'; }
   function L(key) {
     const lang = getLang();
-    return (LABELS[lang] || LABELS.en)[key] || LABELS.en[key];
+    return (LABELS[lang] || LABELS.fr)[key] || LABELS.fr[key];
   }
 
   function resolveChatEndpoints() {
     const endpoints = [];
-    function pushEndpoint(base, suffix, toEnd = false) {
+    function pushEndpoint(base, suffix, toEnd) {
       if (!base) return;
       const clean = String(base).replace(/\/+$/, '');
-      const baseUrl = clean.endsWith('/chat') || clean.endsWith('/ai') ? clean : `${clean}${suffix}`;
-      const url = baseUrl;
+      const url = clean.endsWith('/chat') || clean.endsWith('/ai') ? clean : `${clean}${suffix}`;
       const idx = endpoints.indexOf(url);
-      if (idx >= 0) {
-        if (toEnd) {
-          endpoints.splice(idx, 1);
-          endpoints.push(url);
-        }
-        return;
-      }
+      if (idx >= 0) { if (toEnd) { endpoints.splice(idx, 1); endpoints.push(url); } return; }
       endpoints.push(url);
     }
-    function pushBase(base, toEnd = false) {
-      pushEndpoint(base, '/chat', toEnd);
-      pushEndpoint(base, '/ai', toEnd);
-    }
-
+    function pushBase(base, toEnd) { pushEndpoint(base, '/chat', toEnd); pushEndpoint(base, '/ai', toEnd); }
     const host = location.hostname;
     const isLocalHost = host === 'localhost' || host === '127.0.0.1';
-    const isDevServer = location.protocol === 'file:' ||
-      (isLocalHost && !['', '80', '443', '4000'].includes(location.port));
-
-    // Local first for dev server workflows (e.g., Live Server on :5500).
+    const isDevServer = location.protocol === 'file:' || (isLocalHost && !['', '80', '443', '4000'].includes(location.port));
     if (isDevServer) pushBase('http://localhost:4000/api');
-
-    // Try same-origin API before hosted fallback.
     pushBase('/api');
-
-    try {
-      if (window.BH_API && typeof window.BH_API.getBaseUrl === 'function') {
-        pushBase(window.BH_API.getBaseUrl() || '/api');
-      }
-    } catch (_) {}
-
-    // Ensure hosted API is always the final fallback candidate.
+    try { if (window.BH_API && typeof window.BH_API.getBaseUrl === 'function') pushBase(window.BH_API.getBaseUrl() || '/api'); } catch (_) {}
     pushBase(FALLBACK_API_BASE, true);
     return endpoints;
   }
 
-  // ---- Inject styles ----
+  // ---- Styles ----
   const style = document.createElement('style');
   style.textContent = `
-    #bh-chat-widget { position: fixed; bottom: 2.5rem; right: 1.5rem; z-index: 9999; font-family: inherit; }
+    #bh-chat-widget { position: fixed; right: 1.5rem; bottom: calc(var(--bh-chat-base-bottom, 2.5rem) + env(safe-area-inset-bottom, 0px)); z-index: 9999; font-family: inherit; }
     #bh-chat-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; padding: 0; cursor: pointer; box-shadow: 0 6px 20px rgba(233,69,96,0.45); display: grid; place-items: center; transition: transform 0.2s, box-shadow 0.2s; }
-    #bh-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,69,96,0.5); }
-    #bh-chat-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
-    #bh-chat-box { display: none; flex-direction: column; width: 340px; max-width: calc(100vw - 2rem); height: 460px; background: var(--bg-card, #1a1a2e); border: 1px solid var(--border, #2a2a3e); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 0.75rem; }
+    #bh-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,69,96,0.55); }
+    #bh-chat-btn svg { width: 24px; height: 24px; }
+    #bh-chat-box { display: none; flex-direction: column; width: 340px; max-width: calc(100vw - 2rem); height: 480px; max-height: min(480px, calc(100dvh - 1.5rem)); background: var(--bg-card, #1a1a2e); border: 1px solid var(--border, #2a2a3e); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 0.75rem; }
     #bh-chat-box.open { display: flex; }
     #bh-chat-header { background: var(--primary, #e94560); color: #fff; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
     #bh-chat-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 0.25rem; opacity: 0.85; }
     #bh-chat-header button:hover { opacity: 1; }
-    #bh-chat-messages { flex: 1; overflow-y: auto; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem; }
-    .bh-msg { max-width: 82%; padding: 0.6rem 0.85rem; border-radius: 12px; font-size: 0.88rem; line-height: 1.5; word-break: break-word; }
+    #bh-chat-messages { flex: 1; overflow-y: auto; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .bh-msg { max-width: 85%; padding: 0.65rem 0.9rem; border-radius: 14px; font-size: 0.87rem; line-height: 1.55; word-break: break-word; }
     .bh-msg.user { background: var(--primary, #e94560); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
     .bh-msg.ai { background: var(--bg-elevated, #252540); color: var(--text, #e0e0e0); align-self: flex-start; border-bottom-left-radius: 4px; }
     .bh-msg.typing { opacity: 0.6; font-style: italic; }
-    #bh-chat-input-row { display: flex; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--border, #2a2a3e); flex-shrink: 0; background: var(--bg-card, #1a1a2e); }
-    #bh-chat-input { flex: 1; background: var(--bg-elevated, #252540); border: 1px solid var(--border, #2a2a3e); border-radius: 8px; color: var(--text, #e0e0e0); padding: 0.55rem 0.75rem; font-size: 0.88rem; outline: none; resize: none; height: 38px; max-height: 90px; overflow-y: auto; font-family: inherit; }
+    .bh-lang-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 999px; padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s; white-space: nowrap; }
+    .bh-lang-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    .bh-lang-btn:disabled { cursor: default; }
+    #bh-chat-input-row { display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--border, #2a2a3e); flex-shrink: 0; background: var(--bg-card, #1a1a2e); }
+    #bh-chat-input { flex: 1; background: var(--bg-elevated, #252540); border: 1px solid var(--border, #2a2a3e); border-radius: 12px; color: var(--text, #e0e0e0); padding: 0.55rem 0.75rem; font-size: 1rem; outline: none; resize: none; height: 38px; max-height: 90px; overflow-y: auto; font-family: inherit; }
     #bh-chat-input:focus { border-color: var(--primary, #e94560); }
-    #bh-chat-send { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 8px; padding: 0 0.85rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; flex-shrink: 0; transition: opacity 0.2s; }
-    #bh-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+    #bh-chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    #bh-chat-send, #bh-chat-voice { width: 38px; height: 38px; border: none; border-radius: 999px; display: grid; place-items: center; color: #fff; cursor: pointer; flex-shrink: 0; transition: opacity 0.2s, transform 0.2s; padding: 0; }
+    #bh-chat-send svg, #bh-chat-voice svg { width: 18px; height: 18px; }
+    #bh-chat-send { background: var(--primary, #e94560); }
+    #bh-chat-voice { background: #25d366; }
+    #bh-chat-send:disabled, #bh-chat-voice:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    #bh-chat-voice.recording { background: #ef4444; animation: bh-voice-pulse 1s ease-in-out infinite; }
+    #bh-chat-voice-pill { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fecaca; border-radius: 999px; padding: 0.3rem 0.55rem; font-size: 0.78rem; line-height: 1; white-space: nowrap; }
+    #bh-chat-voice-pill[hidden] { display: none; }
+    .bh-rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; animation: bh-dot-pulse 0.9s ease-in-out infinite; }
+    @keyframes bh-voice-pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.45); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+    @keyframes bh-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
     @media (max-width: 480px) {
-      #bh-chat-widget { bottom: 4.75rem; right: 1rem; }
-      #bh-chat-box { width: calc(100vw - 2rem); height: 400px; }
+      #bh-chat-widget { --bh-chat-base-bottom: 4.75rem; right: 1rem; }
+      #bh-chat-box { width: calc(100vw - 2rem); height: min(420px, calc(100dvh - 7rem)); }
       #bh-chat-btn { width: 52px; height: 52px; }
-      #bh-chat-btn svg { width: 22px; height: 22px; }
     }
   `;
   document.head.appendChild(style);
 
-  // ---- Inject HTML ----
+  // ---- HTML ----
   const widget = document.createElement('div');
   widget.id = 'bh-chat-widget';
   widget.innerHTML = `
@@ -103,8 +150,17 @@
       </div>
       <div id="bh-chat-messages"></div>
       <div id="bh-chat-input-row">
+        <div id="bh-chat-voice-pill" hidden>
+          <span class="bh-rec-dot"></span>
+          <span id="bh-chat-voice-time">0:00</span>
+        </div>
         <textarea id="bh-chat-input" rows="1" maxlength="500"></textarea>
-        <button id="bh-chat-send"></button>
+        <button id="bh-chat-send" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+        </button>
+        <button id="bh-chat-voice" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v4"/><path d="M8 22h8"/></svg>
+        </button>
       </div>
     </div>
     <button id="bh-chat-btn">
@@ -113,26 +169,41 @@
   `;
   document.body.appendChild(widget);
 
-  // ---- State ----
-  const history = [];
-  let isOpen = false;
-  let isBusy = false;
-
-  const box = document.getElementById('bh-chat-box');
-  const btn = document.getElementById('bh-chat-btn');
+  const box      = document.getElementById('bh-chat-box');
+  const btn      = document.getElementById('bh-chat-btn');
   const closeBtn = document.getElementById('bh-chat-close');
   const messages = document.getElementById('bh-chat-messages');
-  const input = document.getElementById('bh-chat-input');
-  const sendBtn = document.getElementById('bh-chat-send');
+  const input    = document.getElementById('bh-chat-input');
+  const sendBtn  = document.getElementById('bh-chat-send');
+  const voiceBtn = document.getElementById('bh-chat-voice');
+  const voicePill = document.getElementById('bh-chat-voice-pill');
+  const voiceTime = document.getElementById('bh-chat-voice-time');
+  const chatHistory = [];
 
   function updateLabels() {
     document.getElementById('bh-chat-title').textContent = L('title');
-    input.placeholder = L('placeholder');
-    sendBtn.textContent = L('send');
-    const chatBtn = document.getElementById('bh-chat-btn');
-    if (chatBtn) chatBtn.setAttribute('aria-label', L('open'));
+    if (!_chatLang) {
+      input.placeholder = 'Choisissez une langue / Select a language';
+    } else {
+      input.placeholder = L('placeholder');
+    }
+    sendBtn.title = L('send');
+    voiceBtn.title = isRecording ? L('mic_stop') : L('mic_start');
+    btn.setAttribute('aria-label', L('open'));
   }
+
+  function setActionButtons() {
+    if (!_chatLang) { sendBtn.style.display = 'none'; voiceBtn.style.display = 'none'; return; }
+    if (isRecording) { sendBtn.style.display = 'none'; voiceBtn.style.display = 'grid'; voiceBtn.disabled = isBusy; return; }
+    const hasText = input.value.trim().length > 0;
+    sendBtn.style.display = hasText ? 'grid' : 'none';
+    voiceBtn.style.display = hasText ? 'none' : 'grid';
+    sendBtn.disabled = isBusy || !hasText;
+    voiceBtn.disabled = isBusy;
+  }
+
   updateLabels();
+  setActionButtons();
 
   function escapeHTML(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -147,15 +218,69 @@
     return el;
   }
 
+  // ---- Language selection ----
+  function showLangGreeting() {
+    const el = document.createElement('div');
+    el.className = 'bh-msg ai';
+    el.innerHTML =
+      '<div style="font-size:1rem;font-weight:700;margin-bottom:0.35rem">Nanga def! \uD83C\uDDF8\uD83C\uDDF3<br>Bonjour! \uD83C\uDDEB\uD83C\uDDF7</div>' +
+      '<div style="font-size:0.84rem;margin-bottom:0.75rem">C\'est moi Awa, votre assistante JOTMA.<br>Quelle langue préférez-vous ?</div>' +
+      '<div style="display:flex;gap:0.4rem;flex-wrap:wrap">' +
+        '<button class="bh-lang-btn" data-lang-select="fr">Français \uD83C\uDDEB\uD83C\uDDF7</button>' +
+        '<button class="bh-lang-btn" data-lang-select="wo">Wolof \uD83C\uDDF8\uD83C\uDDF3</button>' +
+        '<button class="bh-lang-btn" data-lang-select="en">English \uD83C\uDDFA\uD83C\uDDF8</button>' +
+      '</div>';
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    input.disabled = true;
+    updateLabels();
+    setActionButtons();
+  }
+
+  function selectLang(lang) {
+    if (!['en', 'fr', 'wo'].includes(lang)) return;
+    _chatLang = lang;
+    // Dim unselected buttons
+    document.querySelectorAll('[data-lang-select]').forEach(b => {
+      b.disabled = true;
+      b.style.opacity = b.dataset.langSelect === lang ? '1' : '0.35';
+    });
+    input.disabled = false;
+    updateLabels();
+    setTimeout(() => {
+      addMessage(INTRO[lang], 'ai');
+      setActionButtons();
+      input.focus();
+    }, 250);
+  }
+
+  // Click delegation for language buttons
+  messages.addEventListener('click', (e) => {
+    const btn2 = e.target.closest('[data-lang-select]');
+    if (btn2 && !_chatLang) selectLang(btn2.dataset.langSelect);
+  });
+
+  // Detect language from typed text
+  function detectLangFromText(text) {
+    const t = text.toLowerCase().trim();
+    if (['fr', 'français', 'francais', 'french'].includes(t)) return 'fr';
+    if (['wo', 'wolof', 'wlf'].includes(t)) return 'wo';
+    if (['en', 'english', 'anglais'].includes(t)) return 'en';
+    return null;
+  }
+
+  // ---- Open / Close ----
   function open() {
     isOpen = true;
     box.classList.add('open');
     btn.style.display = 'none';
-    if (messages.children.length === 0) addMessage(L('welcome'), 'ai');
-    input.focus();
+    if (messages.children.length === 0) showLangGreeting();
+    if (!_chatLang) { input.disabled = true; } else { input.focus(); }
+    setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 80);
   }
 
   function close() {
+    if (isRecording) endVoiceCapture(false, 'cancel');
     isOpen = false;
     box.classList.remove('open');
     btn.style.display = 'flex';
@@ -164,6 +289,7 @@
   btn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
 
+  // ---- XHR fallback ----
   function postWithXhr(endpoint, payload, timeoutMs) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -177,13 +303,25 @@
     });
   }
 
-  async function send() {
-    const text = input.value.trim();
+  // ---- Send ----
+  async function send(overrideText) {
+    let text = String(overrideText !== undefined ? overrideText : input.value).trim();
+    if (text.length > 500) text = text.slice(0, 500).trim();
     if (!text || isBusy) return;
+
+    // If language not yet selected, try to detect from typed text
+    if (!_chatLang) {
+      const detected = detectLangFromText(text);
+      if (detected) { input.value = ''; selectLang(detected); return; }
+      return; // ignore other input until lang selected
+    }
+
     isBusy = true;
     sendBtn.disabled = true;
+    voiceBtn.disabled = true;
     input.value = '';
     input.style.height = '38px';
+    setActionButtons();
 
     addMessage(text, 'user');
     const typing = addMessage('...', 'ai typing');
@@ -194,22 +332,15 @@
       let raw = '';
       let lastNetworkError = null;
       const attempts = [];
-      const payload = JSON.stringify({ message: text, history });
+      const payload = JSON.stringify({ message: text, history: chatHistory, lang: _chatLang });
+
       for (const endpoint of endpoints) {
         try {
-          const candidateRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload,
-            cache: 'no-store',
-          });
+          const candidateRes = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, cache: 'no-store' });
           const candidateRaw = await candidateRes.text();
           attempts.push({ endpoint, status: candidateRes.status });
-          // Keep trying fallback endpoints until one succeeds.
           if (!candidateRes.ok && endpoint !== endpoints[endpoints.length - 1]) continue;
-          res = candidateRes;
-          raw = candidateRaw;
-          break;
+          res = candidateRes; raw = candidateRaw; break;
         } catch (err) {
           attempts.push({ endpoint, fetch_error: true });
           lastNetworkError = err || lastNetworkError;
@@ -227,53 +358,121 @@
           }
         }
       }
+
       if (!res) throw lastNetworkError || new Error('Unable to reach chat API.');
-      if (!res.ok && attempts.length > 1) console.warn('Baye chat attempts:', attempts);
+      if (!res.ok && attempts.length > 1) console.warn('Awa chat attempts:', attempts);
 
       let data = {};
       try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+
       const fallbackError = res.status === 404
-        ? 'Chat route not found on this server. Please redeploy backend and try again.'
+        ? 'Chat route not found. Please redeploy the backend.'
         : (res.status === 503
-            ? 'AI service is not configured yet. Please set GEMINI_API_KEY on the backend.'
-            : `Server error ${res.status}. Please try again.`);
+          ? 'AI service not configured. Set GEMINI_API_KEY on the backend.'
+          : `Server error ${res.status}. Please try again.`);
+
       const reply = data.reply || data.error || (res.ok ? 'Something went wrong.' : fallbackError);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(reply).replace(/\n/g, '<br>');
+
       if (data.reply) {
-        history.push({ role: 'user', text });
-        history.push({ role: 'model', text: data.reply });
-        if (history.length > 12) history.splice(0, 2);
+        chatHistory.push({ role: 'user', text });
+        chatHistory.push({ role: 'model', text: data.reply });
+        if (chatHistory.length > 12) chatHistory.splice(0, 2);
       }
-    } catch (err) {
+    } catch (_) {
       typing.className = 'bh-msg ai';
-      let message = 'Network error. Baye could not reach the server. If testing locally, run backend on http://localhost:4000.';
-      try {
-        const health = await fetch('/api/health', { cache: 'no-store' });
-        if (health && health.ok) {
-          message = 'Baye chat was blocked by this browser/network. Disable ad blocker or VPN, then hard refresh.';
-        }
-      } catch (_) {}
-      typing.textContent = message;
+      let msg = 'Network error — check your connection and try again.';
+      try { const h = await fetch('/api/health', { cache: 'no-store' }); if (h && h.ok) msg = 'Awa was blocked by your browser or network. Disable ad blocker or VPN, then hard refresh.'; } catch (_2) {}
+      typing.textContent = msg;
     }
 
     messages.scrollTop = messages.scrollHeight;
     isBusy = false;
     sendBtn.disabled = false;
+    voiceBtn.disabled = false;
+    setActionButtons();
     input.focus();
   }
 
-  sendBtn.addEventListener('click', send);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  });
+  // ---- Voice ----
+  function getVoiceLang() { const l = getLang(); if (l === 'fr') return 'fr-FR'; if (l === 'wo') return 'fr-SN'; return 'en-US'; }
+  function formatVoiceTime(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+  function clearVoiceTimers() { if (recordTimer) { clearInterval(recordTimer); recordTimer = null; } if (hardStopTimer) { clearTimeout(hardStopTimer); hardStopTimer = null; } }
+  function setRecordingUi(active) { voiceBtn.classList.toggle('recording', !!active); voicePill.hidden = !active; updateLabels(); setActionButtons(); }
+  function resetVoiceBuffers() { finalTranscript = ''; liveTranscript = ''; shouldSendAfterStop = false; stopReason = ''; }
 
-  // Auto-resize textarea
+  function ensureRecognition() {
+    if (!SpeechRecognitionCtor) return false;
+    if (recognition) return true;
+    recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      let fp = '', ip = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const piece = String(event.results[i][0]?.transcript || '').trim();
+        if (!piece) continue;
+        if (event.results[i].isFinal) fp += (fp ? ' ' : '') + piece;
+        else ip += (ip ? ' ' : '') + piece;
+      }
+      if (fp) finalTranscript = (finalTranscript + ' ' + fp).trim();
+      liveTranscript = ip;
+      const combined = (finalTranscript + ' ' + liveTranscript).trim().slice(0, 500);
+      if (combined) { input.value = combined; input.style.height = '38px'; input.style.height = Math.min(input.scrollHeight, 90) + 'px'; }
+    };
+    recognition.onerror = (event) => {
+      const err = event?.error || '';
+      if (err === 'not-allowed' || err === 'service-not-allowed') addMessage(L('voice_denied'), 'ai');
+      else if (err && err !== 'aborted' && err !== 'no-speech') addMessage(L('voice_error'), 'ai');
+      shouldSendAfterStop = false;
+    };
+    recognition.onend = () => {
+      if (isRecording) { isRecording = false; clearVoiceTimers(); setRecordingUi(false); }
+      const transcript = (finalTranscript + ' ' + liveTranscript).trim();
+      const ss = shouldSendAfterStop, reason = stopReason;
+      resetVoiceBuffers();
+      if (!ss) { setActionButtons(); return; }
+      if (reason === 'limit') addMessage(L('voice_limit'), 'ai');
+      if (transcript) send(transcript);
+      else { addMessage(L('voice_no_speech'), 'ai'); setActionButtons(); }
+    };
+    return true;
+  }
+
+  function endVoiceCapture(shouldSend, reason) {
+    if (!isRecording || !recognition) { shouldSendAfterStop = false; stopReason = ''; setActionButtons(); return; }
+    shouldSendAfterStop = !!shouldSend; stopReason = reason || 'manual';
+    isRecording = false; clearVoiceTimers(); setRecordingUi(false);
+    try { recognition.stop(); } catch (_) {
+      const transcript = (finalTranscript + ' ' + liveTranscript).trim(), sa = shouldSendAfterStop, lr = stopReason;
+      resetVoiceBuffers();
+      if (sa) { if (lr === 'limit') addMessage(L('voice_limit'), 'ai'); if (transcript) send(transcript); else addMessage(L('voice_no_speech'), 'ai'); }
+      setActionButtons();
+    }
+  }
+
+  function startVoiceCapture() {
+    if (isBusy || !_chatLang) return;
+    if (!ensureRecognition()) { addMessage(L('voice_unsupported'), 'ai'); return; }
+    try {
+      recognition.lang = getVoiceLang(); input.value = ''; input.style.height = '38px';
+      resetVoiceBuffers(); recognition.start();
+      isRecording = true; recordStartedAt = Date.now(); voiceTime.textContent = '0:00';
+      recordTimer = setInterval(() => { voiceTime.textContent = formatVoiceTime(Date.now() - recordStartedAt); }, 250);
+      hardStopTimer = setTimeout(() => endVoiceCapture(true, 'limit'), VOICE_MAX_MS);
+      setRecordingUi(true);
+    } catch (_) { addMessage(L('voice_error'), 'ai'); setActionButtons(); }
+  }
+
+  sendBtn.addEventListener('click', () => send());
+  voiceBtn.addEventListener('click', () => { if (isBusy) return; if (isRecording) endVoiceCapture(true, 'manual'); else startVoiceCapture(); });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
   input.addEventListener('input', () => {
-    input.style.height = '38px';
-    input.style.height = Math.min(input.scrollHeight, 90) + 'px';
+    if (!isRecording) { input.style.height = '38px'; input.style.height = Math.min(input.scrollHeight, 90) + 'px'; }
+    setActionButtons();
   });
 
-  // Update labels if language changes
-  window.addEventListener('bh-lang-change', updateLabels);
+  window.addEventListener('bh-lang-change', () => { updateLabels(); setActionButtons(); });
 })();

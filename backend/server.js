@@ -204,18 +204,35 @@ const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
-  const model = getGeminiModel();
+  const model = String(process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest').trim();
   if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
-  const { message, history = [] } = req.body;
+  const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
   if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
-  const SYSTEM_PROMPT = `Your name is Baye. You are a helpful AI assistant for JOTMA, a service booking platform in Senegal. Help users find barbers, book appointments, answer questions about services, pricing and cancellations. Speak EN/FR/WO based on user language. Keep answers short (2-4 sentences). Known barbers: Carlos Cuts ID 1 (/book.html?barber=1), Sofia Style Lab ID 2 (/book.html?barber=2), Marcus Fresh Cuts ID 3 (/book.html?barber=3). Never discuss unrelated topics.`;
+  const langName = { en: 'English', fr: 'French', wo: 'Wolof' }[lang] || 'French';
+  const offTopic = {
+    en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, contact us:\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
+    fr: "Je suis ici pour vous aider à trouver et réserver des services sur JOTMA.\n\nPour plus de questions, contactez-nous :\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
+    wo: "Maa ngi fi ngir la jàpp ci JOTMA.\n\nSu am na laaj, jokkoo ak nun :\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
+  }[lang] || "I'm here to help you find and book services on JOTMA. Contact: +1 313 989 6811 or gueyebaye955@gmail.com";
+  const SYSTEM_PROMPT = `Your name is Awa. You are the virtual assistant for JOTMA, a service booking platform in Senegal.
+
+LANGUAGE: Always respond in ${langName} only. Never switch languages.
+ROLE: Help users find service providers and book appointments on JOTMA.
+STYLE: Keep messages short and simple (2-4 sentences max). Ask follow-up questions when info is missing.
+
+BOOKING FLOW: When a user wants to book, ask for: service needed, preferred date/time, and city.
+Known providers: Carlos Cuts (/book.html?barber=1), Sofia Style Lab (/book.html?barber=2), Marcus Fresh Cuts (/book.html?barber=3). For others, direct to /barbers.html.
+Booking policy: Arrive 10 min early. 10% deposit required. Cancel up to 8 hours before.
+
+OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal, or anything unrelated to JOTMA, respond ONLY with this exact text:
+"${offTopic}"`;
   const contents = [];
   for (const turn of history.slice(-6)) {
     if (turn.role && turn.text) contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
   }
   contents.push({ role: 'user', parts: [{ text: message.trim() }] });
-  const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 300, temperature: 0.7 } });
+  const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 350, temperature: 0.6 } });
   const result = await new Promise((resolve, reject) => {
     const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
     const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
