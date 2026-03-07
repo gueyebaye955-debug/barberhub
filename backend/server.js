@@ -55,9 +55,10 @@ function normalizeGeminiModel(value) {
 function getGeminiModelCandidates() {
   const configured = normalizeGeminiModel(process.env.GEMINI_MODEL || '');
   const candidates = [
-    configured || 'gemini-2.0-flash',
+    configured || 'gemini-1.5-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
     'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
   ];
   return candidates.filter((model, index, arr) => model && arr.indexOf(model) === index);
 }
@@ -138,14 +139,21 @@ function buildRuleBasedReply(message, lang = 'fr') {
     return 'Je peux vous aider a reserver maintenant. Dites-moi:\n- Quel service voulez-vous ?\n- Quand voulez-vous le rendez-vous ?\n- Dans quelle ville etes-vous ?\n\nVous pouvez voir les prestataires ici: /barbers.html';
   }
 
+  const isGreeting = /^(hi|hello|hey|bonjour|bonsoir|salut|salam|nanga def|na nga def|nanga|yow|waaw|ça va|ca va|comment allez)/i.test(q);
+  if (isGreeting) {
+    if (lang === 'en') return "Hello! I'm Awa, your JOTMA assistant.\n\nI can help you find a service provider and book an appointment.\nWhat service are you looking for?";
+    if (lang === 'wo') return "Nanga def! Maa ngi Awa, jappale JOTMA.\n\nMan naa la jënd ñu jaay sarwiis te tekki rendez-vous.\nBan sarwiis nga bëgg?";
+    return "Bonjour ! Je suis Awa, votre assistante JOTMA.\n\nJe peux vous aider à trouver un prestataire et réserver.\nQuel service recherchez-vous ?";
+  }
+
   if (!hasService || !hasTime || !hasCity) {
     if (lang === 'en') {
-      return 'I can help you find and book services on JOTMA.\nTell me the service, preferred date/time, and your city.';
+      return 'I can help you book on JOTMA. To get started:\n- What service do you need?\n- When? (date and time)\n- Which city are you in?';
     }
     if (lang === 'wo') {
-      return 'Maa ngi ngir jappale la ci JOTMA.\nWax ma sarwiis bi, kañ nga bëgg, ak dëkk bi.';
+      return 'Man naa la jappale ci JOTMA. Ngir doon ci kanam:\n- Ban sarwiis nga bëgg?\n- Kañ? (date ak heure)\n- Ban dëkk nga nekk?';
     }
-    return 'Je peux vous aider a trouver et reserver sur JOTMA.\nDites-moi le service, la date/heure souhaitee et votre ville.';
+    return 'Je peux vous aider à réserver sur JOTMA. Pour commencer :\n- Quel service souhaitez-vous ?\n- Quand ? (date et heure)\n- Dans quelle ville êtes-vous ?';
   }
 
   if (lang === 'en') return 'Tell me the provider name you prefer, and I will guide you to booking.';
