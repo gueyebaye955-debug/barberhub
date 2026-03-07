@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel  Jelall</title>
+  <title>Admin Panel  JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -497,8 +497,8 @@
           localStorage.setItem('bh_accounts', JSON.stringify(stored));
           render(); // re-render first so the pending list updates
 
-          const subject = ' Your Jelall application is approved!';
-          const message = `Hi ${account.first_name}!\n\nGreat news  your barber profile on Jelall has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The Jelall Team`;
+          const subject = ' Your JOTMA application is approved!';
+          const message = `Hi ${account.first_name}!\n\nGreat news  your provider profile on JOTMA has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The JOTMA Team`;
           const sent = await sendEmailJS(account.email, account.first_name, subject, message);
           showNotifModal(
             'Notify Barber ',
@@ -566,8 +566,8 @@
       if (!cfg.publicKey) { alert('Save your EmailJS settings first.'); return; }
       const sent = await sendEmailJS(
         user.email, user.first_name,
-        'Jelall Email Test ',
-        `Hi ${user.first_name}! This is a test from your Jelall admin panel.\n\nEmail notifications are working correctly. `
+        'JOTMA Email Test ',
+        `Hi ${user.first_name}! This is a test from your JOTMA admin panel.\n\nEmail notifications are working correctly. `
       );
       alert(sent ? ' Test email sent  check your inbox!' : ' Send failed. Double-check your EmailJS keys.');
     }
@@ -608,7 +608,7 @@
 
       if (newStatus === 'confirmed') {
         const subject = `Booking Confirmed with ${booking.barber_name}`;
-        const message = `Hi ${customer.first_name}!\n\nYour appointment is confirmed:\n- Service: ${booking.service_name}\n- Barber: ${booking.barber_name}\n- Date: ${booking.date}\n- Time: ${booking.time}\n- Price: ${booking.price}\n\nSee you then!\n- Jelall`;
+        const message = `Hi ${customer.first_name}!\n\nYour appointment is confirmed:\n- Service: ${booking.service_name}\n- Barber: ${booking.barber_name}\n- Date: ${booking.date}\n- Time: ${booking.time}\n- Price: ${booking.price}\n\nSee you then!\n- JOTMA`;
         const sent = await sendEmailJS(customer.email, customer.first_name, subject, message);
 
         Notifs.add(customer.id, {

@@ -4,10 +4,10 @@ async function sendOpsAlert(title, details = {}) {
 
   try {
     const payload = {
-      text: `[Jelall] ${title}`,
+      text: `[JOTMA] ${title}`,
       title,
       at: new Date().toISOString(),
-      service: 'jelall-backend',
+      service: 'jotma-backend',
       details,
     };
     const response = await fetch(webhookUrl, {

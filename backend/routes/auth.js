@@ -11,8 +11,8 @@ const { getCaptchaConfig, verifyCaptchaToken } = require('../utils/captcha');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '12h';
-const JWT_ISSUER = process.env.JWT_ISSUER || 'jelall';
-const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jelall-web';
+const JWT_ISSUER = process.env.JWT_ISSUER || 'jotma';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jotma-web';
 const LOGIN_MAX_ATTEMPTS = Number(process.env.LOGIN_LOCKOUT_ATTEMPTS || 5);
 const LOGIN_LOCKOUT_MS = Number(process.env.LOGIN_LOCKOUT_MS || (15 * 60 * 1000));
 const loginAttemptStore = new Map();

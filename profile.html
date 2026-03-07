@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>if (/\/barber\/\d+/.test(location.pathname)) document.write('<base href="/">');</script>
-  <title>Barber Profile  Jelall</title>
+  <title>Provider Profile | JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -379,6 +379,10 @@
     }
 
     function getServiceImageList(service) {
+      // Single image_url from Cloudinary
+      if (service?.image_url && typeof service.image_url === 'string') {
+        return [service.image_url.trim()].filter(Boolean);
+      }
       const direct = [
         ...(Array.isArray(service?.gallery) ? service.gallery : []),
         ...(Array.isArray(service?.images) ? service.images : []),
@@ -486,13 +490,13 @@
         return;
       }
 
-      document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name} | Jelall`;
+      document.title = `${barber.shop_name || barber.first_name + ' ' + barber.last_name} | JOTMA`;
       if (typeof Analytics !== 'undefined') Analytics.track('profile_view', { barber_id: barber.id, city: barber.city });
       try {
         renderProfile();
       } catch (err) {
         console.error('Profile render failed:', err);
-        document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Unable to load this barber profile</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
+        document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Unable to load this provider profile</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
         return;
       }
 

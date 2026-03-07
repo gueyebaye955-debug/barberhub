@@ -38,9 +38,9 @@ const _DEMO_PW = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542
 const Auth = {
   // Pre-seeded demo accounts (passwords stored as SHA-256 hashes)
   DEMO_ACCOUNTS: [
-    { id: 1, email: 'john@demo.com',   password: _DEMO_PW, role: 'customer', first_name: 'John',   last_name: 'Doe',    city: 'New York' },
-    { id: 2, email: 'carlos@demo.com', password: _DEMO_PW, role: 'barber',   first_name: 'Carlos', last_name: 'Rivera', city: 'New York', barber_id: 1 },
-    { id: 3, email: 'admin@demo.com',  password: _DEMO_PW, role: 'admin',    first_name: 'Admin',  last_name: 'Hub',    city: '' }
+    { id: 1, email: 'john@demo.com',   password: _DEMO_PW, role: 'customer', first_name: 'John',   last_name: 'Doe',    city: 'Dakar' },
+    { id: 2, email: 'carlos@demo.com', password: _DEMO_PW, role: 'barber',   first_name: 'Carlos', last_name: 'Rivera', city: 'Dakar', barber_id: 1 },
+    { id: 3, email: 'gueyebaye955@gmail.com',  password: _DEMO_PW, role: 'admin',    first_name: 'Admin',  last_name: 'Hub',    city: '' }
   ],
 
   // Get all stored accounts (demo + registered)

@@ -11,6 +11,8 @@ const {
   parsePositiveInt,
 } = require('../utils/validators');
 
+const { uploadImage, deleteImage, isConfigured: cloudinaryConfigured } = require('../utils/cloudinary');
+
 const MAX_PORTFOLIO_PHOTOS = 12;
 
 async function resolveBarberProfileId(userId, db = pool) {
@@ -33,35 +35,68 @@ async function fetchPortfolioByBarberId(barberId, db = pool) {
 router.get('/', asyncHandler(async (req, res) => {
   const city = cleanString(req.query?.city, { max: 100, allowEmpty: true });
   const search = cleanString(req.query?.search, { max: 100, allowEmpty: true });
+  const minRating = parseFloat(req.query?.min_rating);
+  const category = cleanString(req.query?.category, { max: 50, allowEmpty: true });
+  const validSorts = ['rating', 'reviews', 'price'];
+  const sort = validSorts.includes(req.query?.sort) ? req.query.sort : 'rating';
+  const limit = Math.min(50, Math.max(1, parseInt(req.query?.limit, 10) || 24));
+  const page = Math.max(1, parseInt(req.query?.page, 10) || 1);
+  const offset = (page - 1) * limit;
 
-  let query = `
-    SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
-           json_agg(DISTINCT to_jsonb(s)) FILTER (WHERE s.id IS NOT NULL) AS services,
-           COUNT(DISTINCT p.id)::int AS portfolio_count
-    FROM barber_profiles bp
-    JOIN users u ON u.id = bp.user_id
-    LEFT JOIN services s ON s.barber_id = bp.id
-    LEFT JOIN barber_portfolio_photos p ON p.barber_id = bp.id
-    WHERE u.approved = true AND u.role = 'barber'
-  `;
+  const conditions = ["u.approved = true", "u.role = 'barber'"];
   const params = [];
 
   if (city) {
     params.push(`%${city}%`);
-    query += ` AND bp.city ILIKE $${params.length}`;
+    conditions.push(`bp.city ILIKE $${params.length}`);
   }
   if (search) {
     params.push(`%${search}%`);
-    query += ` AND (
-      bp.shop_name ILIKE $${params.length}
-      OR u.first_name ILIKE $${params.length}
-      OR u.last_name ILIKE $${params.length}
-    )`;
+    conditions.push(`(bp.shop_name ILIKE $${params.length} OR u.first_name ILIKE $${params.length} OR u.last_name ILIKE $${params.length})`);
+  }
+  if (!isNaN(minRating) && minRating > 0) {
+    params.push(minRating);
+    conditions.push(`bp.rating >= $${params.length}`);
+  }
+  if (category) {
+    params.push(category.toLowerCase());
+    conditions.push(`bp.id IN (SELECT barber_id FROM services WHERE LOWER(category) = $${params.length})`);
   }
 
-  query += ' GROUP BY bp.id, u.id ORDER BY bp.rating DESC';
-  const result = await pool.query(query, params);
-  return res.json(result.rows);
+  const where = 'WHERE ' + conditions.join(' AND ');
+  const orderBy = sort === 'reviews' ? 'bp.review_count DESC, bp.rating DESC'
+    : sort === 'price' ? 'min_price ASC NULLS LAST'
+    : 'bp.rating DESC';
+
+  const [countResult, dataResult] = await Promise.all([
+    pool.query(
+      `SELECT COUNT(DISTINCT bp.id)::int AS total FROM barber_profiles bp JOIN users u ON u.id = bp.user_id ${where}`,
+      params
+    ),
+    pool.query(`
+      SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
+             json_agg(DISTINCT to_jsonb(s)) FILTER (WHERE s.id IS NOT NULL) AS services,
+             COUNT(DISTINCT p.id)::int AS portfolio_count,
+             MIN(s.price) AS min_price
+      FROM barber_profiles bp
+      JOIN users u ON u.id = bp.user_id
+      LEFT JOIN services s ON s.barber_id = bp.id
+      LEFT JOIN barber_portfolio_photos p ON p.barber_id = bp.id
+      ${where}
+      GROUP BY bp.id, u.id
+      ORDER BY ${orderBy}
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `, [...params, limit, offset]),
+  ]);
+
+  const total = countResult.rows[0].total;
+  return res.json({
+    data: dataResult.rows,
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    limit,
+  });
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {
@@ -272,6 +307,145 @@ router.delete('/me/portfolio/:photoId', requireAuth, requireRole('barber'), asyn
 
   return res.json({ ok: true });
 }));
+
+// ── Service CRUD ────────────────────────────────────────────────────────────
+
+router.get('/me/services', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+  const result = await pool.query(
+    'SELECT id, name, "desc", price, duration, category, image_url FROM services WHERE barber_id=$1 ORDER BY id ASC',
+    [barberProfileId]
+  );
+  return res.json(result.rows);
+}));
+
+router.post('/me/services', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const name = cleanString(req.body?.name, { max: 150 });
+  const desc = cleanString(req.body?.desc, { max: 500, allowEmpty: true }) || null;
+  const price = parseInt(req.body?.price, 10);
+  const duration = parseInt(req.body?.duration, 10) || 30;
+  const category = cleanString(req.body?.category, { max: 50, allowEmpty: true }) || null;
+
+  if (!name) return res.status(400).json({ error: 'Service name is required' });
+  if (isNaN(price) || price < 0) return res.status(400).json({ error: 'Valid price (in cents) is required' });
+
+  const inserted = await pool.query(
+    `INSERT INTO services(barber_id, name, "desc", price, duration, category)
+     VALUES($1,$2,$3,$4,$5,$6)
+     RETURNING id, name, "desc", price, duration, category, image_url`,
+    [barberProfileId, name, desc, price, duration, category]
+  );
+  return res.status(201).json(inserted.rows[0]);
+}));
+
+router.patch('/me/services/:id', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const serviceId = parsePositiveInt(req.params.id);
+  if (!serviceId) return res.status(400).json({ error: 'Invalid service id' });
+
+  const updates = [];
+  const values = [];
+
+  const name = cleanString(req.body?.name, { max: 150, allowEmpty: true });
+  if (name) { values.push(name); updates.push(`name=$${values.length}`); }
+
+  if (req.body?.desc !== undefined) {
+    const desc = cleanString(req.body.desc, { max: 500, allowEmpty: true }) || null;
+    values.push(desc); updates.push(`"desc"=$${values.length}`);
+  }
+  if (req.body?.price !== undefined) {
+    const price = parseInt(req.body.price, 10);
+    if (isNaN(price) || price < 0) return res.status(400).json({ error: 'Invalid price' });
+    values.push(price); updates.push(`price=$${values.length}`);
+  }
+  if (req.body?.duration !== undefined) {
+    const duration = parseInt(req.body.duration, 10);
+    if (isNaN(duration) || duration < 5) return res.status(400).json({ error: 'Invalid duration' });
+    values.push(duration); updates.push(`duration=$${values.length}`);
+  }
+  if (req.body?.category !== undefined) {
+    const category = cleanString(req.body.category, { max: 50, allowEmpty: true }) || null;
+    values.push(category); updates.push(`category=$${values.length}`);
+  }
+
+  if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+
+  values.push(serviceId, barberProfileId);
+  const updated = await pool.query(
+    `UPDATE services SET ${updates.join(', ')}
+     WHERE id=$${values.length - 1} AND barber_id=$${values.length}
+     RETURNING id, name, "desc", price, duration, category, image_url`,
+    values
+  );
+  if (!updated.rows.length) return res.status(404).json({ error: 'Service not found' });
+  return res.json(updated.rows[0]);
+}));
+
+router.post('/me/services/:id/image', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  if (!cloudinaryConfigured()) {
+    return res.status(503).json({ error: 'Image storage not configured' });
+  }
+
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const serviceId = parsePositiveInt(req.params.id);
+  if (!serviceId) return res.status(400).json({ error: 'Invalid service id' });
+
+  const imageData = parseBase64Image(req.body?.image_data);
+  if (!imageData) return res.status(400).json({ error: 'A valid base64 image is required (JPEG/PNG/WebP, max 1.5 MB)' });
+
+  // Check service belongs to this barber
+  const existing = await pool.query(
+    'SELECT id, image_url FROM services WHERE id=$1 AND barber_id=$2',
+    [serviceId, barberProfileId]
+  );
+  if (!existing.rows.length) return res.status(404).json({ error: 'Service not found' });
+
+  // Delete old image from Cloudinary if it exists
+  const oldUrl = existing.rows[0].image_url;
+  if (oldUrl && oldUrl.includes('cloudinary.com')) {
+    deleteImage(oldUrl).catch(() => {});
+  }
+
+  const imageUrl = await uploadImage(imageData, 'jotma/services');
+
+  const updated = await pool.query(
+    `UPDATE services SET image_url=$1 WHERE id=$2 AND barber_id=$3
+     RETURNING id, name, "desc", price, duration, category, image_url`,
+    [imageUrl, serviceId, barberProfileId]
+  );
+  return res.json(updated.rows[0]);
+}));
+
+router.delete('/me/services/:id', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const serviceId = parsePositiveInt(req.params.id);
+  if (!serviceId) return res.status(400).json({ error: 'Invalid service id' });
+
+  const removed = await pool.query(
+    'DELETE FROM services WHERE id=$1 AND barber_id=$2 RETURNING id, image_url',
+    [serviceId, barberProfileId]
+  );
+  if (!removed.rows.length) return res.status(404).json({ error: 'Service not found' });
+
+  const oldUrl = removed.rows[0].image_url;
+  if (oldUrl && oldUrl.includes('cloudinary.com')) {
+    deleteImage(oldUrl).catch(() => {});
+  }
+
+  return res.json({ ok: true });
+}));
+
+// ── Booked slots ─────────────────────────────────────────────────────────────
 
 router.get('/:id/booked-slots', asyncHandler(async (req, res) => {
   const barberId = parsePositiveInt(req.params.id);

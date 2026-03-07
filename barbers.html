@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Find and book trusted barbers in New York, Brooklyn, Manhattan, Queens, and Bronx. View ratings, real availability, prices, and nearby locations.">
+  <meta name="description" content="Find and book trusted service providers in Senegal. View ratings, real availability, prices, and nearby locations.">
   <meta name="keywords" content="barber near me, NYC barber, Brooklyn barber, Manhattan barber, Queens barber, Bronx barber, haircut booking">
   <link rel="canonical" href="/barbers.html">
-  <meta property="og:title" content="Find Barbers in New York | Jelall">
+  <meta property="og:title" content="Find Services in Senegal | JOTMA">
   <meta property="og:description" content="Book top-rated local barbers with real availability and transparent pricing.">
   <meta property="og:type" content="website">
-  <title>Find Barbers in New York | Jelall</title>
+  <title>Find Services in Senegal | JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="preconnect" href="https://i.pravatar.cc" crossorigin>
@@ -65,11 +65,20 @@
             <h3 data-i18n="filter_city">City</h3>
             <select class="form-control" id="cityFilter" onchange="applyFilters()">
               <option value="" data-i18n="filter_city_all">All Cities</option>
-              <option value="New York">New York</option>
-              <option value="Brooklyn">Brooklyn</option>
-              <option value="Manhattan">Manhattan</option>
-              <option value="Queens">Queens</option>
-              <option value="Bronx">Bronx</option>
+              <option value="Dakar">Dakar</option>
+              <option value="Thiès">Thiès</option>
+              <option value="Diourbel">Diourbel</option>
+              <option value="Saint-Louis">Saint-Louis</option>
+              <option value="Louga">Louga</option>
+              <option value="Matam">Matam</option>
+              <option value="Tambacounda">Tambacounda</option>
+              <option value="Kédougou">Kédougou</option>
+              <option value="Kaffrine">Kaffrine</option>
+              <option value="Kaolack">Kaolack</option>
+              <option value="Fatick">Fatick</option>
+              <option value="Kolda">Kolda</option>
+              <option value="Sédhiou">Sédhiou</option>
+              <option value="Ziguinchor">Ziguinchor</option>
             </select>
           </div>
 
@@ -133,6 +142,9 @@
           </div>
 
           <div id="gridResults" class="grid-3"></div>
+          <div style="text-align:center;margin-top:1.5rem">
+            <button id="loadMoreBtn" class="btn btn-outline btn-lg" onclick="loadMore()" style="display:none">Load More</button>
+          </div>
           <div id="barberMap"></div>
         </div>
       </div>
@@ -160,10 +172,16 @@
     let currentView = 'grid';
     let leafletMap  = null;
     let mapMarkers  = [];
-    let userLocation = null;   // { lat, lng } when granted
-    let userMarker   = null;   // Leaflet marker for "You are here"
+    let userLocation = null;
+    let userMarker   = null;
     let searchTracked = false;
     let leafletReadyPromise = null;
+    let _page = 1;
+    let _totalPages = 1;
+    let _totalCount = 0;
+    let _loadedBarbers = [];
+    let _newBarbers = [];
+    let _searchTimer = null;
 
     // Haversine formula  returns distance in km between two lat/lng points
     function haversine(lat1, lng1, lat2, lng2) {
@@ -283,75 +301,111 @@
     }
 
     // Pre-fill from URL params
-    const params = new URLSearchParams(location.search);
-    if (params.get('q'))    { filters.search = params.get('q');    document.getElementById('searchInput').value = filters.search; }
-    if (params.get('city')) { filters.city   = params.get('city'); document.getElementById('cityFilter').value  = filters.city; }
+    const _urlParams = new URLSearchParams(location.search);
+    if (_urlParams.get('q'))    { filters.search = _urlParams.get('q');    document.getElementById('searchInput').value = filters.search; }
+    if (_urlParams.get('city')) { filters.city   = _urlParams.get('city'); document.getElementById('cityFilter').value  = filters.city; }
 
-    function getFilteredResults() {
-      let results = getAllBarbers().filter((barber) => barber && Number.isFinite(Number(barber.id)));
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        results = results.filter(b =>
-          (b.shop_name||'').toLowerCase().includes(q) ||
-          (b.first_name+' '+b.last_name).toLowerCase().includes(q) ||
-          getBarberServices(b).some(s => String(s.name || '').toLowerCase().includes(q)) ||
-          String(b.city || '').toLowerCase().includes(q)
-        );
-      }
-      if (filters.city)    results = results.filter(b => b.city === filters.city);
-      if (filters.rating)  results = results.filter(b => Number(b.rating) >= parseFloat(filters.rating));
-      if (filters.service) results = results.filter(b => getBarberServices(b).some(s => s.category === filters.service));
+    async function _fetchPage(page) {
+      if (!window.BH_API) return { barbers: getAllBarbers(), total: null, pages: 1 };
+      const apiParams = { page, limit: 24 };
+      if (filters.city)    apiParams.city       = filters.city;
+      if (filters.search)  apiParams.search     = filters.search;
+      if (filters.rating)  apiParams.min_rating = filters.rating;
+      if (filters.service) apiParams.category   = filters.service;
+      if (filters.sort && filters.sort !== 'distance' && filters.sort !== 'bookings') apiParams.sort = filters.sort;
+      const response = await window.BH_API.getBarbers(apiParams);
+      const rows = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+      const barbers = rows.map(normalizeApiBarber);
+      return { barbers, total: response?.total ?? barbers.length, pages: response?.pages ?? 1 };
+    }
+
+    function _applyClientFilters(barbers) {
+      let results = barbers;
       if (filters.avail) {
-        const today    = new Date().getDay();
-        const tomorrow = (today + 1) % 7;
+        const today = new Date().getDay(), tomorrow = (today + 1) % 7;
         results = results.filter(b => {
-          const availability = Array.isArray(b.availability) ? b.availability : [];
-          if (filters.avail === 'today')    return availability.find(a => a.day === today    && a.open);
-          if (filters.avail === 'tomorrow') return availability.find(a => a.day === tomorrow && a.open);
-          if (filters.avail === 'weekend')  return availability.find(a => (a.day === 0 || a.day === 6) && a.open);
+          const av = Array.isArray(b.availability) ? b.availability : [];
+          if (filters.avail === 'today')    return av.find(a => a.day === today    && a.open);
+          if (filters.avail === 'tomorrow') return av.find(a => a.day === tomorrow && a.open);
+          if (filters.avail === 'weekend')  return av.find(a => (a.day === 0 || a.day === 6) && a.open);
           return true;
         });
       }
-      // Attach distance from user location (km) when available
-      if (userLocation) {
-        results.forEach(b => {
-          b._distance = (b.lat && b.lng)
-            ? haversine(userLocation.lat, userLocation.lng, b.lat, b.lng)
-            : null;
-        });
-      } else {
-        results.forEach(b => { b._distance = null; });
-      }
-
-      const sortFns = {
-        rating:   (a,b) => Number(b.rating || 0) - Number(a.rating || 0),
-        bookings: (a,b) => Number(b.total_bookings || 0) - Number(a.total_bookings || 0),
-        reviews:  (a,b) => Number(b.total_reviews  || 0) - Number(a.total_reviews || 0),
-        price:    (a,b) => {
-          const aPrice = getBarberMinPrice(a, Number.POSITIVE_INFINITY);
-          const bPrice = getBarberMinPrice(b, Number.POSITIVE_INFINITY);
-          return aPrice - bPrice;
-        },
-        distance: (a,b) => {
+      results.forEach(b => {
+        b._distance = (userLocation && b.lat && b.lng) ? haversine(userLocation.lat, userLocation.lng, b.lat, b.lng) : null;
+      });
+      if (filters.sort === 'distance') {
+        results.sort((a, b) => {
           if (a._distance == null && b._distance == null) return 0;
           if (a._distance == null) return 1;
           if (b._distance == null) return -1;
           return a._distance - b._distance;
-        }
-      };
-      results.sort(sortFns[filters.sort] || sortFns.rating);
+        });
+      } else if (filters.sort === 'bookings') {
+        results.sort((a, b) => Number(b.total_bookings || 0) - Number(a.total_bookings || 0));
+      }
       return results;
     }
 
-    function applyFilters() {
+    function _updateLoadMoreBtn() {
+      const btn = document.getElementById('loadMoreBtn');
+      if (btn) btn.style.display = _page < _totalPages ? '' : 'none';
+    }
+
+    async function applyFilters(resetPage = true) {
       filters.city = document.getElementById('cityFilter').value;
-      const results = getFilteredResults();
-      const found = results.length;
+      if (resetPage) {
+        _page = 1;
+        _loadedBarbers = [];
+        if (currentView === 'grid') {
+          document.getElementById('gridResults').innerHTML =
+            '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted)">Loading...</div>';
+        }
+      }
+      try {
+        const { barbers, total, pages } = await _fetchPage(_page);
+        _totalPages = pages;
+        _totalCount = total;
+        _newBarbers = _applyClientFilters(barbers);
+      } catch (err) {
+        console.warn('API fetch failed, using local data:', err.message);
+        _newBarbers = _applyClientFilters(getAllBarbers());
+        _totalCount = _newBarbers.length;
+        _totalPages = 1;
+      }
+      if (resetPage) _loadedBarbers = _newBarbers;
+      else _loadedBarbers = [..._loadedBarbers, ..._newBarbers];
       document.getElementById('resultsCount').textContent =
-        `${found} ${found === 1 ? t('barbers_found') : t('barbers_found_plural')}`;
-      updateBarbersSchema(results);
-      if (currentView === 'grid') renderGrid(results);
-      else renderMap(results).catch(console.error);
+        `${_totalCount} ${_totalCount === 1 ? t('barbers_found') : t('barbers_found_plural')}`;
+      updateBarbersSchema(_loadedBarbers);
+      if (currentView === 'grid') {
+        if (resetPage) renderGrid(_loadedBarbers);
+        else appendGrid(_newBarbers);
+      } else {
+        renderMap(_loadedBarbers).catch(console.error);
+      }
+      _updateLoadMoreBtn();
+    }
+
+    async function loadMore() {
+      const btn = document.getElementById('loadMoreBtn');
+      if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+      _page++;
+      await applyFilters(false);
+      if (btn) { btn.textContent = 'Load More'; btn.disabled = false; }
+    }
+
+    function _makeCard(b) {
+      let card = barberCardHTML(b);
+      if (userLocation && b._distance != null) {
+        const dist = fmtDist(b._distance);
+        const city = escapeHTML(b?.city || 'Location not set');
+        card = card.replace(
+          `<div class="bc-loc"> ${city}</div>`,
+          `<div class="bc-loc"> ${city}<span style="color:var(--primary);font-size:0.7rem;font-weight:700;margin-left:0.4rem"> ${dist} away</span></div>`
+        );
+      }
+      return card;
     }
 
     function renderGrid(results) {
@@ -360,28 +414,16 @@
         el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>${t('no_barbers')}</h3><p>${t('no_barbers_sub')}</p></div>`;
         return;
       }
-      const cards = results.map(b => {
-        try {
-          let card = barberCardHTML(b);
-          // Inject distance badge next to city when location is active
-          if (userLocation && b._distance != null) {
-            const dist = fmtDist(b._distance);
-            const city = escapeHTML(b?.city || 'Location not set');
-            card = card.replace(
-              `<div class="bc-loc"> ${city}</div>`,
-              `<div class="bc-loc"> ${city}<span style="color:var(--primary);font-size:0.7rem;font-weight:700;margin-left:0.4rem"> ${dist} away</span></div>`
-            );
-          }
-          return card;
-        } catch (err) {
-          console.warn('Skipping invalid barber card:', err.message, b);
-          return '';
-        }
-      }).filter(Boolean);
-
+      const cards = results.map(b => { try { return _makeCard(b); } catch (err) { console.warn('Skipping card:', err.message); return ''; } }).filter(Boolean);
       el.innerHTML = cards.length
         ? cards.join('')
         : `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>${t('no_barbers')}</h3><p>${t('no_barbers_sub')}</p></div>`;
+    }
+
+    function appendGrid(results) {
+      const el = document.getElementById('gridResults');
+      const cards = results.map(b => { try { return _makeCard(b); } catch { return ''; } }).filter(Boolean);
+      if (cards.length) el.insertAdjacentHTML('beforeend', cards.join(''));
     }
 
     async function renderMap(results) {
@@ -389,7 +431,7 @@
       mapEl.classList.add('show');
       await ensureLeaflet();
       if (!leafletMap) {
-        leafletMap = L.map('barberMap').setView([40.7128, -74.0060], 11);
+        leafletMap = L.map('barberMap').setView([14.6928, -17.4467], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: ' <a href="https://openstreetmap.org">OpenStreetMap</a>'
         }).addTo(leafletMap);
@@ -481,28 +523,31 @@
         searchTracked = true;
       }
       const list = document.getElementById('autocompleteList');
-      if (!val.trim()) { list.style.display = 'none'; applyFilters(); return; }
-      const q = val.toLowerCase();
-      const matches = [];
-      getAllBarbers().forEach(b => {
-        const name = b.shop_name || b.first_name+' '+b.last_name;
-        if (name.toLowerCase().includes(q))
-          matches.push({ type: 'barber', label: name, sub: b.city, id: b.id });
-        (b.services || []).forEach(s => {
-          if (s.name.toLowerCase().includes(q) && !matches.find(m => m.label === s.name))
-            matches.push({ type: 'service', label: s.name, sub: s.category });
-        });
-      });
-      if (!matches.length) { list.style.display = 'none'; }
+      if (!val.trim()) { list.style.display = 'none'; }
       else {
-        list.style.display = 'block';
-        list.innerHTML = matches.slice(0,6).map(m => `
-          <div class="autocomplete-item" onclick="selectAC(${m.id||'null'},'${m.label.replace(/'/g,"\\'")}','${m.type}')">
-            <span class="ac-icon">${m.type === 'barber' ? '' : ''}</span>
-            <div><div class="ac-name">${m.label}</div><div class="ac-sub">${m.sub}</div></div>
-          </div>`).join('');
+        const q = val.toLowerCase();
+        const matches = [];
+        _loadedBarbers.forEach(b => {
+          const name = b.shop_name || b.first_name + ' ' + b.last_name;
+          if (name.toLowerCase().includes(q))
+            matches.push({ type: 'barber', label: name, sub: b.city, id: b.id });
+          (b.services || []).forEach(s => {
+            if (s.name.toLowerCase().includes(q) && !matches.find(m => m.label === s.name))
+              matches.push({ type: 'service', label: s.name, sub: s.category });
+          });
+        });
+        if (!matches.length) { list.style.display = 'none'; }
+        else {
+          list.style.display = 'block';
+          list.innerHTML = matches.slice(0,6).map(m => `
+            <div class="autocomplete-item" onclick="selectAC(${m.id||'null'},'${m.label.replace(/'/g,"\\'")}','${m.type}')">
+              <span class="ac-icon">${m.type === 'barber' ? '' : ''}</span>
+              <div><div class="ac-name">${m.label}</div><div class="ac-sub">${m.sub}</div></div>
+            </div>`).join('');
+        }
       }
-      applyFilters();
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(() => applyFilters(), 400);
     }
 
     function selectAC(id, label, type) {
@@ -536,16 +581,7 @@
       applyFilters();
     }
 
-    applyFilters(); // Show local barbers immediately while API loads
-    (async function initBarbersPage() {
-      try {
-        await loadApiBarbers();
-      } catch (err) {
-        console.warn('Falling back to local barber data:', err.message);
-      }
-      updateBarbersSchema(getAllBarbers());
-      applyFilters();
-    }());
+    applyFilters();
   </script>
 </body>
 </html>

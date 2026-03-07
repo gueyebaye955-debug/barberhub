@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_ISSUER = process.env.JWT_ISSUER || 'jelall';
-const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jelall-web';
+const JWT_ISSUER = process.env.JWT_ISSUER || 'jotma';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jotma-web';
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;

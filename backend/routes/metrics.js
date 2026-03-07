@@ -6,8 +6,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { cleanString, parsePositiveInt } = require('../utils/validators');
 
-const JWT_ISSUER = process.env.JWT_ISSUER || 'jelall';
-const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jelall-web';
+const JWT_ISSUER = process.env.JWT_ISSUER || 'jotma';
+const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'jotma-web';
 const FUNNEL_STEPS = ['homepage_view', 'barber_search', 'profile_view', 'booking_start', 'booking_complete'];
 
 function parseMeta(meta) {

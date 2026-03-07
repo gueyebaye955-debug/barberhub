@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// Mock Data  Jelall Simple
+// Mock Data  JOTMA
 // No database needed  all data lives here + localStorage
 // ============================================================
 
@@ -10,8 +10,8 @@ const BARBERS = [
     shop_name: 'Carlos Cuts Studio',
     bio: 'Professional barber with 10 years of experience. Specializing in fades, lineups, and beard grooming. I take pride in every cut.',
     phone: '3139896811',
-    city: 'New York', location: '234 W 42nd St, New York, NY',
-    lat: 40.7577, lng: -73.9857,
+    city: 'Dakar', location: 'Plateau, Dakar, Sénégal',
+    lat: 14.6928, lng: -17.4467,
     rating: 4.9, total_reviews: 127, total_bookings: 342,
     years_experience: 10, is_verified: true,
     booked_today: 5, cancellation_hours: 24,
@@ -48,8 +48,8 @@ const BARBERS = [
     first_name: 'Marcus', last_name: 'Washington',
     shop_name: 'Marcus The Fade King',
     bio: 'Brooklyn native bringing authentic fade artistry. Known for crisp lineups and clean tapers. Walk-ins welcome on weekdays.',
-    city: 'Brooklyn', location: '789 Flatbush Ave, Brooklyn, NY',
-    lat: 40.6501, lng: -73.9496,
+    city: 'Dakar', location: 'Medina, Dakar, Sénégal',
+    lat: 14.6881, lng: -17.4594,
     rating: 4.75, total_reviews: 89, total_bookings: 210,
     years_experience: 7, is_verified: true,
     booked_today: 3, cancellation_hours: 48,
@@ -83,8 +83,8 @@ const BARBERS = [
     first_name: 'Tony', last_name: 'Gambino',
     shop_name: 'Tony\'s Classic Barbershop',
     bio: 'Old school barbershop with modern techniques. Classic cuts, hot towel shaves, and beard sculpting. Family-run for 15 years.',
-    city: 'Manhattan', location: '560 Madison Ave, Manhattan, NY',
-    lat: 40.7614, lng: -73.9726,
+    city: 'Thiès', location: 'Centre-ville, Thiès, Sénégal',
+    lat: 14.7886, lng: -16.9260,
     rating: 4.6, total_reviews: 64, total_bookings: 180,
     years_experience: 15, is_verified: false,
     booked_today: 2, cancellation_hours: 24,
@@ -117,8 +117,8 @@ const BARBERS = [
     first_name: 'James', last_name: 'Brooks',
     shop_name: 'James The Trim Master',
     bio: 'Queens finest barber. Known for precision fades and creative designs. I work with all hair types. Book early  my schedule fills up fast!',
-    city: 'Queens', location: '115-02 Jamaica Ave, Queens, NY',
-    lat: 40.7014, lng: -73.7993,
+    city: 'Kaolack', location: 'Centre, Kaolack, Sénégal',
+    lat: 14.1418, lng: -16.0726,
     rating: 4.85, total_reviews: 112, total_bookings: 298,
     years_experience: 8, is_verified: true,
     booked_today: 7, cancellation_hours: 24,
@@ -153,8 +153,8 @@ const BARBERS = [
     first_name: 'Alex', last_name: 'Chen',
     shop_name: 'Alex Snip & Style',
     bio: 'Bronx-based barber specializing in textured hair, waves, and modern styles. Affordable prices, great service. English and Spanish spoken.',
-    city: 'Bronx', location: '2451 Grand Concourse, Bronx, NY',
-    lat: 40.8448, lng: -73.9140,
+    city: 'Saint-Louis', location: 'Île Saint-Louis, Saint-Louis, Sénégal',
+    lat: 16.0179, lng: -16.4896,
     rating: 4.45, total_reviews: 43, total_bookings: 95,
     years_experience: 5, is_verified: false,
     booked_today: 1, cancellation_hours: 12,
@@ -187,8 +187,8 @@ const BARBERS = [
     first_name: 'David', last_name: 'Okafor',
     shop_name: 'D\'s Premium Cuts',
     bio: 'Bringing Lagos-style fades to New York. Specializing in textured hair, cornrows, and modern African American styles.',
-    city: 'Brooklyn', location: '445 Nostrand Ave, Brooklyn, NY',
-    lat: 40.6706, lng: -73.9496,
+    city: 'Ziguinchor', location: 'Centre, Ziguinchor, Sénégal',
+    lat: 12.5605, lng: -16.2719,
     rating: 4.7, total_reviews: 38, total_bookings: 120,
     years_experience: 6, is_verified: false,
     booked_today: 4, cancellation_hours: 24,
@@ -346,14 +346,17 @@ function _apiTimeout(ms) {
 async function loadApiBarbers(params = {}) {
   if (!window.BH_API) return API_BARBERS.length ? API_BARBERS : BARBERS;
   try {
-    const rows = await Promise.race([window.BH_API.getBarbers(params), _apiTimeout(5000)]);
-    if (Array.isArray(rows) && rows.length) {
+    const response = await Promise.race([window.BH_API.getBarbers(params), _apiTimeout(5000)]);
+    // Handle both old array format and new paginated { data, total, page, pages } format
+    const rows = Array.isArray(response) ? response : (Array.isArray(response?.data) ? response.data : []);
+    if (rows.length) {
       API_BARBERS = rows.map(normalizeApiBarber);
     }
+    return { barbers: API_BARBERS, total: response?.total || rows.length, pages: response?.pages || 1 };
   } catch (error) {
     console.warn('Unable to load API barbers:', error.message);
   }
-  return API_BARBERS.length ? API_BARBERS : BARBERS;
+  return { barbers: API_BARBERS.length ? API_BARBERS : BARBERS, total: null, pages: 1 };
 }
 
 async function loadApiBarberById(id) {
@@ -606,7 +609,7 @@ function getBookingCalendarEvent(booking, barber = null) {
   const end = new Date(start.getTime() + duration * 60000);
   const title = `${booking.service_name} with ${booking.barber_name || b?.shop_name || 'Barber'}`;
   const location = b?.location || b?.city || '';
-  const description = `Jelall booking #${booking.id}`;
+  const description = `JOTMA booking #${booking.id}`;
   return { title, start, end, location, description };
 }
 
@@ -614,12 +617,12 @@ function buildICSContent(events) {
   const rows = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Jelall//Appointments//EN'
+    'PRODID:-//JOTMA//Appointments//EN'
   ];
 
   events.filter(Boolean).forEach((ev, idx) => {
     rows.push('BEGIN:VEVENT');
-    rows.push(`UID:jelall-${Date.now()}-${idx}@jelall.local`);
+    rows.push(`UID:jotma-${Date.now()}-${idx}@jotma.net`);
     rows.push(`DTSTAMP:${_toGoogleCalStamp(new Date())}`);
     rows.push(`DTSTART:${_toICSStamp(ev.start)}`);
     rows.push(`DTEND:${_toICSStamp(ev.end)}`);
@@ -639,7 +642,7 @@ function downloadICS(filename, events) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename || 'jelall-booking.ics';
+  a.download = filename || 'jotma-booking.ics';
   document.body.appendChild(a);
   a.click();
   a.remove();

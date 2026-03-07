@@ -140,11 +140,20 @@ function renderNav(currentPage) {
               <div class="navbar__search-divider"></div>
               <select class="navbar__city-select" id="navCitySelect">
                 <option value="">${t('hero_search_city')}</option>
-                <option>New York</option>
-                <option>Brooklyn</option>
-                <option>Manhattan</option>
-                <option>Queens</option>
-                <option>Bronx</option>
+                <option>Dakar</option>
+                <option>Thiès</option>
+                <option>Diourbel</option>
+                <option>Saint-Louis</option>
+                <option>Louga</option>
+                <option>Matam</option>
+                <option>Tambacounda</option>
+                <option>Kédougou</option>
+                <option>Kaffrine</option>
+                <option>Kaolack</option>
+                <option>Fatick</option>
+                <option>Kolda</option>
+                <option>Sédhiou</option>
+                <option>Ziguinchor</option>
               </select>
             </div>
             <div class="navbar__suggestions" id="navSuggestions" style="display:none"></div>
@@ -279,7 +288,7 @@ function toggleMobileMenu() {
 }
 
 // ── Search autocomplete ────────────────────────────────────────────────────
-const _NAV_CITIES = ['New York', 'Brooklyn', 'Manhattan', 'Queens', 'Bronx', 'Newark', 'Jersey City', 'Staten Island', 'Harlem'];
+const _NAV_CITIES = ['Dakar', 'Thiès', 'Diourbel', 'Saint-Louis', 'Louga', 'Matam', 'Tambacounda', 'Kédougou', 'Kaffrine', 'Kaolack', 'Fatick', 'Kolda', 'Sédhiou', 'Ziguinchor'];
 
 function _navEsc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');

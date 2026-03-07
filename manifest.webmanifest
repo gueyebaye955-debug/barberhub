@@ -1,7 +1,7 @@
 {
-  "name": "BarberHub Home App",
-  "short_name": "BarberHub",
-  "description": "Quickly launch BarberHub from your home screen.",
+  "name": "JOTMA",
+  "short_name": "JOTMA",
+  "description": "Quickly launch JOTMA from your home screen.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

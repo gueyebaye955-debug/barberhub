@@ -16,7 +16,7 @@ function timestamp() {
 function run() {
   const backupDir = path.join(__dirname, 'backups');
   fs.mkdirSync(backupDir, { recursive: true });
-  const outputFile = path.join(backupDir, `barberhub-${timestamp()}.dump`);
+  const outputFile = path.join(backupDir, `jotma-${timestamp()}.dump`);
 
   const args = ['--format=custom', '--no-owner', '--no-privileges', '--file', outputFile];
   const env = { ...process.env };

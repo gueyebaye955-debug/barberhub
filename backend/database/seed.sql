@@ -1,10 +1,10 @@
--- Demo seed data for BarberHub
+-- Demo seed data for JOTMA
 -- Password for all demo accounts: "password"
 
 INSERT INTO users (first_name, last_name, email, password, phone, city, role, approved) VALUES
   ('John', 'Doe', 'john@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5550001111', 'New York', 'customer', true),
   ('Carlos', 'Rivera', 'carlos@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '3139896811', 'New York', 'barber', true),
-  ('Admin', 'Hub', 'admin@demo.com', '$2a$10$MXadMmjl2aMOfEhmSzzUxO9QZBBbuUK4cIUy50drbQdz2dNkfn7nO', '', 'New York', 'admin', true),
+  ('Admin', 'Hub', 'gueyebaye955@gmail.com', '$2a$10$MXadMmjl2aMOfEhmSzzUxO9QZBBbuUK4cIUy50drbQdz2dNkfn7nO', '', 'New York', 'admin', true),
   ('Sofia', 'Chen', 'sofia@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5552223333', 'Los Angeles', 'barber', true),
   ('Marcus', 'James', 'marcus@demo.com', '$2a$10$AXGXcB07/503BZGhAHb6pOi62MSX8HSXa4qLo2iKMih2duhRj9L5S', '5554445555', 'Chicago', 'barber', true)
 ON CONFLICT (email) DO NOTHING;
@@ -65,8 +65,8 @@ INSERT INTO notifications (user_id, title, message)
 SELECT u.id, x.title, x.message
 FROM (
   VALUES
-    ('john@demo.com', 'Welcome to BarberHub!', 'Book your first appointment today.'),
-    ('carlos@demo.com', 'Profile approved', 'Your barber profile is now live!')
+    ('john@demo.com', 'Welcome to JOTMA!', 'Book your first appointment today.'),
+    ('carlos@demo.com', 'Profile approved', 'Your provider profile is now live!')
 ) AS x(email, title, message)
 JOIN users u ON u.email = x.email
 WHERE NOT EXISTS (

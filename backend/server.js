@@ -18,7 +18,7 @@ app.disable('x-powered-by');
 const isProduction = process.env.NODE_ENV === 'production';
 const jwtSecret = String(process.env.JWT_SECRET || '');
 const sessionSecret = String(process.env.SESSION_SECRET || process.env.JWT_SECRET || '');
-const defaultProdOrigins = ['https://jelall.com', 'https://www.jelall.com'];
+const defaultProdOrigins = ['https://jotma.net', 'https://www.jotma.net'];
 const sessionMaxAgeMs = Number(process.env.SESSION_MAX_AGE_MS || (60 * 60 * 1000));
 
 if (!jwtSecret) {
@@ -147,7 +147,7 @@ app.get('/api/health', asyncHandler(async (_req, res) => {
   const dbLatencyMs = Date.now() - startedAt;
   res.json({
     ok: true,
-    service: 'jelall-backend',
+    service: 'jotma-backend',
     env: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     uptime_seconds: Math.round(process.uptime()),
@@ -209,5 +209,5 @@ process.on('uncaughtException', (error) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Jelall backend running on http://localhost:${PORT}`);
+  console.log(`JOTMA backend running on http://localhost:${PORT}`);
 });

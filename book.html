@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Appointment  Jelall</title>
+  <title>Book Appointment  JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -144,7 +144,7 @@
 
     async function initBookingPage() {
       try {
-        barber = getBarber(barberId) || await loadApiBarberById(barberId);
+        barber = await loadApiBarberById(barberId) || getBarber(barberId);
         if (!barber) {
           window.location.href = 'barbers.html';
           return;
@@ -164,8 +164,8 @@
         document.getElementById('bookContainer').innerHTML = `
           <div style="max-width:520px;margin:3rem auto;text-align:center;padding:1.5rem">
             <h2 style="margin-bottom:0.6rem">Unable to load booking</h2>
-            <p style="color:var(--text-muted);margin-bottom:1.2rem">Please try again or choose another barber.</p>
-            <a class="btn btn-primary" href="barbers.html">Browse barbers</a>
+            <p style="color:var(--text-muted);margin-bottom:1.2rem">Please try again or choose another provider.</p>
+            <a class="btn btn-primary" href="barbers.html">Browse providers</a>
           </div>`;
       }
     }
@@ -229,6 +229,7 @@
           <div class="svc-pick-list">
             ${services.map(s => `
               <div class="svc-pick ${sel.service?.id === s.id ? 'selected' : ''}" onclick="selectService(${s.id})">
+                ${s.image_url ? `<img src="${escapeHTML(s.image_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;margin-right:0.75rem">` : ''}
                 <div class="svc-pick-info">
                   <strong>${s.name}</strong>
                   ${s.desc ? `<span>${s.desc}</span><br>` : ''}
@@ -490,7 +491,7 @@
       })();
       const cleanPhone = barberPhone.replace(/\D/g, '');
       const waMsg = encodeURIComponent(
-        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via Jelall`
+        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via JOTMA`
       );
       const manualWaLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMsg}` : '';
       const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
@@ -540,7 +541,7 @@
       const booking = lastCreatedBooking;
       if (!booking) return;
       const ev = getBookingCalendarEvent(booking, barber);
-      downloadICS(`jelall-booking-${booking.id}.ics`, [ev]);
+      downloadICS(`jotma-booking-${booking.id}.ics`, [ev]);
     }
 
     initBookingPage();

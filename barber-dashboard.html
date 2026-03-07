@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Barber Dashboard  Jelall</title>
+  <title>Provider Dashboard | JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -109,6 +109,16 @@
           <input class="form-control" type="number" id="svcDur" placeholder="45" min="15" step="15">
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Photo (optional)</label>
+        <div id="svcImgPreviewWrap" style="display:none;margin-bottom:0.5rem">
+          <img id="svcImgPreview" src="" alt="Service photo" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        </div>
+        <input type="file" id="svcImgFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="onSvcImagePick(this)">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('svcImgFile').click()">Upload photo</button>
+        <span id="svcImgName" style="font-size:0.8rem;color:var(--text-muted);margin-left:0.5rem"></span>
+      </div>
+      <div id="svcModalError" style="color:#ef4444;font-size:0.85rem;margin-bottom:0.5rem;display:none"></div>
       <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem">
         <button class="btn btn-ghost" onclick="closeSvcModal()" data-i18n="btn_cancel">Cancel</button>
         <button class="btn btn-primary" id="svcSaveBtn" onclick="saveService()" data-i18n="btn_save">Save Service</button>
@@ -180,12 +190,29 @@
       } catch (_) {}
     })();
 
-    const SVC_KEY = `bh_services_${barber.id}`;
-    function getServices() {
-      const stored = localStorage.getItem(SVC_KEY);
-      return stored ? JSON.parse(stored) : [...barber.services];
+    // Services are loaded from the API; this array is the local cache
+    let _services = Array.isArray(barber.services) ? barber.services.map(s => ({
+      ...s,
+      price: typeof s.price === 'number' && s.price > 100 ? s.price / 100 : s.price,
+    })) : [];
+
+    function getServices() { return _services; }
+
+    async function loadServicesFromAPI() {
+      try {
+        const rows = await BH_API.getMyServices();
+        if (Array.isArray(rows)) {
+          _services = rows.map(s => ({ ...s, price: s.price / 100 }));
+          render();
+        }
+      } catch (_) {}
     }
-    function saveServices(svcs) { localStorage.setItem(SVC_KEY, JSON.stringify(svcs)); }
+
+    // Kick off API load immediately
+    loadServicesFromAPI();
+
+    // selected image file for upload (set by onSvcImagePick)
+    let _svcImageDataUri = null;
 
     const SCHED_KEY = `bh_schedule_${barber.id}`;
     function getSchedule() {
@@ -305,8 +332,9 @@
             </div>
             <p class="sub">${t('bdash_services_sub')}</p>
             ${getServices().map(s => `
-              <div class="svc-item">
-                <div class="svc-info">
+              <div class="svc-item" style="align-items:flex-start;gap:0.75rem">
+                ${s.image_url ? `<img src="${escapeHTML(s.image_url)}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0">` : ''}
+                <div class="svc-info" style="flex:1;min-width:0">
                   <strong>${escapeHTML(s.name)}</strong>
                   <span>${escapeHTML(s.desc || '')} &nbsp;&nbsp;  ${fmtDur(s.duration)}</span>
                 </div>
@@ -1072,8 +1100,23 @@
       render();
     }
 
+    function onSvcImagePick(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) { alert('Image must be under 1.5 MB.'); input.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        _svcImageDataUri = e.target.result;
+        document.getElementById('svcImgPreview').src = _svcImageDataUri;
+        document.getElementById('svcImgPreviewWrap').style.display = '';
+        document.getElementById('svcImgName').textContent = file.name;
+      };
+      reader.readAsDataURL(file);
+    }
+
     function openSvcModal(id) {
       editingSvcId = id;
+      _svcImageDataUri = null;
       const services = getServices();
       const s = id ? services.find(x => x.id === id) : null;
       document.getElementById('svcModalTitle').textContent = s ? t('svc_modal_edit') : t('svc_modal_add');
@@ -1081,33 +1124,78 @@
       document.getElementById('svcDesc').value  = s ? (s.desc||'') : '';
       document.getElementById('svcPrice').value = s ? s.price : '';
       document.getElementById('svcDur').value   = s ? s.duration : '';
+      document.getElementById('svcImgFile').value = '';
+      document.getElementById('svcImgName').textContent = '';
+      document.getElementById('svcModalError').style.display = 'none';
+      const preview = document.getElementById('svcImgPreview');
+      const previewWrap = document.getElementById('svcImgPreviewWrap');
+      if (s && s.image_url) {
+        preview.src = s.image_url;
+        previewWrap.style.display = '';
+      } else {
+        preview.src = '';
+        previewWrap.style.display = 'none';
+      }
       document.getElementById('svcModal').classList.add('open');
     }
     function closeSvcModal() {
       document.getElementById('svcModal').classList.remove('open');
       editingSvcId = null;
+      _svcImageDataUri = null;
     }
-    function saveService() {
+    async function saveService() {
       const name  = document.getElementById('svcName').value.trim();
       const desc  = document.getElementById('svcDesc').value.trim();
       const price = parseFloat(document.getElementById('svcPrice').value);
       const dur   = parseInt(document.getElementById('svcDur').value);
-      if (!name || isNaN(price) || isNaN(dur)) { alert('Please fill all required fields.'); return; }
-      const services = getServices();
-      if (editingSvcId) {
-        const idx = services.findIndex(s => s.id === editingSvcId);
-        if (idx !== -1) services[idx] = { ...services[idx], name, desc, price, duration: dur };
-      } else {
-        services.push({ id: Date.now(), name, desc, price, duration: dur });
+      const errEl = document.getElementById('svcModalError');
+      errEl.style.display = 'none';
+
+      if (!name || isNaN(price) || isNaN(dur)) {
+        errEl.textContent = 'Please fill all required fields.';
+        errEl.style.display = '';
+        return;
       }
-      saveServices(services);
-      closeSvcModal();
-      render();
+
+      const btn = document.getElementById('svcSaveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      try {
+        let saved;
+        const priceInCents = Math.round(price * 100);
+        if (editingSvcId) {
+          saved = await BH_API.updateService(editingSvcId, { name, desc, price: priceInCents, duration: dur });
+        } else {
+          saved = await BH_API.createService({ name, desc, price: priceInCents, duration: dur });
+        }
+
+        // Upload image if one was picked
+        if (_svcImageDataUri && saved && saved.id) {
+          btn.textContent = 'Uploading image…';
+          try {
+            saved = await BH_API.uploadServiceImage(saved.id, _svcImageDataUri);
+          } catch (_) { /* image upload failure is non-fatal */ }
+        }
+
+        await loadServicesFromAPI();
+        closeSvcModal();
+      } catch (err) {
+        errEl.textContent = err.message || 'Failed to save service.';
+        errEl.style.display = '';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = t('btn_save');
+      }
     }
-    function deleteService(id) {
+    async function deleteService(id) {
       if (!confirm('Delete this service?')) return;
-      saveServices(getServices().filter(s => s.id !== id));
-      render();
+      try {
+        await BH_API.deleteService(id);
+        await loadServicesFromAPI();
+      } catch (err) {
+        alert(err.message || 'Failed to delete service.');
+      }
     }
 
     function exportConfirmedCalendar() {
@@ -1122,7 +1210,7 @@
         alert('No upcoming bookings to export.');
         return;
       }
-      downloadICS(`jelall-${barber.id}-calendar.ics`, events);
+      downloadICS(`jotma-${barber.id}-calendar.ics`, events);
     }
 
     function syncNextBookingToGoogle() {

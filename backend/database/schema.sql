@@ -1,4 +1,4 @@
--- BarberHub Database Schema
+-- JOTMA Database Schema
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,

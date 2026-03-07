@@ -3,7 +3,7 @@
   const TOKEN_KEY = 'bh_token';
   const USER_KEY = 'bh_user';
   const LAST_ACTIVITY_KEY = 'bh_last_activity';
-  const RAILWAY_API = 'https://barberhub-production.up.railway.app/api';
+  const RAILWAY_API = 'https://jotma.net/api';
   // Use relative /api for all real HTTP servers (production, custom domains, local Express).
   // Only fall back to full Railway URL when opening files directly or via a dev server
   // that is NOT the Express backend (e.g. VSCode Live Server on port 5500).
@@ -133,6 +133,11 @@
       const query = new URLSearchParams();
       if (params.city) query.set('city', params.city);
       if (params.search) query.set('search', params.search);
+      if (params.min_rating) query.set('min_rating', params.min_rating);
+      if (params.category) query.set('category', params.category);
+      if (params.sort && params.sort !== 'distance' && params.sort !== 'bookings') query.set('sort', params.sort);
+      if (params.page) query.set('page', params.page);
+      if (params.limit) query.set('limit', params.limit);
       const suffix = query.toString() ? `?${query.toString()}` : '';
       return request(`/barbers${suffix}`);
     },
@@ -312,6 +317,23 @@
 
     async getRecentErrors(limit = 20) {
       return request(`/metrics/errors?limit=${encodeURIComponent(limit)}`, { auth: true });
+    },
+
+    // Services
+    async getMyServices() {
+      return request('/barbers/me/services', { auth: true });
+    },
+    async createService(data) {
+      return request('/barbers/me/services', { method: 'POST', body: data, auth: true });
+    },
+    async updateService(id, data) {
+      return request(`/barbers/me/services/${id}`, { method: 'PATCH', body: data, auth: true });
+    },
+    async uploadServiceImage(id, base64DataUri) {
+      return request(`/barbers/me/services/${id}/image`, { method: 'POST', body: { image_data: base64DataUri }, auth: true });
+    },
+    async deleteService(id) {
+      return request(`/barbers/me/services/${id}`, { method: 'DELETE', auth: true });
     },
   };
 

@@ -10,32 +10,47 @@
   const citySlug = document.body.dataset.citySlug || 'new-york-barbers';
   const esc = (v) => (typeof escapeHTML === 'function' ? escapeHTML(v) : String(v || ''));
 
-  const allBarbers = getAllBarbers();
-  const results = allBarbers
+  let results = getAllBarbers()
     .filter(b => (b.city || '').toLowerCase() === city.toLowerCase())
     .sort((a, b) => b.rating - a.rating);
 
   const grid = document.getElementById('cityBarbersGrid');
   const empty = document.getElementById('cityEmpty');
   const count = document.getElementById('cityCount');
-  if (count) {
-    count.textContent = results.length === 1
-      ? tf('city_count_one', { count: results.length, city })
-      : tf('city_count_many', { count: results.length, city });
-  }
-  if (empty) {
-    const emptyTitle = empty.querySelector('h3');
-    const emptyText = empty.querySelector('p');
-    if (emptyTitle) emptyTitle.textContent = t('no_barbers');
-    if (emptyText) emptyText.textContent = t('city_try_other');
+
+  function _renderCity(list) {
+    if (count) count.textContent = list.length === 1
+      ? tf('city_count_one', { count: list.length, city })
+      : tf('city_count_many', { count: list.length, city });
+    if (empty) {
+      const emptyTitle = empty.querySelector('h3');
+      const emptyText = empty.querySelector('p');
+      if (emptyTitle) emptyTitle.textContent = t('no_barbers');
+      if (emptyText) emptyText.textContent = t('city_try_other');
+    }
+    if (!list.length) {
+      if (grid) grid.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+    } else if (grid) {
+      grid.innerHTML = list.map(b => barberCardHTML(b)).join('');
+      if (empty) empty.style.display = 'none';
+    }
   }
 
-  if (!results.length) {
-    if (grid) grid.innerHTML = '';
-    if (empty) empty.style.display = 'block';
-  } else if (grid) {
-    grid.innerHTML = results.map(b => barberCardHTML(b)).join('');
-    if (empty) empty.style.display = 'none';
+  _renderCity(results);
+
+  // Load from API with city filter for accurate results at scale
+  if (window.BH_API) {
+    (async () => {
+      try {
+        const response = await window.BH_API.getBarbers({ city, limit: 50 });
+        const rows = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []);
+        if (rows.length) {
+          results = rows.map(normalizeApiBarber).sort((a, b) => b.rating - a.rating);
+          _renderCity(results);
+        }
+      } catch (_) {}
+    })();
   }
 
   const list = results.slice(0, 25).map((b, idx) => ({
@@ -58,7 +73,7 @@
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: `${tf('city_best_title', { city })} | Jelall`,
+    name: `${tf('city_best_title', { city })} | JOTMA`,
     url: `/${citySlug}.html`,
     mainEntity: {
       '@type': 'ItemList',
