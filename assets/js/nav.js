@@ -473,7 +473,7 @@ function navSearchKeydown(e) {
 (function () {
   if (!document.getElementById('bh-chat-widget')) {
     const s = document.createElement('script');
-    s.src = 'assets/js/chat-widget.js';
+    s.src = '/assets/js/chat-widget.js?v=20260307-4';
     document.body.appendChild(s);
   }
 })();

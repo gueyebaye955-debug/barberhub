@@ -162,6 +162,19 @@
   btn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
 
+  function postWithXhr(endpoint, payload, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', endpoint, true);
+      xhr.timeout = timeoutMs;
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = () => resolve({ status: Number(xhr.status || 0), body: String(xhr.responseText || '') });
+      xhr.onerror = () => reject(new Error('XHR network error'));
+      xhr.ontimeout = () => reject(new Error('XHR timeout'));
+      xhr.send(payload);
+    });
+  }
+
   async function send() {
     const text = input.value.trim();
     if (!text || isBusy) return;
@@ -179,12 +192,14 @@
       let raw = '';
       let lastNetworkError = null;
       const attempts = [];
+      const payload = JSON.stringify({ message: text, history });
       for (const endpoint of endpoints) {
         try {
           const candidateRes = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history }),
+            body: payload,
+            cache: 'no-store',
           });
           const candidateRaw = await candidateRes.text();
           attempts.push({ endpoint, status: candidateRes.status });
@@ -194,8 +209,20 @@
           raw = candidateRaw;
           break;
         } catch (err) {
-          attempts.push({ endpoint, error: true });
-          lastNetworkError = err;
+          attempts.push({ endpoint, fetch_error: true });
+          lastNetworkError = err || lastNetworkError;
+          try {
+            const xhrResult = await postWithXhr(endpoint, payload, 15000);
+            attempts.push({ endpoint, status: xhrResult.status, via: 'xhr' });
+            if (xhrResult.status === 0 && endpoint !== endpoints[endpoints.length - 1]) continue;
+            res = { ok: xhrResult.status >= 200 && xhrResult.status < 300, status: xhrResult.status };
+            raw = xhrResult.body;
+            if (!res.ok && endpoint !== endpoints[endpoints.length - 1]) continue;
+            break;
+          } catch (xhrErr) {
+            attempts.push({ endpoint, xhr_error: true });
+            lastNetworkError = xhrErr || lastNetworkError;
+          }
         }
       }
       if (!res) throw lastNetworkError || new Error('Unable to reach chat API.');
@@ -218,7 +245,14 @@
       }
     } catch (err) {
       typing.className = 'bh-msg ai';
-      typing.textContent = 'Network error. Baye could not reach the server. If testing locally, run backend on http://localhost:4000.';
+      let message = 'Network error. Baye could not reach the server. If testing locally, run backend on http://localhost:4000.';
+      try {
+        const health = await fetch('/api/health', { cache: 'no-store' });
+        if (health && health.ok) {
+          message = 'Baye chat was blocked by this browser/network. Disable ad blocker or VPN, then hard refresh.';
+        }
+      } catch (_) {}
+      typing.textContent = message;
     }
 
     messages.scrollTop = messages.scrollHeight;
