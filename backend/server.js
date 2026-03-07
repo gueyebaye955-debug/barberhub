@@ -204,7 +204,7 @@ const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
-  const model = String(process.env.GEMINI_MODEL || 'gemini-pro').trim();
+  const model = String(process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim();
   if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
   const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
@@ -232,7 +232,7 @@ OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal,
     if (turn.role && turn.text) contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
   }
   contents.push({ role: 'user', parts: [{ text: message.trim() }] });
-  const payload = JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 350, temperature: 0.6 } });
+  const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 350, temperature: 0.6 } });
   const result = await new Promise((resolve, reject) => {
     const u = new URL(`https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
     const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
