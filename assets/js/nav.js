@@ -469,6 +469,15 @@ function navSearchKeydown(e) {
   }
 }
 
+// Load AI chat widget on every page
+(function () {
+  if (!document.getElementById('bh-chat-widget')) {
+    const s = document.createElement('script');
+    s.src = 'assets/js/chat-widget.js';
+    document.body.appendChild(s);
+  }
+})();
+
 function renderFooter() {
   document.getElementById('footer').innerHTML = `
     <div class="container">

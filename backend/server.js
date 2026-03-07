@@ -161,6 +161,7 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/metrics', require('./routes/metrics'));
+app.use('/api/chat', require('./routes/chat'));
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });

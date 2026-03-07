@@ -316,13 +316,22 @@
             <textarea class="form-control" placeholder="${t('notes_ph')}" rows="3" id="notesInput" onchange="sel.notes=this.value">${sel.notes}</textarea>
           </div>
           <div id="bookAlert"></div>
+          <div class="rules-hint" style="margin-top:1.25rem;border-left:3px solid var(--primary)">
+            <strong style="display:block;margin-bottom:0.4rem">${t('booking_policy_title')}</strong>
+            <ul style="margin:0;padding-left:1.2rem;line-height:1.7">
+              <li>${t('booking_policy_arrive')}</li>
+              <li>${t('booking_policy_deposit')}</li>
+              <li>${t('booking_policy_cancel')}</li>
+            </ul>
+          </div>
           <div class="book-nav">
             <button class="btn btn-ghost" onclick="prevStep()">${t('btn_back')}</button>
             <div class="book-confirm-actions">
               <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Print confirmation"> ${t('btn_print') || 'Print'}</button>
               <button class="btn btn-primary btn-lg" onclick="confirmBooking()">${t('btn_confirm')}</button>
             </div>
-          </div>`;
+          </div>
+          <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:0.6rem">${t('booking_policy_accept')}</p>`;
       }
     }
 
