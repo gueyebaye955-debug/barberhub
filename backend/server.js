@@ -41,8 +41,115 @@ function getGeminiApiKey() {
   ).trim();
 }
 
-function getGeminiModel() {
-  return String(process.env.GEMINI_MODEL || 'gemini-flash-latest').trim();
+function normalizeGeminiModel(value) {
+  const model = String(value || '').trim();
+  if (!model) return '';
+  const alias = {
+    'gemini-flash-latest': 'gemini-2.0-flash',
+    'gemini-1.5-flash-latest': 'gemini-1.5-flash',
+  };
+  return alias[model.toLowerCase()] || model;
+}
+
+function getGeminiModelCandidates() {
+  const configured = normalizeGeminiModel(process.env.GEMINI_MODEL || '');
+  const candidates = [
+    configured || 'gemini-2.0-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+  ];
+  return candidates.filter((model, index, arr) => model && arr.indexOf(model) === index);
+}
+
+function shouldTryNextGeminiModel(statusCode, responseBody) {
+  const body = String(responseBody || '').toLowerCase();
+  if (statusCode === 404 || statusCode === 429 || statusCode === 503) return true;
+  if (body.includes('not found') || body.includes('not supported for generatecontent')) return true;
+  if (body.includes('high demand') || body.includes('unavailable')) return true;
+  return false;
+}
+
+function getSupportReply(lang) {
+  const replies = {
+    en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, please contact us:\n+1 313 989 6811\ngueyebaye955@gmail.com",
+    fr: "Je suis ici pour vous aider a trouver et reserver des services sur JOTMA.\n\nPour plus de questions, veuillez nous contacter:\n+1 313 989 6811\ngueyebaye955@gmail.com",
+    wo: "Maa ngi fi ngir la japp ci JOTMA ngir giss te tekki rendez-vous.\n\nSu laaj yu ci des amee, jokkoo ak nun:\n+1 313 989 6811\ngueyebaye955@gmail.com",
+  };
+  return replies[lang] || replies.fr;
+}
+
+function isOffTopicMessage(text) {
+  const q = String(text || '').toLowerCase();
+  const offTopicRx = /(politic|politique|election|president|religion|islam|christian|news|actualit|world news|medical|doctor|sante|health advice|legal|lawyer|justice|investment advice|relationship advice|personal advice)/i;
+  return offTopicRx.test(q);
+}
+
+function detectProvider(text) {
+  const q = String(text || '').toLowerCase();
+  const providers = [
+    { id: 1, name: 'Carlos Cuts', aliases: ['carlos', 'carlos cuts'] },
+    { id: 2, name: 'Sofia Style Lab', aliases: ['sofia', 'sofia style lab', "sofia's style lab"] },
+    { id: 3, name: 'Marcus Fresh Cuts', aliases: ['marcus', 'marcus fresh cuts'] },
+  ];
+  return providers.find((p) => p.aliases.some((a) => q.includes(a))) || null;
+}
+
+function buildRuleBasedReply(message, lang = 'fr') {
+  const text = String(message || '').trim();
+  const q = text.toLowerCase();
+
+  if (!text) {
+    return lang === 'en'
+      ? 'Tell me the service you need, your preferred date/time, and your city.'
+      : (lang === 'wo'
+        ? 'Wax ma sarwiis bi nga soxla, kañ nga bëgg, ak dëkk bi nga nekk.'
+        : 'Dites-moi le service voulu, la date/heure souhaitee et votre ville.');
+  }
+
+  if (isOffTopicMessage(q)) {
+    return getSupportReply(lang);
+  }
+
+  const wantsBooking = /(book|booking|appointment|rendez|rdv|reserve|reserver|réserver|tekki|tomorrow|demain|today|aujourd|am|pm|\d{1,2}:\d{2}|\d{1,2}h)/i.test(q);
+  const provider = detectProvider(q);
+  const hasCity = /(dakar|thi[eè]s|diourbel|saint-louis|louga|matam|tambacounda|k[eé]dougou|kaffrine|kaolack|fatick|kolda|s[eé]dhiou|ziguinchor)/i.test(q);
+  const hasService = /(haircut|fade|braid|nails|salon|barber|coiff|tresse|makeup|massage|service)/i.test(q);
+  const hasTime = /(tomorrow|demain|today|aujourd|am|pm|\b\d{1,2}(:\d{2})?\s?(am|pm|h)?\b)/i.test(q);
+
+  if (provider && wantsBooking) {
+    const link = `/book.html?barber=${provider.id}`;
+    if (lang === 'en') {
+      return `Great choice. Book ${provider.name} here: ${link}\n\nTo confirm quickly, tell me the service and city.\nPolicy: arrive 10 minutes early, 10% deposit, cancel at least 8 hours before.`;
+    }
+    if (lang === 'wo') {
+      return `${provider.name} baax na. Tekkal fii: ${link}\n\nNgir gaaw, wax ma sarwiis bi ak dëkk bi.\nSart yi: ñëw 10 minutes lu jiitu, 10% acompte, ngir fommat dafa war 8 heures lu jiitu.`;
+    }
+    return `Tres bon choix. Reservez ${provider.name} ici: ${link}\n\nPour confirmer vite, dites-moi le service et la ville.\nRegle: arrivez 10 minutes avant, acompte 10%, annulation au moins 8 heures avant.`;
+  }
+
+  if (wantsBooking) {
+    if (lang === 'en') {
+      return 'I can help you book now. Please tell me:\n- What service do you need?\n- When do you want the appointment?\n- Which city are you in?\n\nYou can browse providers here: /barbers.html';
+    }
+    if (lang === 'wo') {
+      return 'Man naa la jappale ngir book leegi. Wax ma:\n- Ban sarwiis nga bëgg?\n- Kañ nga bëgg rendez-vous bi?\n- Ban dëkk nga nekk?\n\nMën nga seet prestataire yi fii: /barbers.html';
+    }
+    return 'Je peux vous aider a reserver maintenant. Dites-moi:\n- Quel service voulez-vous ?\n- Quand voulez-vous le rendez-vous ?\n- Dans quelle ville etes-vous ?\n\nVous pouvez voir les prestataires ici: /barbers.html';
+  }
+
+  if (!hasService || !hasTime || !hasCity) {
+    if (lang === 'en') {
+      return 'I can help you find and book services on JOTMA.\nTell me the service, preferred date/time, and your city.';
+    }
+    if (lang === 'wo') {
+      return 'Maa ngi ngir jappale la ci JOTMA.\nWax ma sarwiis bi, kañ nga bëgg, ak dëkk bi.';
+    }
+    return 'Je peux vous aider a trouver et reserver sur JOTMA.\nDites-moi le service, la date/heure souhaitee et votre ville.';
+  }
+
+  if (lang === 'en') return 'Tell me the provider name you prefer, and I will guide you to booking.';
+  if (lang === 'wo') return 'Wax ma turu prestataire bi nga bëgg, ma gindiko ci booking bi.';
+  return 'Dites-moi le nom du prestataire prefere, et je vous guide vers la reservation.';
 }
 
 if (!jwtSecret) {
@@ -204,11 +311,11 @@ const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
-  const model = String(process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim();
-  if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
+  const models = getGeminiModelCandidates();
   const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
   if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
+  if (!apiKey) return res.json({ reply: buildRuleBasedReply(message, lang), fallback: true, warning: 'Gemini key missing' });
   const langName = { en: 'English', fr: 'French', wo: 'Wolof' }[lang] || 'French';
   const offTopic = {
     en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, contact us:\n📞 +1 313 989 6811\n📧 gueyebaye955@gmail.com",
@@ -239,14 +346,38 @@ OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal,
     contents,
     generationConfig: { maxOutputTokens: 350, temperature: 0.6 },
   });
-  const result = await new Promise((resolve, reject) => {
-    const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
-    const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
-      let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d }));
+
+  let result = null;
+  const attempts = [];
+  for (const model of models) {
+    const candidate = await new Promise((resolve, reject) => {
+      const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`);
+      const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
+        let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d, model }));
+      });
+      req2.on('error', reject); req2.write(payload); req2.end();
     });
-    req2.on('error', reject); req2.write(payload); req2.end();
-  });
-  if (result.status !== 200) { console.error('Gemini error:', result.body); return res.status(502).json({ error: 'AI service error. Please try again.' }); }
+
+    attempts.push({ model, status: candidate.status });
+    result = candidate;
+    if (candidate.status === 200) break;
+    if (!shouldTryNextGeminiModel(candidate.status, candidate.body)) break;
+  }
+
+  if (!result || result.status !== 200) {
+    const bodyText = String(result?.body || '');
+    const isBusy = result?.status === 429 || result?.status === 503 || /high demand|unavailable/i.test(bodyText);
+    const isQuota = /quota exceeded|rate limit|limit:\s*0/i.test(bodyText);
+    console.error('Gemini error:', JSON.stringify({ attempts, body: bodyText.slice(0, 500) }));
+    return res.json({
+      reply: buildRuleBasedReply(message, lang),
+      fallback: true,
+      warning: isQuota
+        ? 'Gemini quota exceeded'
+        : (isBusy ? 'Gemini temporarily busy' : 'Gemini request failed'),
+    });
+  }
+
   const data = JSON.parse(result.body);
   const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response generated.';
   res.json({ reply });

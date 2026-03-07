@@ -269,6 +269,53 @@
     return null;
   }
 
+  function shouldUseLocalFallback(replyText, statusCode) {
+    const msg = String(replyText || '').toLowerCase();
+    if ([429, 502, 503].includes(Number(statusCode))) return true;
+    if (msg.includes('ai service error')) return true;
+    if (msg.includes('quota exceeded')) return true;
+    if (msg.includes('temporarily busy')) return true;
+    if (msg.includes('unavailable')) return true;
+    return false;
+  }
+
+  function detectProvider(text) {
+    const q = String(text || '').toLowerCase();
+    const providers = [
+      { id: 1, name: 'Carlos Cuts', aliases: ['carlos', 'carlos cuts'] },
+      { id: 2, name: 'Sofia Style Lab', aliases: ['sofia', 'sofia style lab', "sofia's style lab"] },
+      { id: 3, name: 'Marcus Fresh Cuts', aliases: ['marcus', 'marcus fresh cuts'] },
+    ];
+    return providers.find((p) => p.aliases.some((a) => q.includes(a))) || null;
+  }
+
+  function buildLocalFallbackReply(userText, lang) {
+    const q = String(userText || '').toLowerCase();
+    const provider = detectProvider(q);
+    const wantsBooking = /(book|booking|appointment|rendez|rdv|reserve|reserver|tomorrow|demain|today|aujourd|am|pm|\d{1,2}(:\d{2})?)/i.test(q);
+
+    if (provider && wantsBooking) {
+      const link = `/book.html?barber=${provider.id}`;
+      if (lang === 'en') return `Great choice. Book ${provider.name} here: ${link}\n\nTell me your service and city to confirm.`;
+      if (lang === 'wo') return `${provider.name} baax na. Tekkal fii: ${link}\n\nWax ma sarwiis bi ak dëkk bi ngir confirme.`;
+      return `Tres bon choix. Reservez ${provider.name} ici: ${link}\n\nDites-moi le service et la ville pour confirmer.`;
+    }
+
+    if (wantsBooking) {
+      if (lang === 'en') return 'I can help you book now.\nTell me: service, date/time, and city.\nBrowse providers: /barbers.html';
+      if (lang === 'wo') return 'Maa ngi fi ngir jappale la booking.\nWax ma sarwiis bi, date/time, ak dëkk bi.\nSeet prestataire yi: /barbers.html';
+      return 'Je peux vous aider a reserver.\nDites-moi: service, date/heure, et ville.\nVoir les prestataires: /barbers.html';
+    }
+
+    if (lang === 'en') {
+      return "I'm here to help you find and book services on JOTMA.\n\nFor more questions:\n+1 313 989 6811\ngueyebaye955@gmail.com";
+    }
+    if (lang === 'wo') {
+      return "Maa ngi fi ngir la japp ci booking JOTMA.\n\nSu laaj yu ci des amee:\n+1 313 989 6811\ngueyebaye955@gmail.com";
+    }
+    return "Je suis ici pour vous aider a trouver et reserver sur JOTMA.\n\nPour plus de questions:\n+1 313 989 6811\ngueyebaye955@gmail.com";
+  }
+
   // ---- Open / Close ----
   function open() {
     isOpen = true;
@@ -368,22 +415,28 @@
       const fallbackError = res.status === 404
         ? 'Chat route not found. Please redeploy the backend.'
         : (res.status === 503
-          ? 'AI service not configured. Set GEMINI_API_KEY on the backend.'
+          ? 'AI service is busy right now. Please try again in a moment.'
           : `Server error ${res.status}. Please try again.`);
 
-      const reply = data.reply || data.error || (res.ok ? 'Something went wrong.' : fallbackError);
+      const rawReply = data.reply || data.error || (res.ok ? 'Something went wrong.' : fallbackError);
+      const reply = shouldUseLocalFallback(rawReply, res.status)
+        ? buildLocalFallbackReply(text, _chatLang)
+        : rawReply;
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(reply).replace(/\n/g, '<br>');
 
-      if (data.reply) {
+      if (reply) {
         chatHistory.push({ role: 'user', text });
-        chatHistory.push({ role: 'model', text: data.reply });
+        chatHistory.push({ role: 'model', text: reply });
         if (chatHistory.length > 12) chatHistory.splice(0, 2);
       }
     } catch (_) {
       typing.className = 'bh-msg ai';
-      let msg = 'Network error — check your connection and try again.';
-      try { const h = await fetch('/api/health', { cache: 'no-store' }); if (h && h.ok) msg = 'Awa was blocked by your browser or network. Disable ad blocker or VPN, then hard refresh.'; } catch (_2) {}
+      let msg = buildLocalFallbackReply(text, _chatLang || 'fr');
+      try {
+        const h = await fetch('/api/health', { cache: 'no-store' });
+        if (!h || !h.ok) msg = buildLocalFallbackReply(text, _chatLang || 'fr');
+      } catch (_2) {}
       typing.textContent = msg;
     }
 

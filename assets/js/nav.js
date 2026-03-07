@@ -469,11 +469,109 @@ function navSearchKeydown(e) {
   }
 }
 
+// Mobile keyboard handling:
+// - toggles body.keyboard-open
+// - updates viewport and keyboard CSS vars used by chat + bottom nav
+(function () {
+  if (!document.body) return;
+
+  const isLikelyMobile = window.matchMedia('(pointer: coarse)').matches ||
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  if (!isLikelyMobile) return;
+
+  const root = document.documentElement;
+  let rafId = 0;
+  let keyboardOpen = false;
+  let baselineHeight = Math.max(
+    window.innerHeight || 0,
+    window.visualViewport ? Math.round((window.visualViewport.height || 0) + (window.visualViewport.offsetTop || 0)) : 0
+  );
+
+  function isEditableTarget(el) {
+    if (!el) return false;
+    if (el.isContentEditable) return true;
+    if (el instanceof HTMLTextAreaElement) return !(el.readOnly || el.disabled);
+    if (el instanceof HTMLInputElement) {
+      if (el.readOnly || el.disabled) return false;
+      const nonTextTypes = new Set(['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'file', 'color', 'image']);
+      return !nonTextTypes.has((el.type || '').toLowerCase());
+    }
+    return false;
+  }
+
+  function hasEditableFocus() {
+    return isEditableTarget(document.activeElement);
+  }
+
+  function getVisualViewportHeight() {
+    if (!window.visualViewport) return Math.max(window.innerHeight || 0, 0);
+    return Math.max(window.visualViewport.height || 0, 0);
+  }
+
+  function getVisualViewportTop() {
+    if (!window.visualViewport) return 0;
+    return Math.max(window.visualViewport.offsetTop || 0, 0);
+  }
+
+  function applyKeyboardState() {
+    rafId = 0;
+
+    const visualHeight = getVisualViewportHeight();
+    const visualTop = getVisualViewportTop();
+    const layoutHeight = Math.max(window.innerHeight || 0, 0);
+    const focused = hasEditableFocus();
+
+    if (!focused) {
+      const candidateBaseline = Math.max(layoutHeight, Math.round(visualHeight + visualTop));
+      baselineHeight = Math.abs(candidateBaseline - baselineHeight) > 160
+        ? candidateBaseline
+        : Math.max(baselineHeight, candidateBaseline);
+    }
+
+    const baselineDelta = Math.max(0, baselineHeight - visualHeight - visualTop);
+    const layoutDelta = Math.max(0, layoutHeight - visualHeight - visualTop);
+    const openByHeight = baselineDelta > 110 || visualHeight < baselineHeight * 0.82;
+    const nextKeyboardOpen = focused && openByHeight;
+    const keyboardOffset = nextKeyboardOpen && layoutDelta > 8 ? Math.round(layoutDelta) : 0;
+
+    if (nextKeyboardOpen !== keyboardOpen) {
+      keyboardOpen = nextKeyboardOpen;
+      document.body.classList.toggle('keyboard-open', keyboardOpen);
+      window.dispatchEvent(new CustomEvent('bh-keyboard-state', { detail: { open: keyboardOpen } }));
+    } else {
+      document.body.classList.toggle('keyboard-open', keyboardOpen);
+    }
+
+    root.style.setProperty('--bh-keyboard-offset', `${keyboardOffset}px`);
+    root.style.setProperty('--bh-visual-height', `${Math.round(visualHeight)}px`);
+  }
+
+  function requestApply() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(applyKeyboardState);
+  }
+
+  window.addEventListener('resize', requestApply, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', requestApply, { passive: true });
+    window.visualViewport.addEventListener('scroll', requestApply, { passive: true });
+  }
+  document.addEventListener('focusin', requestApply, { passive: true });
+  document.addEventListener('focusout', () => setTimeout(requestApply, 90), { passive: true });
+  document.addEventListener('visibilitychange', requestApply, { passive: true });
+  window.addEventListener('orientationchange', () => {
+    baselineHeight = Math.max(window.innerHeight || 0, Math.round(getVisualViewportHeight() + getVisualViewportTop()));
+    requestApply();
+  }, { passive: true });
+
+  requestApply();
+})();
+
 // Load AI chat widget on every page
 (function () {
   if (!document.getElementById('bh-chat-widget')) {
     const s = document.createElement('script');
-    s.src = '/assets/js/chat-widget.js?v=20260307-4';
+    s.src = '/assets/js/chat-widget.js?v=20260307-7';
     document.body.appendChild(s);
   }
 })();

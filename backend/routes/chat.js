@@ -12,8 +12,62 @@ function getGeminiApiKey() {
   ).trim();
 }
 
-function getGeminiModel() {
-  return String(process.env.GEMINI_MODEL || 'gemini-flash-latest').trim();
+function normalizeGeminiModel(value) {
+  const model = String(value || '').trim();
+  if (!model) return '';
+  const alias = {
+    'gemini-flash-latest': 'gemini-2.0-flash',
+    'gemini-1.5-flash-latest': 'gemini-1.5-flash',
+  };
+  return alias[model.toLowerCase()] || model;
+}
+
+function getGeminiModels() {
+  const configured = normalizeGeminiModel(process.env.GEMINI_MODEL || '');
+  const candidates = [configured || 'gemini-2.0-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  return candidates.filter((model, index, arr) => model && arr.indexOf(model) === index);
+}
+
+function shouldTryNextModel(statusCode, responseBody) {
+  const body = String(responseBody || '').toLowerCase();
+  if (statusCode === 404 || statusCode === 429 || statusCode === 503) return true;
+  if (body.includes('not found') || body.includes('not supported for generatecontent')) return true;
+  if (body.includes('high demand') || body.includes('unavailable')) return true;
+  return false;
+}
+
+function getSupportReply() {
+  return "I'm here to help you find and book services on JOTMA.\n\nFor more questions, please contact us:\n+1 313 989 6811\ngueyebaye955@gmail.com";
+}
+
+function isOffTopicMessage(text) {
+  const q = String(text || '').toLowerCase();
+  return /(politic|religion|news|medical|legal|personal advice)/i.test(q);
+}
+
+function detectProvider(text) {
+  const q = String(text || '').toLowerCase();
+  const providers = [
+    { id: 1, name: 'Carlos Cuts', aliases: ['carlos', 'carlos cuts'] },
+    { id: 2, name: 'Sofia Style Lab', aliases: ['sofia', 'sofia style lab', "sofia's style lab"] },
+    { id: 3, name: 'Marcus Fresh Cuts', aliases: ['marcus', 'marcus fresh cuts'] },
+  ];
+  return providers.find((p) => p.aliases.some((a) => q.includes(a))) || null;
+}
+
+function buildRuleBasedReply(message) {
+  const q = String(message || '').toLowerCase();
+  if (!q.trim()) return 'Tell me the service, date/time, and city so I can help you book.';
+  if (isOffTopicMessage(q)) return getSupportReply();
+  const provider = detectProvider(q);
+  const wantsBooking = /(book|booking|appointment|rendez|rdv|reserve|tomorrow|am|pm|\d{1,2}(:\d{2})?)/i.test(q);
+  if (provider && wantsBooking) {
+    return `Great choice. Book ${provider.name} here: /book.html?barber=${provider.id}\n\nTell me your service and city to confirm.`;
+  }
+  if (wantsBooking) {
+    return 'I can help you book now. Tell me the service, your preferred date/time, and city.\nBrowse providers: /barbers.html';
+  }
+  return 'I am here to help you find and book services on JOTMA. Tell me what service you need.';
 }
 
 function httpsPost(url, body) {
@@ -65,8 +119,7 @@ If unsure, suggest the user visit the Support page or contact JOTMA directly.`;
 
 router.post('/', chatLimit, async (req, res) => {
   const apiKey = getGeminiApiKey();
-  const model = getGeminiModel();
-  if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
+  const models = getGeminiModels();
 
   const { message, history = [] } = req.body;
   if (!message || typeof message !== 'string' || message.trim().length === 0) {
@@ -75,6 +128,7 @@ router.post('/', chatLimit, async (req, res) => {
   if (message.length > 500) {
     return res.status(400).json({ error: 'Message too long (max 500 chars).' });
   }
+  if (!apiKey) return res.json({ reply: buildRuleBasedReply(message), fallback: true, warning: 'Gemini key missing' });
 
   // Build conversation contents for Gemini
   const contents = [];
@@ -86,16 +140,30 @@ router.post('/', chatLimit, async (req, res) => {
   contents.push({ role: 'user', parts: [{ text: message.trim() }] });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
-    const result = await httpsPost(url, {
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents,
-      generationConfig: { maxOutputTokens: 300, temperature: 0.7 },
-    });
+    let result = null;
+    const attempts = [];
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+      const candidate = await httpsPost(url, {
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents,
+        generationConfig: { maxOutputTokens: 300, temperature: 0.7 },
+      });
+      attempts.push({ model, status: candidate.status });
+      result = candidate;
+      if (candidate.status === 200) break;
+      if (!shouldTryNextModel(candidate.status, candidate.body)) break;
+    }
 
-    if (result.status !== 200) {
-      console.error('Gemini API error:', result.body);
-      return res.status(502).json({ error: 'AI service error. Please try again.' });
+    if (!result || result.status !== 200) {
+      const bodyText = String(result?.body || '');
+      const isBusy = result?.status === 429 || result?.status === 503 || /high demand|unavailable/i.test(bodyText);
+      console.error('Gemini API error:', JSON.stringify({ attempts, body: bodyText.slice(0, 500) }));
+      return res.json({
+        reply: buildRuleBasedReply(message),
+        fallback: true,
+        warning: isBusy ? 'Gemini temporarily busy' : 'Gemini request failed',
+      });
     }
 
     const data = JSON.parse(result.body);
