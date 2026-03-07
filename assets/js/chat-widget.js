@@ -3,9 +3,9 @@
   if (document.getElementById('bh-chat-widget')) return;
 
   const LABELS = {
-    en: { title: 'JOTMA Assistant', placeholder: 'Ask me anything...', send: 'Send', open: 'Chat with AI', welcome: 'Hi! I\'m the JOTMA Assistant. Ask me anything about bookings, barbers, or services.' },
-    fr: { title: 'Assistant JOTMA', placeholder: 'Posez votre question...', send: 'Envoyer', open: 'Chat IA', welcome: 'Bonjour! Je suis l\'assistant JOTMA. Posez-moi vos questions sur les réservations, les prestataires ou les services.' },
-    wo: { title: 'Jëfandikukat JOTMA', placeholder: 'Laaj sa laaj...', send: 'Yónnee', open: 'AI Chat', welcome: 'Asalaamalekum! Maa ngi JOTMA Assistant. Laajal ma ci réservation, prestataire, walla sarwiis yi.' },
+    en: { title: 'Baye', placeholder: 'Ask me anything...', send: 'Send', open: 'Chat with Baye', welcome: 'Hi! I\'m Baye, your JOTMA assistant. Ask me anything about bookings, barbers, or services.' },
+    fr: { title: 'Baye', placeholder: 'Posez votre question...', send: 'Envoyer', open: 'Chat avec Baye', welcome: 'Bonjour! Je suis Baye, votre assistant JOTMA. Posez-moi vos questions sur les réservations, les prestataires ou les services.' },
+    wo: { title: 'Baye', placeholder: 'Laaj sa laaj...', send: 'Yónnee', open: 'Chat ak Baye', welcome: 'Asalaamalekum! Maa ngi Baye, sa jëfandikukat JOTMA. Laajal ma ci réservation, prestataire, walla sarwiis yi.' },
   };
 
   function getLang() {
