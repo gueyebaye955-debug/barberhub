@@ -161,12 +161,32 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/metrics', require('./routes/metrics'));
-try {
-  app.use('/api/chat', require('./routes/chat'));
-  console.log('[BOOT] /api/chat route loaded OK');
-} catch (e) {
-  console.error('[BOOT] Failed to load /api/chat route:', e.message);
-}
+app.post('/api/chat', require('express-rate-limit')({ windowMs: 60000, max: 20 }), asyncHandler(async (req, res) => {
+  const https = require('https');
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'AI service not configured.' });
+  const { message, history = [] } = req.body;
+  if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
+  if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
+  const SYSTEM_PROMPT = `Your name is Baye. You are a helpful AI assistant for JOTMA, a service booking platform in Senegal. Help users find barbers, book appointments, answer questions about services, pricing and cancellations. Speak EN/FR/WO based on user language. Keep answers short (2-4 sentences). Known barbers: Carlos Cuts ID 1 (/book.html?barber=1), Sofia Style Lab ID 2 (/book.html?barber=2), Marcus Fresh Cuts ID 3 (/book.html?barber=3). Never discuss unrelated topics.`;
+  const contents = [];
+  for (const turn of history.slice(-6)) {
+    if (turn.role && turn.text) contents.push({ role: turn.role, parts: [{ text: String(turn.text).slice(0, 500) }] });
+  }
+  contents.push({ role: 'user', parts: [{ text: message.trim() }] });
+  const payload = JSON.stringify({ system_instruction: { parts: [{ text: SYSTEM_PROMPT }] }, contents, generationConfig: { maxOutputTokens: 300, temperature: 0.7 } });
+  const result = await new Promise((resolve, reject) => {
+    const u = new URL(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`);
+    const req2 = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
+      let d = ''; r.on('data', c => d += c); r.on('end', () => resolve({ status: r.statusCode, body: d }));
+    });
+    req2.on('error', reject); req2.write(payload); req2.end();
+  });
+  if (result.status !== 200) { console.error('Gemini error:', result.body); return res.status(502).json({ error: 'AI service error. Please try again.' }); }
+  const data = JSON.parse(result.body);
+  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response generated.';
+  res.json({ reply });
+}));
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'API route not found' });
