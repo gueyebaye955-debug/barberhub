@@ -507,9 +507,17 @@ const handleChat = asyncHandler(async (req, res) => {
     fr: "Je suis ici pour vous aider à trouver et réserver des services sur JOTMA.\n\nPour plus de questions, contactez-nous :\n+1 313 989 6811\ngueyebaye955@gmail.com",
     wo: "Maa ngi fi ngir la jàpp ci JOTMA.\n\nSu am na laaj, jokkoo ak nun :\n+1 313 989 6811\ngueyebaye955@gmail.com",
   }[lang] || "I'm here to help you find and book services on JOTMA. Contact: +1 313 989 6811 or gueyebaye955@gmail.com";
+  const wolofNote = lang === 'wo' ? `
+WOLOF LANGUAGE RULES (CRITICAL):
+- You MUST write every single word in Wolof. Do NOT use French or English words except for proper nouns (JOTMA, Carlos, Sofia, Marcus).
+- Wolof vocabulary to use: "Nanga def" (hello), "waaw" (yes), "déedéet" (no), "jërejëf" (thank you), "mangi dem" (I'm going), "bëgg" (want), "jàpp" (understand), "xam" (know), "am" (have), "dëkk" (city/live), "rendez-vous" (appointment - kept in Wolof speech), "sarwiis" (service), "kañ" (when), "fan" (where), "ana" (where is), "nu" (we/let's).
+- If you don't know a Wolof word, use the closest Wolof equivalent or a commonly borrowed word. Never use French syntax.
+- Example correct response: "Waaw, mangi xam. Kañ bëgg nga rendez-vous bi? Te ana dëkk bi?"
+- Example WRONG response: "Oui, je comprends. Quand voulez-vous le rendez-vous?"` : '';
+
   const SYSTEM_PROMPT = `Your name is Awa. You are the virtual assistant for JOTMA, a service booking platform in Senegal.
 
-LANGUAGE: Always respond in ${langName} only. Never switch languages.
+LANGUAGE: Always respond in ${langName} only. Never switch languages. Every word must be in ${langName}.${wolofNote}
 ROLE: Help users find service providers and book appointments on JOTMA.
 STYLE: Keep messages short and simple (2-4 sentences max). Ask follow-up questions when info is missing.
 
