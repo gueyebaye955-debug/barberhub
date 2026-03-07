@@ -64,10 +64,10 @@
   // ---- Inject styles ----
   const style = document.createElement('style');
   style.textContent = `
-    #bh-chat-widget { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; font-family: inherit; }
-    #bh-chat-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 50px; padding: 0.75rem 1.25rem; cursor: pointer; font-size: 0.9rem; font-weight: 600; box-shadow: 0 4px 16px rgba(233,69,96,0.4); display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; }
+    #bh-chat-widget { position: fixed; bottom: 2.5rem; right: 1.5rem; z-index: 9999; font-family: inherit; }
+    #bh-chat-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; padding: 0; cursor: pointer; box-shadow: 0 6px 20px rgba(233,69,96,0.45); display: grid; place-items: center; transition: transform 0.2s, box-shadow 0.2s; }
     #bh-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,69,96,0.5); }
-    #bh-chat-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    #bh-chat-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
     #bh-chat-box { display: none; flex-direction: column; width: 340px; max-width: calc(100vw - 2rem); height: 460px; background: var(--bg-card, #1a1a2e); border: 1px solid var(--border, #2a2a3e); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 0.75rem; }
     #bh-chat-box.open { display: flex; }
     #bh-chat-header { background: var(--primary, #e94560); color: #fff; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
@@ -84,8 +84,10 @@
     #bh-chat-send { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 8px; padding: 0 0.85rem; cursor: pointer; font-size: 0.88rem; font-weight: 600; flex-shrink: 0; transition: opacity 0.2s; }
     #bh-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
     @media (max-width: 480px) {
-      #bh-chat-widget { bottom: 1rem; right: 1rem; }
+      #bh-chat-widget { bottom: 4.75rem; right: 1rem; }
       #bh-chat-box { width: calc(100vw - 2rem); height: 400px; }
+      #bh-chat-btn { width: 52px; height: 52px; }
+      #bh-chat-btn svg { width: 22px; height: 22px; }
     }
   `;
   document.head.appendChild(style);
@@ -107,7 +109,6 @@
     </div>
     <button id="bh-chat-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span id="bh-chat-btn-label"></span>
     </button>
   `;
   document.body.appendChild(widget);
@@ -126,9 +127,10 @@
 
   function updateLabels() {
     document.getElementById('bh-chat-title').textContent = L('title');
-    document.getElementById('bh-chat-btn-label').textContent = L('open');
     input.placeholder = L('placeholder');
     sendBtn.textContent = L('send');
+    const chatBtn = document.getElementById('bh-chat-btn');
+    if (chatBtn) chatBtn.setAttribute('aria-label', L('open'));
   }
   updateLabels();
 
