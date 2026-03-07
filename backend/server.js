@@ -204,7 +204,7 @@ const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');
   const apiKey = getGeminiApiKey();
-  const model = String(process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim();
+  const model = String(process.env.GEMINI_MODEL || 'gemini-pro').trim();
   if (!apiKey) return res.status(503).json({ error: 'AI service not configured. Set GEMINI_API_KEY on the backend.' });
   const { message, history = [], lang = 'fr' } = req.body;
   if (!message || typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Message is required.' });
