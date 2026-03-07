@@ -318,9 +318,23 @@ function buildContextualFallbackReply(message, lang = 'fr', history = []) {
     return ctxMissingText(missing, lang) + '\nVous pouvez voir les prestataires ici: ' + browseLink;
   }
 
-  if (lang === 'en') return 'I can help only with JOTMA bookings. Example: "I want a haircut tomorrow at 9am in Dakar."';
-  if (lang === 'wo') return 'Maa ngi fi rek ngir booking JOTMA. Misal: "Begg naa coupe demain 9h ci Dakar."';
-  return 'Je peux aider uniquement pour les reservations JOTMA. Exemple: "Je veux une coupe demain a 9h a Dakar."';
+  const isWhoAreYou = /(qui es|who are you|ki nga|what is jotma|c'est quoi|kessen)/i.test(q);
+  if (isWhoAreYou) {
+    if (lang === 'en') return "I'm Awa, JOTMA's virtual assistant.\n\nI can help you:\n- Find a barber or service provider\n- Book an appointment\n- Answer questions about JOTMA services\n\nWhat service are you looking for?";
+    if (lang === 'wo') return "Maa ngi Awa, jappale bi JOTMA.\n\nMan naa la jappale:\n- Seet barber wala prestataire\n- Tekki rendez-vous\n- Tontu laaj yi ci JOTMA\n\nBan sarwiis nga bëgg?";
+    return "Je suis Awa, l'assistante virtuelle de JOTMA.\n\nJe peux vous aider à :\n- Trouver un coiffeur ou prestataire\n- Réserver un rendez-vous\n- Répondre à vos questions sur JOTMA\n\nQuel service recherchez-vous ?";
+  }
+
+  const isHowMuch = /(prix|price|cost|combien|tarif|how much|tarif)/i.test(q);
+  if (isHowMuch) {
+    if (lang === 'en') return "Prices vary by provider and service. Browse available providers here: /barbers.html\n\nYou can see their rates on their profile pages.";
+    if (lang === 'wo') return "Njëg yi dafay yège ci prestataire ak sarwiis bi. Seet fii: /barbers.html\n\nMën nga gis tarif yi ci profil bi.";
+    return "Les prix varient selon le prestataire et le service. Consultez les prestataires ici : /barbers.html\n\nVous pouvez voir leurs tarifs sur leurs pages de profil.";
+  }
+
+  if (lang === 'en') return "I can help you book a service on JOTMA. What service are you looking for?\n\nYou can also browse providers here: /barbers.html";
+  if (lang === 'wo') return "Man naa la jappale book sarwiis ci JOTMA. Ban sarwiis nga bëgg?\n\nMën nga seet prestataire yi fii: /barbers.html";
+  return "Je peux vous aider à réserver un service sur JOTMA. Quel service recherchez-vous ?\n\nVous pouvez aussi parcourir les prestataires ici : /barbers.html";
 }
 
 if (!jwtSecret) {
