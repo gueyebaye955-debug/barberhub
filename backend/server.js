@@ -167,7 +167,15 @@ app.use('/api', (_req, res) => {
 });
 
 const frontendDir = path.join(__dirname, '..');
-app.use(express.static(frontendDir));
+
+// HTML files: always revalidate so mobile browsers pick up new deploys immediately
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/' || !req.path.includes('.')) {
+    res.set('Cache-Control', 'no-cache, must-revalidate');
+  }
+  next();
+});
+app.use(express.static(frontendDir, { etag: true, lastModified: true }));
 
 app.get('/barber/:id', (_req, res) => {
   res.sendFile(path.join(frontendDir, 'profile.html'));
