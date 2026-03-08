@@ -29,7 +29,7 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
 }
@@ -40,7 +40,7 @@ img { max-width: 100%; display: block; }
 
 /*  Layout  */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; }
-.page-wrap  { display: flex; flex-direction: column; min-height: 100vh; }
+.page-wrap  { display: flex; flex-direction: column; min-height: 100dvh; }
 main        { flex: 1; }
 
 /*  NAV  */
@@ -446,7 +446,7 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 
 /*  AUTH PAGE  */
 .auth-wrap {
-  min-height: calc(100vh - 140px);
+  min-height: calc(100dvh - 140px);
   display: flex; align-items: center; justify-content: center; padding: 3rem 1rem;
 }
 .auth-card {
@@ -1031,6 +1031,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .page-404 h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; }
 .page-404 p  { color: var(--text-muted); max-width: 400px; margin-bottom: 2rem; }
 .page-404__links { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+
+/* Mobile keyboard: hide bottom nav, keep layout stable */
+body.keyboard-open .bottom-nav { display: none !important; }
+body.keyboard-open { overflow: hidden; }
 
 /*  Print styles  */
 @media print {

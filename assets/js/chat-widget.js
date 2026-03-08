@@ -136,6 +136,23 @@
       #bh-chat-box { width: calc(100vw - 2rem); height: min(420px, calc(100dvh - 7rem)); }
       #bh-chat-btn { width: 52px; height: 52px; }
     }
+    /* Keyboard open: pin chat to visual viewport bottom, hide bottom offset */
+    body.keyboard-open #bh-chat-widget {
+      bottom: env(safe-area-inset-bottom, 0px);
+      --bh-chat-base-bottom: 0px;
+    }
+    body.keyboard-open #bh-chat-box {
+      height: calc(var(--bh-visual-height, 100dvh) - 0.5rem);
+      max-height: calc(var(--bh-visual-height, 100dvh) - 0.5rem);
+      border-radius: 0;
+      margin-bottom: 0;
+      width: 100vw;
+      max-width: 100vw;
+      right: 0;
+      left: 0;
+      position: fixed;
+      bottom: env(safe-area-inset-bottom, 0px);
+    }
   `;
   document.head.appendChild(style);
 
@@ -282,11 +299,15 @@
   function detectProvider(text) {
     const q = String(text || '').toLowerCase();
     const providers = [
-      { id: 1, name: 'Carlos Cuts', aliases: ['carlos', 'carlos cuts'] },
-      { id: 2, name: 'Sofia Style Lab', aliases: ['sofia', 'sofia style lab', "sofia's style lab"] },
-      { id: 3, name: 'Marcus Fresh Cuts', aliases: ['marcus', 'marcus fresh cuts'] },
+      { id: 1, name: 'Carlos Cuts', aliases: ['carlos', 'carlos cuts', 'curlos', 'carols', 'charlos', 'carlo', 'karlos'] },
+      { id: 2, name: 'Marcus The Fade King', aliases: ['marcus', 'markus', 'marcu', 'fade king'] },
+      { id: 3, name: "Tony's Classic Barbershop", aliases: ['tony', 'toni', 'tonny', 'gambino'] },
     ];
-    return providers.find((p) => p.aliases.some((a) => q.includes(a))) || null;
+    const exact = providers.find((p) => p.aliases.some((a) => q.includes(a)));
+    if (exact) return exact;
+    // Fuzzy fallback for user typos
+    const fuzzyId = fuzzyProviderMatch(q);
+    return fuzzyId ? providers.find(p => p.id === fuzzyId) || null : null;
   }
 
   function buildLocalFallbackReply(userText, lang) {
@@ -359,10 +380,35 @@
 
   // Keywords that map reply text → provider ID (case-insensitive)
   const PROVIDER_KEYWORDS = [
-    { id: 1, words: ['carlos', 'carlos cuts', 'carlos rivera'] },
-    { id: 2, words: ['marcus', 'marcus washington', 'fade king'] },
-    { id: 3, words: ['tony', 'tony gambino', 'classic barbershop'] },
+    { id: 1, words: ['carlos', 'carlos cuts', 'carlos rivera', 'curlos', 'carols', 'charlos', 'carlo', 'karlos'] },
+    { id: 2, words: ['marcus', 'marcus washington', 'fade king', 'markus', 'marcu', 'marcuse'] },
+    { id: 3, words: ['tony', 'tony gambino', 'classic barbershop', 'toni', 'tonny', 'gambino'] },
   ];
+
+  // Levenshtein distance for fuzzy single-word matching
+  function levenshtein(a, b) {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, (_, i) => Array.from({ length: n + 1 }, (_, j) => i === 0 ? j : j === 0 ? i : 0));
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    return dp[m][n];
+  }
+
+  function fuzzyProviderMatch(text) {
+    const words = String(text || '').toLowerCase().split(/\s+/);
+    const targets = [
+      { id: 1, keys: ['carlos', 'curlos', 'carols', 'carlo'] },
+      { id: 2, keys: ['marcus', 'markus'] },
+      { id: 3, keys: ['tony', 'gambino'] },
+    ];
+    for (const word of words) {
+      if (word.length < 4) continue;
+      for (const t of targets) {
+        if (t.keys.some(k => levenshtein(word, k) <= 2)) return t.id;
+      }
+    }
+    return null;
+  }
 
   function getLastProviderFromHistory() {
     for (let i = chatHistory.length - 1; i >= 0; i--) {
@@ -383,13 +429,16 @@
     if (tagMatch) {
       return { cleanReply: text.replace(/\n?PROFILE_CARD:\d+/g, '').trim(), profileId: Number(tagMatch[1]) };
     }
-    // Fallback: scan reply for provider name mentions
+    // Fallback: scan reply for provider name mentions (exact keywords)
     const lower = text.toLowerCase();
     for (const p of PROVIDER_KEYWORDS) {
       if (p.words.some(w => lower.includes(w))) {
         return { cleanReply: text, profileId: p.id };
       }
     }
+    // Last resort: fuzzy match (catches typos like "curlos" → Carlos)
+    const fuzzyId = fuzzyProviderMatch(text);
+    if (fuzzyId) return { cleanReply: text, profileId: fuzzyId };
     return { cleanReply: text, profileId: null };
   }
 
