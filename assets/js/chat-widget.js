@@ -226,7 +226,11 @@
   }
 
   function setActionButtons() {
-    const micAvailable = _chatLang !== 'wo'; // mic hidden for Wolof (also hidden before lang selected)
+    // If lang already chosen: mic available for fr/en only
+    // If lang not chosen yet: detect from current input — show mic only if clearly fr or en
+    const micAvailable = _chatLang
+      ? _chatLang !== 'wo'
+      : (() => { const d = detectTypingLang(input.value); return d === 'fr' || d === 'en'; })();
     if (isRecording) { sendBtn.style.display = 'none'; voiceBtn.style.display = micAvailable ? 'grid' : 'none'; voiceBtn.disabled = isBusy; return; }
     const hasText = input.value.trim().length > 0;
     sendBtn.style.display = hasText ? 'grid' : 'none';
@@ -298,6 +302,27 @@
     if (['fr', 'français', 'francais', 'french'].includes(t)) return 'fr';
     if (['wo', 'wolof', 'wlf'].includes(t)) return 'wo';
     if (['en', 'english', 'anglais'].includes(t)) return 'en';
+    return null;
+  }
+
+  // Detect language while user is typing (for mic button visibility)
+  function detectTypingLang(text) {
+    const t = String(text || '').toLowerCase().trim();
+    if (t.length < 2) return null;
+    // Wolof-specific characters or words → always Wolof (even if mixed with French)
+    const wolofMarkers = ['waaw', 'nanga', 'mangi', 'bëgg', 'xam', 'dëkk', 'sama', 'yow', 'nekk', 'wax', 'tekkal', 'japp', 'jërejëf', 'sarwiis', 'kañ', 'déedéet', 'jërejëf'];
+    if (wolofMarkers.some(w => t.includes(w)) || t.includes('ë')) return 'wo';
+    const words = t.split(/\s+/);
+    // French word markers
+    const frWords = new Set(['bonjour', 'salut', 'oui', 'non', 'merci', 'avec', 'pour', 'dans', 'sur', 'est', 'les', 'une', 'des', 'du', 'au', 'je', 'tu', 'nous', 'vous', 'voici', 'quel', 'quelle', 'comment', 'cherche', 'veux', 'réserver', 'besoin', 'coiffeur']);
+    const enWords = new Set(['hello', 'hi', 'hey', 'the', 'what', 'how', 'when', 'where', 'yes', 'no', 'thanks', 'book', 'need', 'want', 'please', 'available', 'appointment', 'barber', 'looking']);
+    let frScore = 0, enScore = 0;
+    for (const w of words) {
+      if (frWords.has(w)) frScore++;
+      if (enWords.has(w)) enScore++;
+    }
+    if (frScore > enScore && frScore > 0) return 'fr';
+    if (enScore > frScore && enScore > 0) return 'en';
     return null;
   }
 
