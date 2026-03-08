@@ -394,38 +394,79 @@
   }
 
   function appendProfileCard(profileId, lang) {
-    const p = CHAT_PROVIDERS[profileId];
-    if (!p) return;
-    const profileUrl = `/barber/${profileId}`;
-    const bookUrl = `/book.html?barber=${profileId}`;
-    const profileLabel = lang === 'en' ? `See ${p.shop}'s profile →` : lang === 'wo' ? `Xool profil ${p.shop} →` : `Voir le profil de ${p.shop} →`;
-    const bookLabel    = lang === 'en' ? 'Book an appointment' : lang === 'wo' ? 'Tekkal rendez-vous' : 'Réserver un rendez-vous';
-    const card = document.createElement('div');
-    card.className = 'bh-msg ai';
-    card.style.cssText = 'padding:0;overflow:hidden;background:transparent;max-width:100%;';
-    card.innerHTML = `
-      <div style="background:var(--bg-elevated,#252540);border:1px solid var(--border,#2a2a3e);border-radius:14px;border-bottom-left-radius:4px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;">
-          <img src="${escapeHTML(p.avatar)}" alt="${escapeHTML(p.name)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--primary,#e94560);" onerror="this.style.display='none'">
-          <div style="min-width:0;">
-            <div style="font-weight:700;font-size:0.9rem;color:var(--text,#e0e0e0);overflow:hidden;text-overflow:ellipsis;">${escapeHTML(p.shop)}</div>
-            <div style="font-size:0.78rem;color:var(--text-muted,#888);margin-top:2px;">${escapeHTML(p.specialty)}</div>
-            <div style="font-size:0.78rem;margin-top:3px;"><span style="color:#f59e0b;">★</span> <span style="color:var(--text,#e0e0e0);font-weight:600;">${escapeHTML(p.rating)}</span><span style="color:var(--text-muted,#888);"> · ${escapeHTML(p.city)}</span></div>
-          </div>
-        </div>
-        <a href="${escapeHTML(profileUrl)}" target="_blank" rel="noopener"
-           style="display:block;background:var(--primary,#e94560);color:#fff;text-align:center;text-decoration:none;padding:0.65rem 1rem;font-size:0.88rem;font-weight:700;letter-spacing:0.01em;transition:opacity 0.2s;"
-           onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-          👤 ${escapeHTML(profileLabel)}
-        </a>
-        <a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener"
-           style="display:block;text-align:center;text-decoration:none;padding:0.45rem 1rem;font-size:0.78rem;color:var(--text-muted,#888);border-top:1px solid var(--border,#2a2a3e);transition:color 0.2s;"
-           onmouseover="this.style.color='var(--text,#e0e0e0)'" onmouseout="this.style.color='var(--text-muted,#888)'">
-          📅 ${escapeHTML(bookLabel)}
-        </a>
-      </div>`;
-    messages.appendChild(card);
-    messages.scrollTop = messages.scrollHeight;
+    try {
+      const p = CHAT_PROVIDERS[profileId];
+      if (!p) return;
+      const profileUrl = '/barber/' + profileId;
+      const bookUrl = '/book.html?barber=' + profileId;
+      const profileLabel = lang === 'en' ? 'See profile' : lang === 'wo' ? 'Xool profil' : 'Voir le profil';
+      const bookLabel = lang === 'en' ? 'Book appointment' : lang === 'wo' ? 'Tekkal' : 'Reserver';
+
+      // wrapper
+      const card = document.createElement('div');
+      card.className = 'bh-msg ai';
+      card.style.padding = '0';
+      card.style.background = 'transparent';
+      card.style.maxWidth = '100%';
+
+      // inner box
+      const box = document.createElement('div');
+      box.style.cssText = 'background:#252540;border:1px solid #2a2a3e;border-radius:14px;border-bottom-left-radius:4px;overflow:hidden;';
+
+      // top row: avatar + info
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:0.75rem;padding:0.75rem;';
+
+      const img = document.createElement('img');
+      img.src = p.avatar;
+      img.alt = p.name;
+      img.style.cssText = 'width:54px;height:54px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #e94560;';
+      img.onerror = function() { this.style.display = 'none'; };
+
+      const info = document.createElement('div');
+      info.style.minWidth = '0';
+
+      const shopEl = document.createElement('div');
+      shopEl.style.cssText = 'font-weight:700;font-size:0.9rem;color:#e0e0e0;';
+      shopEl.textContent = p.shop;
+
+      const specEl = document.createElement('div');
+      specEl.style.cssText = 'font-size:0.78rem;color:#888;margin-top:2px;';
+      specEl.textContent = p.specialty;
+
+      const ratingEl = document.createElement('div');
+      ratingEl.style.cssText = 'font-size:0.78rem;margin-top:3px;color:#888;';
+      ratingEl.textContent = '\u2605 ' + p.rating + ' \u00b7 ' + p.city;
+
+      info.appendChild(shopEl);
+      info.appendChild(specEl);
+      info.appendChild(ratingEl);
+      row.appendChild(img);
+      row.appendChild(info);
+      box.appendChild(row);
+
+      // profile button (red)
+      const profBtn = document.createElement('a');
+      profBtn.href = profileUrl;
+      profBtn.target = '_blank';
+      profBtn.rel = 'noopener';
+      profBtn.style.cssText = 'display:block;background:#e94560;color:#fff;text-align:center;text-decoration:none;padding:0.65rem 1rem;font-size:0.88rem;font-weight:700;';
+      profBtn.textContent = '\uD83D\uDC64 ' + profileLabel;
+      box.appendChild(profBtn);
+
+      // book link (subtle)
+      const bookBtn = document.createElement('a');
+      bookBtn.href = bookUrl;
+      bookBtn.target = '_blank';
+      bookBtn.rel = 'noopener';
+      bookBtn.style.cssText = 'display:block;text-align:center;text-decoration:none;padding:0.45rem 1rem;font-size:0.78rem;color:#888;border-top:1px solid #2a2a3e;';
+      bookBtn.textContent = '\uD83D\uDCC5 ' + bookLabel;
+      box.appendChild(bookBtn);
+
+      card.appendChild(box);
+      messages.appendChild(card);
+      messages.scrollTop = messages.scrollHeight;
+    } catch(e) { console.error('appendProfileCard error:', e); }
   }
 
   // ---- Book link helpers ----
