@@ -576,6 +576,102 @@ function navSearchKeydown(e) {
   }
 })();
 
+// Add to Home Screen banner (injected on every page)
+(function () {
+  if (document.getElementById('a2hsBar')) return;
+
+  // Inject styles
+  const st = document.createElement('style');
+  st.textContent = `
+    #a2hsBar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9998;
+      background: linear-gradient(135deg, #e94560 0%, #c73652 100%);
+      color: #fff; display: flex; align-items: center; justify-content: space-between;
+      gap: 0.75rem; padding: 0.75rem 1rem;
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.35); font-family: inherit;
+      transform: translateY(100%); transition: transform 0.3s ease;
+    }
+    #a2hsBar.visible { transform: translateY(0); }
+    body.keyboard-open #a2hsBar { display: none; }
+    #a2hsBar .a2hs-text { flex: 1; font-size: 0.82rem; line-height: 1.4; }
+    #a2hsBar .a2hs-text strong { display: block; font-size: 0.88rem; }
+    #a2hsBtn {
+      background: #fff; color: #e94560; border: none; border-radius: 999px;
+      padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    #a2hsClose {
+      background: none; border: none; color: rgba(255,255,255,0.8);
+      font-size: 1.1rem; cursor: pointer; padding: 0 0.25rem; flex-shrink: 0; line-height: 1;
+    }
+  `;
+  document.head.appendChild(st);
+
+  // Inject HTML
+  const bar = document.createElement('div');
+  bar.id = 'a2hsBar';
+  bar.hidden = true;
+  bar.innerHTML = `
+    <div class="a2hs-text">
+      <strong>📲 Accès rapide à JOTMA</strong>
+      <span id="a2hsHint">Ajoutez JOTMA à votre écran d'accueil.</span>
+    </div>
+    <button id="a2hsBtn">Installer</button>
+    <button id="a2hsClose" aria-label="Fermer">&#x2715;</button>
+  `;
+  document.body.appendChild(bar);
+
+  // Animate in after a short delay
+  function showBar(msg) {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (standalone) return;
+    try { if (Number(localStorage.getItem('bh_a2hs_dismissed_at') || 0) > Date.now() - 7 * 864e5) return; } catch (_) {}
+    if (msg) document.getElementById('a2hsHint').textContent = msg;
+    bar.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => bar.classList.add('visible')));
+  }
+
+  function hideBar() {
+    bar.classList.remove('visible');
+    setTimeout(() => { bar.hidden = true; }, 320);
+  }
+
+  document.getElementById('a2hsClose').addEventListener('click', () => {
+    try { localStorage.setItem('bh_a2hs_dismissed_at', String(Date.now())); } catch (_) {}
+    hideBar();
+  });
+
+  let deferredPrompt = null;
+  document.getElementById('a2hsBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try { await deferredPrompt.userChoice; } catch (_) {}
+      deferredPrompt = null;
+      hideBar();
+    } else {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const hint = isIOS
+        ? 'Sur iPhone : appuyez sur Partager puis "Sur l\'écran d\'accueil" 📤'
+        : 'Menu du navigateur → "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"';
+      document.getElementById('a2hsHint').textContent = hint;
+    }
+  });
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    setTimeout(() => showBar('Réservez plus vite — installez JOTMA en un clic !'), 3000);
+  });
+
+  window.addEventListener('appinstalled', hideBar);
+
+  // iOS: show after 4s if not standalone
+  if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) {
+    setTimeout(() => showBar('Ajoutez JOTMA à votre écran d\'accueil pour un accès rapide.'), 4000);
+  }
+})();
+
 function renderFooter() {
   document.getElementById('footer').innerHTML = `
     <div class="container">
