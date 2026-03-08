@@ -1516,8 +1516,6 @@
       row.innerHTML = barbers.map((barber) => {
         const name = _heroEsc(_barberDisplayName(barber));
         const rating = Number.isFinite(Number(barber.rating)) ? Number(barber.rating).toFixed(1) : '4.8';
-        const savePct = _offerPercent(barber);
-        const saveLabel = typeof tf === 'function' ? tf('home_save_up_to', { pct: savePct }) : `Save up to ${savePct}%`;
         const bookNowLabel = typeof t === 'function' ? t('card_book_now') : 'Book Now';
         return `
           <a class="offer-card" href="${getBarberProfileUrl(barber.id)}" aria-label="${name}">
@@ -1528,7 +1526,6 @@
             </div>
             <div class="offer-body">
               <p class="offer-name">${name}</p>
-              <span class="offer-save">${_heroEsc(saveLabel)}</span>
               <span class="offer-book">${_heroEsc(bookNowLabel)}</span>
             </div>
           </a>

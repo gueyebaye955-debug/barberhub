@@ -626,16 +626,6 @@
             const priceLabel = fmtPrice(service?.price);
             const serviceDesc = String(service?.desc || service?.description || '').trim();
             const serviceImages = getServiceImageList(service);
-            const discountPercent = Number(service?.discount_percent);
-            const discountEnabled = Boolean(
-              service?.discount_enabled
-              || service?.has_discount
-              || (Number.isFinite(discountPercent) && discountPercent > 0)
-            );
-            const safeDiscount = Number.isFinite(discountPercent) && discountPercent > 0
-              ? Math.min(10, Math.max(1, Math.round(discountPercent)))
-              : 10;
-
             return `
               <div class="svc-item">
                 <div class="svc-head">
@@ -645,7 +635,6 @@
                     <span class="svc-meta">${durationLabel}</span>
                   </div>
                   <div class="svc-right">
-                    ${discountEnabled ? `<span class="svc-discount">${t('service_save_badge')} ${safeDiscount}%</span>` : ''}
                     <span class="svc-price">${priceLabel}</span>
                     <a href="book.html?barber=${barber.id}&service=${service.id}" class="btn btn-primary btn-sm">${t('card_book_now')}</a>
                   </div>
