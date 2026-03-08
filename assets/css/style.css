@@ -634,7 +634,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 .lang-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .lang-opt {
-  display: block; width: 100%; padding: 0.6rem 1rem;
+  display: block; width: 100%; padding: 0.35rem 0.75rem;
   background: none; border: none; text-align: left;
   font-size: 0.85rem; cursor: pointer; font-family: inherit;
   color: var(--text-muted); transition: background 0.15s;
