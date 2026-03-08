@@ -364,6 +364,18 @@
     { id: 3, words: ['tony', 'tony gambino', 'classic barbershop'] },
   ];
 
+  function getLastProviderFromHistory() {
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      const entry = chatHistory[i];
+      if (!entry || !entry.text) continue;
+      const lower = String(entry.text).toLowerCase();
+      for (const p of PROVIDER_KEYWORDS) {
+        if (p.words.some(w => lower.includes(w))) return p.id;
+      }
+    }
+    return null;
+  }
+
   function extractProfileCard(reply) {
     const text = String(reply || '');
     // Check explicit tag first
@@ -530,8 +542,11 @@
       const reply = shouldUseLocalFallback(rawReply, res.status)
         ? buildLocalFallbackReply(text, _chatLang)
         : rawReply;
-      const { cleanReply: r1, profileId } = extractProfileCard(reply);
+      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(reply);
       const { cleanReply, bookUrl } = extractBookLink(r1);
+      // If user said "confirm" but AI reply didn't mention a provider, pull it from history
+      const isConfirm = /\b(confirm|oui|yes|ok|d'accord|confirme|c'est bon|waaw|parfait|allons|go)\b/i.test(text);
+      const profileId = pidFromReply || (isConfirm ? getLastProviderFromHistory() : null);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(cleanReply).replace(/\n/g, '<br>');
       if (profileId) appendProfileCard(profileId, _chatLang);
