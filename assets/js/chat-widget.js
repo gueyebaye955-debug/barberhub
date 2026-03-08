@@ -266,7 +266,6 @@
       '</div>';
     messages.appendChild(el);
     messages.scrollTop = messages.scrollHeight;
-    input.disabled = true;
     updateLabels();
     setActionButtons();
   }
@@ -361,7 +360,7 @@
     btn.style.display = 'none';
     collectGPS(); // silent GPS — no chat prompt
     if (messages.children.length === 0) showLangGreeting();
-    if (!_chatLang) { input.disabled = true; } else { input.focus(); }
+    input.focus();
     setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 80);
   }
 
@@ -646,11 +645,14 @@
     if (text.length > 500) text = text.slice(0, 500).trim();
     if (!text || isBusy) return;
 
-    // If language not yet selected, try to detect from typed text
+    // If language not yet selected, try to detect from typed text; otherwise default to fr
     if (!_chatLang) {
       const detected = detectLangFromText(text);
       if (detected) { input.value = ''; selectLang(detected); return; }
-      return; // ignore other input until lang selected
+      // User skipped language picker — default to French and continue normally
+      _chatLang = 'fr';
+      updateLabels();
+      setActionButtons();
     }
 
     isBusy = true;
