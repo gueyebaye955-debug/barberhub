@@ -265,9 +265,43 @@
     .dd-empty__title { font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
     .dd-empty__sub   { font-size: 0.8rem; color: #9ca3af; }
 
+    /* ── City chips ── */
+    .city-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+      margin-bottom: 4px;
+    }
+    .city-chip {
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .city-chip:hover {
+      border-color: #e94560;
+      color: #e94560;
+      background: rgba(233,69,96,0.04);
+      box-shadow: 0 0 0 3px rgba(233,69,96,0.08);
+    }
+    .city-chip.active {
+      border-color: #e94560;
+      background: #e94560;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(233,69,96,0.3);
+    }
+
     /* ── Popular searches ── */
     .popular {
-      margin-top: 28px;
+      margin-top: 20px;
     }
     .popular__label {
       font-size: 0.78rem;
@@ -362,6 +396,16 @@
       </div>
 
       <!-- Dropdown is injected here by JS -->
+    </div>
+
+    <!-- City chips -->
+    <div class="city-chips" id="cityChips">
+      <button class="city-chip active" data-city="" onclick="selectCity(this, '')">🌍 Toutes les villes</button>
+      <button class="city-chip" data-city="Dakar" onclick="selectCity(this, 'Dakar')">📍 Dakar</button>
+      <button class="city-chip" data-city="Thiès" onclick="selectCity(this, 'Thiès')">📍 Thiès</button>
+      <button class="city-chip" data-city="Saint-Louis" onclick="selectCity(this, 'Saint-Louis')">📍 Saint-Louis</button>
+      <button class="city-chip" data-city="Mbour" onclick="selectCity(this, 'Mbour')">📍 Mbour</button>
+      <button class="city-chip" data-city="Ziguinchor" onclick="selectCity(this, 'Ziguinchor')">📍 Ziguinchor</button>
     </div>
 
     <!-- Popular searches -->
@@ -506,6 +550,18 @@
     let dropdown   = null;
     let focusedIdx = -1;
     let blurTimer  = null;
+    let _activeCity = ''; // '' = all cities
+
+    function selectCity(btn, city) {
+      _activeCity = city;
+      document.querySelectorAll('.city-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      // Update search placeholder
+      input.placeholder = city ? `Services à ${city}...` : (typeof t === 'function' ? t('search_placeholder') : 'Services or businesses...');
+      // Re-run dropdown if already typing
+      if (input.value.trim()) openDropdown(input.value);
+      else input.focus();
+    }
 
     // ─── Dropdown lifecycle ───────────────────────────────────────────────────
     function openDropdown(query) {
@@ -520,8 +576,11 @@
         q, x => x
       ).slice(0, 7);
 
+      const bizPool = _activeCity
+        ? BUSINESSES.filter(b => (b.address || '').toLowerCase().includes(_activeCity.toLowerCase()))
+        : BUSINESSES;
       const bizMatches = sortByRelevance(
-        BUSINESSES.filter(b => b.name.toLowerCase().includes(q.toLowerCase())),
+        bizPool.filter(b => b.name.toLowerCase().includes(q.toLowerCase())),
         q, x => x.name
       ).slice(0, 5);
 
@@ -543,7 +602,7 @@
         if (svcMatches.length) {
           html += `<div class="dd-section-label">${t('search_services_group')}</div>`;
           svcMatches.forEach(name => {
-            const svcHref = `/barbers.html?service=${encodeURIComponent(name)}`;
+            const svcHref = `/barbers.html?service=${encodeURIComponent(name)}${_activeCity ? '&city=' + encodeURIComponent(_activeCity) : ''}`;
             html += `
               <div class="dd-item" role="option" data-value="${esc(name)}" data-href="${esc(svcHref)}">
                 <span class="dd-item__icon">${ICON_SEARCH}</span>
@@ -612,8 +671,9 @@
     function fillSearch(value) {
       input.value = value;
       clearBtn.classList.add('show');
-      input.focus();
-      openDropdown(value);
+      // Navigate directly with city filter if one is active
+      const href = `/barbers.html?service=${encodeURIComponent(value)}${_activeCity ? '&city=' + encodeURIComponent(_activeCity) : ''}`;
+      window.location.href = href;
     }
 
     // ─── Keyboard navigation ──────────────────────────────────────────────────
