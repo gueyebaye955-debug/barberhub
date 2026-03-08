@@ -227,10 +227,11 @@
 
   function setActionButtons() {
     if (!_chatLang) { sendBtn.style.display = 'none'; voiceBtn.style.display = 'none'; return; }
-    if (isRecording) { sendBtn.style.display = 'none'; voiceBtn.style.display = 'grid'; voiceBtn.disabled = isBusy; return; }
+    const micAvailable = _chatLang !== 'wo'; // mic hidden for Wolof
+    if (isRecording) { sendBtn.style.display = 'none'; voiceBtn.style.display = micAvailable ? 'grid' : 'none'; voiceBtn.disabled = isBusy; return; }
     const hasText = input.value.trim().length > 0;
     sendBtn.style.display = hasText ? 'grid' : 'none';
-    voiceBtn.style.display = hasText ? 'none' : 'grid';
+    voiceBtn.style.display = (hasText || !micAvailable) ? 'none' : 'grid';
     sendBtn.disabled = isBusy || !hasText;
     voiceBtn.disabled = isBusy;
   }
@@ -472,21 +473,21 @@
     return null;
   }
 
-  function extractProfileCard(reply) {
+  function extractProfileCard(reply, tagOnly = false) {
     const text = String(reply || '');
-    // Check explicit tag first
+    // Check explicit tag first (always respected)
     const tagMatch = text.match(/PROFILE_CARD:(\d+)/);
     if (tagMatch) {
       return { cleanReply: text.replace(/\n?PROFILE_CARD:\d+/g, '').trim(), profileId: Number(tagMatch[1]) };
     }
-    // Fallback: scan reply for provider name mentions (exact keywords)
+    // Only scan reply for provider names if user explicitly named one in their message
+    if (tagOnly) return { cleanReply: text, profileId: null };
     const lower = text.toLowerCase();
     for (const p of PROVIDER_KEYWORDS) {
       if (p.words.some(w => lower.includes(w))) {
         return { cleanReply: text, profileId: p.id };
       }
     }
-    // Last resort: fuzzy match (catches typos like "curlos" → Carlos)
     const fuzzyId = fuzzyProviderMatch(text);
     if (fuzzyId) return { cleanReply: text, profileId: fuzzyId };
     return { cleanReply: text, profileId: null };
@@ -712,9 +713,11 @@
         ? buildLocalFallbackReply(text, _chatLang)
         : rawReply;
       const { cleanReply: r0, showProviders } = extractShowProviders(reply);
-      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(r0);
-      const { cleanReply, bookUrl } = extractBookLink(r1);
+      // Only scan AI reply for provider names if user explicitly named one (or it's a confirm)
+      const userNamedProvider = !!detectProvider(text);
       const isConfirm = /\b(confirm|oui|yes|ok|d'accord|confirme|c'est bon|waaw|parfait|allons|go)\b/i.test(text);
+      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(r0, !userNamedProvider && !isConfirm);
+      const { cleanReply, bookUrl } = extractBookLink(r1);
       const profileId = pidFromReply || (isConfirm ? getLastProviderFromHistory() : null);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(cleanReply).replace(/\n/g, '<br>');

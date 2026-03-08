@@ -571,7 +571,7 @@ function navSearchKeydown(e) {
 (function () {
   if (!document.getElementById('bh-chat-widget')) {
     const s = document.createElement('script');
-    s.src = '/assets/js/chat-widget.js?v=20260308-1';
+    s.src = '/assets/js/chat-widget.js?v=20260308-2';
     document.body.appendChild(s);
   }
 })();
