@@ -430,22 +430,28 @@
     ];
 
     const BUSINESSES = [
-      { name: 'Carlos Cuts Studio',        address: '234 W 42nd St, New York, NY' },
-      { name: "Sofia's Style Lab",          address: '789 Broadway, Brooklyn, NY' },
-      { name: 'Marcus Fresh Cuts',          address: '456 Flatbush Ave, Brooklyn, NY' },
-      { name: "Tony's Classic Barbershop",  address: '123 Main St, Manhattan, NY' },
-      { name: 'Glamour Beauty Salon',       address: '567 5th Ave, New York, NY' },
-      { name: 'The Nail Bar',               address: '890 Park Ave, New York, NY' },
-      { name: 'Zen Spa & Wellness',         address: '321 Lexington Ave, New York, NY' },
-      { name: 'Elite Beauty Studio',        address: '654 Amsterdam Ave, New York, NY' },
-      { name: 'Urban Cuts',                 address: '987 Atlantic Ave, Brooklyn, NY' },
-      { name: 'Prestige Hair Studio',       address: '234 DeKalb Ave, Brooklyn, NY' },
-      { name: 'Beauty Bar NYC',             address: '111 W 23rd St, New York, NY' },
-      { name: 'Harlem Hair Lab',            address: '88 W 125th St, Harlem, NY' },
-      { name: 'Brooklyn Brow Bar',          address: '320 Atlantic Ave, Brooklyn, NY' },
-      { name: 'Manhattan Nail Studio',      address: '440 Park Ave S, New York, NY' },
-      { name: 'The Barber Lounge',          address: '55 Water St, New York, NY' },
+      { id: 1, name: 'Carlos Cuts Studio',       address: 'Dakar, Sénégal',  href: '/profile.html?id=1' },
+      { id: 2, name: 'Marcus The Fade King',      address: 'Dakar, Sénégal',  href: '/profile.html?id=2' },
+      { id: 3, name: "Tony's Classic Barbershop", address: 'Thiès, Sénégal',  href: '/profile.html?id=3' },
     ];
+
+    // Try to load real providers from API and merge in
+    (async () => {
+      try {
+        const res = await fetch('/api/barbers?approved=true&limit=20', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.barbers || data.data || []);
+        list.forEach(b => {
+          const name = b.shop_name || b.business_name || b.name || '';
+          if (!name) return;
+          const alreadyHas = BUSINESSES.some(x => x.name.toLowerCase() === name.toLowerCase() || x.id === b.id);
+          if (!alreadyHas) {
+            BUSINESSES.push({ id: b.id, name, address: b.city ? `${b.city}, Sénégal` : 'Sénégal', href: `/profile.html?id=${b.id}` });
+          }
+        });
+      } catch (_) {}
+    })();
 
     // ─── SVG icons ────────────────────────────────────────────────────────────
     const ICON_SEARCH = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
@@ -537,8 +543,9 @@
         if (svcMatches.length) {
           html += `<div class="dd-section-label">${t('search_services_group')}</div>`;
           svcMatches.forEach(name => {
+            const svcHref = `/barbers.html?service=${encodeURIComponent(name)}`;
             html += `
-              <div class="dd-item" role="option" data-value="${esc(name)}">
+              <div class="dd-item" role="option" data-value="${esc(name)}" data-href="${esc(svcHref)}">
                 <span class="dd-item__icon">${ICON_SEARCH}</span>
                 <div class="dd-item__body">
                   <div class="dd-item__name">${highlight(name, q)}</div>
@@ -556,7 +563,7 @@
           html += `<div class="dd-section-label">${t('search_businesses_group')}</div>`;
           bizMatches.forEach(biz => {
             html += `
-              <div class="dd-item" role="option" data-value="${esc(biz.name)}">
+              <div class="dd-item" role="option" data-value="${esc(biz.name)}" data-href="${esc(biz.href || '')}">
                 <span class="dd-item__icon">${ICON_SEARCH}</span>
                 <div class="dd-item__body">
                   <div class="dd-item__name">${highlight(biz.name, q)}</div>
@@ -576,7 +583,7 @@
       // Delegate clicks (works for mouse + touch)
       dd.addEventListener('click', e => {
         const item = e.target.closest('.dd-item');
-        if (item) selectItem(item.dataset.value);
+        if (item) selectItem(item.dataset.value, item.dataset.href);
       });
 
       input.setAttribute('aria-expanded', 'true');
@@ -592,11 +599,12 @@
     }
 
     // ─── Select ───────────────────────────────────────────────────────────────
-    function selectItem(value) {
+    function selectItem(value, href) {
       clearTimeout(blurTimer);
       input.value = value;
       clearBtn.classList.add('show');
       closeDropdown();
+      if (href) { window.location.href = href; return; }
       input.focus();
     }
 
@@ -648,10 +656,10 @@
         case 'Enter':
           e.preventDefault();
           if (focusedIdx >= 0 && items[focusedIdx]) {
-            selectItem(items[focusedIdx].dataset.value);
+            selectItem(items[focusedIdx].dataset.value, items[focusedIdx].dataset.href);
           } else if (items[0]) {
             setFocused(0);
-            selectItem(items[0].dataset.value);
+            selectItem(items[0].dataset.value, items[0].dataset.href);
           }
           break;
 
