@@ -120,7 +120,7 @@ function renderNav(currentPage) {
 
         <!-- LEFT: Logo + Nav Links -->
         <div class="navbar__left">
-          <a href="index.html" class="navbar__logo">✂ Barber<span>Hub</span></a>
+          <a href="index.html" class="navbar__logo">JOTMA</a>
           <nav class="navbar__links">
           </nav>
         </div>
@@ -677,7 +677,7 @@ function renderFooter() {
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__logo"> Barber<span>Hub</span></div>
+          <div class="footer__logo">JOTMA</div>
           <p class="footer__tagline">${t('footer_tagline')}</p>
         </div>
         <div>
