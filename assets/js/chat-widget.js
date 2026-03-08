@@ -386,25 +386,31 @@
     if (!p) return;
     const profileUrl = `/barber/${profileId}`;
     const bookUrl = `/book.html?barber=${profileId}`;
-    const viewLabel = lang === 'en' ? 'View Profile' : lang === 'wo' ? 'Xool Profil' : 'Voir Profil';
-    const bookLabel = lang === 'en' ? 'Book Now' : lang === 'wo' ? 'Tekkal' : 'Réserver';
+    const viewLabel  = lang === 'en' ? 'View full profile' : lang === 'wo' ? 'Xool profil bi' : 'Voir le profil complet';
+    const bookLabel  = lang === 'en' ? `Click here to book ${p.shop} →` : lang === 'wo' ? `Tekkal fii ngir ${p.shop} →` : `Cliquez ici pour réserver ${p.shop} →`;
     const card = document.createElement('div');
     card.className = 'bh-msg ai';
     card.style.cssText = 'padding:0;overflow:hidden;background:transparent;max-width:100%;';
     card.innerHTML = `
       <div style="background:var(--bg-elevated,#252540);border:1px solid var(--border,#2a2a3e);border-radius:14px;border-bottom-left-radius:4px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;">
-          <img src="${escapeHTML(p.avatar)}" alt="${escapeHTML(p.name)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--primary,#e94560);" onerror="this.style.display='none'">
+          <img src="${escapeHTML(p.avatar)}" alt="${escapeHTML(p.name)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--primary,#e94560);" onerror="this.style.display='none'">
           <div style="min-width:0;">
-            <div style="font-weight:700;font-size:0.9rem;color:var(--text,#e0e0e0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(p.shop)}</div>
-            <div style="font-size:0.78rem;color:var(--text-muted,#888);margin-top:1px;">${escapeHTML(p.specialty)}</div>
-            <div style="font-size:0.78rem;margin-top:2px;"><span style="color:#f59e0b;">★</span> <span style="color:var(--text,#e0e0e0);font-weight:600;">${escapeHTML(p.rating)}</span> <span style="color:var(--text-muted,#888);">· ${escapeHTML(p.city)}</span></div>
+            <div style="font-weight:700;font-size:0.9rem;color:var(--text,#e0e0e0);overflow:hidden;text-overflow:ellipsis;">${escapeHTML(p.shop)}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted,#888);margin-top:2px;">${escapeHTML(p.specialty)}</div>
+            <div style="font-size:0.78rem;margin-top:3px;"><span style="color:#f59e0b;">★</span> <span style="color:var(--text,#e0e0e0);font-weight:600;">${escapeHTML(p.rating)}</span><span style="color:var(--text-muted,#888);"> · ${escapeHTML(p.city)}</span></div>
           </div>
         </div>
-        <div style="display:flex;border-top:1px solid var(--border,#2a2a3e);">
-          <a href="${escapeHTML(profileUrl)}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:0.6rem 0.5rem;font-size:0.82rem;font-weight:600;color:var(--text,#e0e0e0);text-decoration:none;border-right:1px solid var(--border,#2a2a3e);transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">${escapeHTML(viewLabel)}</a>
-          <a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:0.6rem 0.5rem;font-size:0.82rem;font-weight:700;color:var(--primary,#e94560);text-decoration:none;transition:background 0.15s;" onmouseover="this.style.background='rgba(233,69,96,0.08)'" onmouseout="this.style.background=''">${escapeHTML(bookLabel)}</a>
-        </div>
+        <a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener"
+           style="display:block;background:var(--primary,#e94560);color:#fff;text-align:center;text-decoration:none;padding:0.65rem 1rem;font-size:0.88rem;font-weight:700;letter-spacing:0.01em;transition:opacity 0.2s;"
+           onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+          📅 ${escapeHTML(bookLabel)}
+        </a>
+        <a href="${escapeHTML(profileUrl)}" target="_blank" rel="noopener"
+           style="display:block;text-align:center;text-decoration:none;padding:0.45rem 1rem;font-size:0.78rem;color:var(--text-muted,#888);border-top:1px solid var(--border,#2a2a3e);transition:color 0.2s;"
+           onmouseover="this.style.color='var(--text,#e0e0e0)'" onmouseout="this.style.color='var(--text-muted,#888)'">
+          ${escapeHTML(viewLabel)}
+        </a>
       </div>`;
     messages.appendChild(card);
     messages.scrollTop = messages.scrollHeight;
