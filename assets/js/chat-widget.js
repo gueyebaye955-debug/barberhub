@@ -386,8 +386,8 @@
     if (!p) return;
     const profileUrl = `/barber/${profileId}`;
     const bookUrl = `/book.html?barber=${profileId}`;
-    const viewLabel  = lang === 'en' ? 'View full profile' : lang === 'wo' ? 'Xool profil bi' : 'Voir le profil complet';
-    const bookLabel  = lang === 'en' ? `Click here to book ${p.shop} →` : lang === 'wo' ? `Tekkal fii ngir ${p.shop} →` : `Cliquez ici pour réserver ${p.shop} →`;
+    const profileLabel = lang === 'en' ? `See ${p.shop}'s profile →` : lang === 'wo' ? `Xool profil ${p.shop} →` : `Voir le profil de ${p.shop} →`;
+    const bookLabel    = lang === 'en' ? 'Book an appointment' : lang === 'wo' ? 'Tekkal rendez-vous' : 'Réserver un rendez-vous';
     const card = document.createElement('div');
     card.className = 'bh-msg ai';
     card.style.cssText = 'padding:0;overflow:hidden;background:transparent;max-width:100%;';
@@ -401,15 +401,15 @@
             <div style="font-size:0.78rem;margin-top:3px;"><span style="color:#f59e0b;">★</span> <span style="color:var(--text,#e0e0e0);font-weight:600;">${escapeHTML(p.rating)}</span><span style="color:var(--text-muted,#888);"> · ${escapeHTML(p.city)}</span></div>
           </div>
         </div>
-        <a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener"
+        <a href="${escapeHTML(profileUrl)}" target="_blank" rel="noopener"
            style="display:block;background:var(--primary,#e94560);color:#fff;text-align:center;text-decoration:none;padding:0.65rem 1rem;font-size:0.88rem;font-weight:700;letter-spacing:0.01em;transition:opacity 0.2s;"
            onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-          📅 ${escapeHTML(bookLabel)}
+          👤 ${escapeHTML(profileLabel)}
         </a>
-        <a href="${escapeHTML(profileUrl)}" target="_blank" rel="noopener"
+        <a href="${escapeHTML(bookUrl)}" target="_blank" rel="noopener"
            style="display:block;text-align:center;text-decoration:none;padding:0.45rem 1rem;font-size:0.78rem;color:var(--text-muted,#888);border-top:1px solid var(--border,#2a2a3e);transition:color 0.2s;"
            onmouseover="this.style.color='var(--text,#e0e0e0)'" onmouseout="this.style.color='var(--text-muted,#888)'">
-          ${escapeHTML(viewLabel)}
+          📅 ${escapeHTML(bookLabel)}
         </a>
       </div>`;
     messages.appendChild(card);
