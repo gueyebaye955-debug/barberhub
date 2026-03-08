@@ -1,0 +1,2 @@
+ALTER TABLE barber_profiles
+ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;

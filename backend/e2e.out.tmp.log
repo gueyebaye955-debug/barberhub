@@ -1,0 +1,2 @@
+JOTMA backend running on http://localhost:4000
+[2026-03-07T07:13:53.613Z] 1451aa72-1781-4516-984f-98016ee25eed POST /api/chat 503 32ms
