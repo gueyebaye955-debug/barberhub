@@ -55,6 +55,22 @@
     wo: 'Nanga def! 🇸🇳\n\nMaa ngi Awa, sa jappale JOTMA. Manuma la jàpp prestataire yi te tëral sa rendez-vous.\n\nNu doon ci kanam, xoolal ma :\n• Ana sarwiis bu la neex ?\n• Kañ bëgg nga rendez-vous bi ?\n• Ana dëkk bi nga am ?',
   };
 
+  // GPS state (silent — never asked in chat)
+  let _userGPS = null;
+  function collectGPS() {
+    if (!navigator.geolocation || _userGPS) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => { _userGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+      () => {}, // silent fail — no error shown
+      { timeout: 8000, maximumAge: 5 * 60 * 1000, enableHighAccuracy: false }
+    );
+  }
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
   // State
   let _chatLang = null; // null = not yet selected
   let isOpen = false;
@@ -342,6 +358,7 @@
     isOpen = true;
     box.classList.add('open');
     btn.style.display = 'none';
+    collectGPS(); // silent GPS — no chat prompt
     if (messages.children.length === 0) showLangGreeting();
     if (!_chatLang) { input.disabled = true; } else { input.focus(); }
     setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 80);
@@ -371,12 +388,45 @@
     });
   }
 
-  // ---- Provider profiles (mirrors data.js BARBERS) ----
+  // ---- Provider profiles ----
   const CHAT_PROVIDERS = {
-    1: { name: 'Carlos Rivera', shop: 'Carlos Cuts Studio', specialty: 'Fades · Lineups · Beard', rating: '4.9', city: 'Dakar', avatar: 'https://i.pravatar.cc/150?img=11' },
-    2: { name: 'Marcus Washington', shop: 'Marcus The Fade King', specialty: 'Skin Fades · Dreads · Lineups', rating: '4.75', city: 'Dakar', avatar: 'https://i.pravatar.cc/150?img=33' },
-    3: { name: 'Tony Gambino', shop: "Tony's Classic Barbershop", specialty: 'Classic Cuts · Hot Shave · Beard', rating: '4.6', city: 'Thiès', avatar: 'https://i.pravatar.cc/150?img=52' },
+    1: { name: 'Carlos Rivera', shop: 'Carlos Cuts Studio', specialty: 'Fades · Lineups · Barbe', rating: 4.9, city: 'Dakar', avatar: 'https://i.pravatar.cc/150?img=11', lat: 14.6928, lng: -17.4467,
+      hours: [null, {o:'09:00',c:'19:00'}, {o:'09:00',c:'19:00'}, {o:'09:00',c:'19:00'}, {o:'09:00',c:'19:00'}, {o:'09:00',c:'19:00'}, {o:'10:00',c:'18:00'}] },
+    2: { name: 'Marcus Washington', shop: 'Marcus The Fade King', specialty: 'Skin Fades · Dreads · Lineups', rating: 4.75, city: 'Dakar', avatar: 'https://i.pravatar.cc/150?img=33', lat: 14.6881, lng: -17.4594,
+      hours: [null, {o:'10:00',c:'18:00'}, {o:'10:00',c:'18:00'}, null, {o:'10:00',c:'18:00'}, {o:'10:00',c:'20:00'}, {o:'09:00',c:'17:00'}] },
+    3: { name: 'Tony Gambino', shop: "Tony's Classic Barbershop", specialty: 'Coupes classiques · Rasage · Barbe', rating: 4.6, city: 'Thiès', avatar: 'https://i.pravatar.cc/150?img=52', lat: 14.7886, lng: -16.9260,
+      hours: [null, {o:'09:00',c:'18:00'}, {o:'09:00',c:'18:00'}, {o:'09:00',c:'18:00'}, {o:'09:00',c:'18:00'}, {o:'09:00',c:'18:00'}, {o:'10:00',c:'16:00'}] },
   };
+
+  function getNextAvailable(provider, lang) {
+    const now = new Date();
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(now);
+      date.setDate(now.getDate() + d);
+      const h = provider.hours[date.getDay()];
+      if (!h) continue;
+      const [oh, om] = h.o.split(':').map(Number);
+      const [ch, cm] = h.c.split(':').map(Number);
+      const openMin = oh * 60 + om, closeMin = ch * 60 + cm;
+      let slotMin;
+      if (d === 0) {
+        const curMin = now.getHours() * 60 + now.getMinutes() + 30;
+        if (curMin >= closeMin) continue;
+        slotMin = Math.max(curMin, openMin);
+        // round up to next 30min
+        slotMin = Math.ceil(slotMin / 30) * 30;
+        if (slotMin >= closeMin) continue;
+      } else {
+        slotMin = openMin;
+      }
+      const label = d === 0 ? (lang === 'wo' ? 'Tey' : lang === 'en' ? 'Today' : "Auj.")
+                  : d === 1 ? (lang === 'wo' ? 'Suba' : lang === 'en' ? 'Tomorrow' : 'Demain')
+                  : date.toLocaleDateString(lang === 'en' ? 'en' : 'fr', { weekday: 'short' });
+      const hh = Math.floor(slotMin / 60), mm = slotMin % 60;
+      return label + ' ' + String(hh).padStart(2,'0') + 'h' + (mm ? String(mm).padStart(2,'0') : '00');
+    }
+    return null;
+  }
 
   // Keywords that map reply text → provider ID (case-insensitive)
   const PROVIDER_KEYWORDS = [
@@ -487,9 +537,17 @@
       ratingEl.style.cssText = 'font-size:0.78rem;margin-top:3px;color:#888;';
       ratingEl.textContent = '\u2605 ' + p.rating + ' \u00b7 ' + p.city;
 
+      const nextSlot = getNextAvailable(p, lang);
+      const availEl = document.createElement('div');
+      availEl.style.cssText = 'font-size:0.75rem;margin-top:3px;color:#4ade80;font-weight:600;';
+      availEl.textContent = nextSlot
+        ? '\uD83D\uDDD3 ' + (lang === 'en' ? 'Next: ' : lang === 'wo' ? 'Ci kanam: ' : 'Prochaine dispo : ') + nextSlot
+        : (lang === 'en' ? 'No availability this week' : lang === 'wo' ? 'Amul disponibilité' : 'Pas de dispo cette semaine');
+
       info.appendChild(shopEl);
       info.appendChild(specEl);
       info.appendChild(ratingEl);
+      info.appendChild(availEl);
       row.appendChild(img);
       row.appendChild(info);
       box.appendChild(row);
@@ -516,6 +574,27 @@
       messages.appendChild(card);
       messages.scrollTop = messages.scrollHeight;
     } catch(e) { console.error('appendProfileCard error:', e); }
+  }
+
+  // ---- Multi-provider display ----
+  function extractShowProviders(reply) {
+    const match = String(reply || '').match(/SHOW_PROVIDERS:[^\n]*/);
+    if (!match) return { cleanReply: reply, showProviders: false };
+    return { cleanReply: reply.replace(/\n?SHOW_PROVIDERS:[^\n]*/g, '').trim(), showProviders: true };
+  }
+
+  function appendMultipleCards(lang) {
+    const providers = Object.values(CHAT_PROVIDERS);
+    if (_userGPS) {
+      providers.sort((a, b) => {
+        const dA = haversineKm(_userGPS.lat, _userGPS.lng, a.lat, a.lng);
+        const dB = haversineKm(_userGPS.lat, _userGPS.lng, b.lat, b.lng);
+        return Math.abs(dA - dB) < 5 ? b.rating - a.rating : dA - dB;
+      });
+    } else {
+      providers.sort((a, b) => b.rating - a.rating);
+    }
+    providers.slice(0, 5).forEach(p => appendProfileCard(p.id, lang));
   }
 
   // ---- Book link helpers ----
@@ -589,7 +668,7 @@
       let raw = '';
       let lastNetworkError = null;
       const attempts = [];
-      const payload = JSON.stringify({ message: text, history: chatHistory, lang: _chatLang });
+      const payload = JSON.stringify({ message: text, history: chatHistory, lang: _chatLang, gps: _userGPS });
 
       for (const endpoint of endpoints) {
         try {
@@ -632,14 +711,15 @@
       const reply = shouldUseLocalFallback(rawReply, res.status)
         ? buildLocalFallbackReply(text, _chatLang)
         : rawReply;
-      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(reply);
+      const { cleanReply: r0, showProviders } = extractShowProviders(reply);
+      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(r0);
       const { cleanReply, bookUrl } = extractBookLink(r1);
-      // If user said "confirm" but AI reply didn't mention a provider, pull it from history
       const isConfirm = /\b(confirm|oui|yes|ok|d'accord|confirme|c'est bon|waaw|parfait|allons|go)\b/i.test(text);
       const profileId = pidFromReply || (isConfirm ? getLastProviderFromHistory() : null);
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(cleanReply).replace(/\n/g, '<br>');
-      if (profileId) appendProfileCard(profileId, _chatLang);
+      if (showProviders && !profileId) appendMultipleCards(_chatLang);
+      else if (profileId) appendProfileCard(profileId, _chatLang);
       if (bookUrl) appendBookCard(bookUrl, _chatLang);
 
       if (reply) {
