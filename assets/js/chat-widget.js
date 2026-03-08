@@ -226,8 +226,7 @@
   }
 
   function setActionButtons() {
-    if (!_chatLang) { sendBtn.style.display = 'none'; voiceBtn.style.display = 'none'; return; }
-    const micAvailable = _chatLang !== 'wo'; // mic hidden for Wolof
+    const micAvailable = _chatLang !== 'wo'; // mic hidden for Wolof (also hidden before lang selected)
     if (isRecording) { sendBtn.style.display = 'none'; voiceBtn.style.display = micAvailable ? 'grid' : 'none'; voiceBtn.disabled = isBusy; return; }
     const hasText = input.value.trim().length > 0;
     sendBtn.style.display = hasText ? 'grid' : 'none';
