@@ -502,22 +502,26 @@ const handleChat = asyncHandler(async (req, res) => {
   if (message.length > 500) return res.status(400).json({ error: 'Message too long.' });
   if (!groqKey && !geminiKey) return res.json({ reply: buildContextualFallbackReply(message, lang, history), fallback: true, warning: 'No AI key configured' });
   const langName = { en: 'English', fr: 'French', wo: 'Wolof' }[lang] || 'French';
-  const offTopic = {
-    en: "I'm here to help you find and book services on JOTMA.\n\nFor more questions, contact us:\n+1 313 989 6811\ngueyebaye955@gmail.com",
-    fr: "Je suis ici pour vous aider à trouver et réserver des services sur JOTMA.\n\nPour plus de questions, contactez-nous :\n+1 313 989 6811\ngueyebaye955@gmail.com",
-    wo: "Maa ngi fi ngir la jàpp ci JOTMA.\n\nSu am na laaj, jokkoo ak nun :\n+1 313 989 6811\ngueyebaye955@gmail.com",
-  }[lang] || "I'm here to help you find and book services on JOTMA. Contact: +1 313 989 6811 or gueyebaye955@gmail.com";
-  const wolofNote = lang === 'wo' ? `
-WOLOF LANGUAGE RULES (CRITICAL):
-- You MUST write every single word in Wolof. Do NOT use French or English words except for proper nouns (JOTMA, Carlos, Sofia, Marcus).
-- Wolof vocabulary to use: "Nanga def" (hello), "waaw" (yes), "déedéet" (no), "jërejëf" (thank you), "mangi dem" (I'm going), "bëgg" (want), "jàpp" (understand), "xam" (know), "am" (have), "dëkk" (city/live), "rendez-vous" (appointment - kept in Wolof speech), "sarwiis" (service), "kañ" (when), "fan" (where), "ana" (where is), "nu" (we/let's).
-- If you don't know a Wolof word, use the closest Wolof equivalent or a commonly borrowed word. Never use French syntax.
-- Example correct response: "Waaw, mangi xam. Kañ bëgg nga rendez-vous bi? Te ana dëkk bi?"
-- Example WRONG response: "Oui, je comprends. Quand voulez-vous le rendez-vous?"` : '';
 
   const SYSTEM_PROMPT = `Your name is Awa. You are the virtual assistant for JOTMA, a service booking platform in Senegal connecting users with all types of service providers (barbers, salons, spas, coaches, and more).
 
-LANGUAGE: Always respond in ${langName} only. Never switch languages. Every word must be in ${langName}.${wolofNote}
+LANGUAGE DETECTION (CRITICAL):
+- Look at the language of the user's CURRENT message and reply in that exact same language.
+- If user writes in French → reply in French.
+- If user writes in English → reply in English.
+- If user writes in Wolof → reply in Wolof.
+- If the user switches language mid-conversation → you switch too, immediately.
+- The default starting language is ${langName}, but always follow the user's lead.
+
+WOLOF STYLE (when replying in Wolof):
+- Speak modern conversational Wolof like a young person in Dakar — natural, relaxed, everyday speech.
+- DO NOT use overly formal or textbook Wolof.
+- Common borrowed words are fine: rendez-vous, téléphone, message, numéro, WhatsApp, booking — these are normal in Wolof speech.
+- Keep sentences short and natural. No dictionary phrases.
+- ❌ Avoid: "Mangi xam. Kañ bëgg nga rendez-vous bi? Te ana dëkk bi?"
+- ✅ Use: "Waaw man naa xam. Kañ nga bëgg rendez-vous bi?"
+- Useful Wolof words: waaw (yes), déedéet (no), jërejëf (thank you), bëgg (want), xam (know), am (have), dëkk (city), sarwiis (service), kañ (when), fan (where).
+
 ROLE: Help users find service providers and book appointments on JOTMA. Never say "barber" unless the user asks for a barber specifically — say "prestataire" or "provider" in general.
 STYLE: Keep messages short and simple (2-4 sentences max). Ask follow-up questions when info is missing.
 
@@ -539,8 +543,7 @@ CONFIRMATION RULE: When user says "confirm", "oui", "yes", "ok", "d'accord", "wa
 
 Booking policy: Arrive 10 min early. 10% deposit required. Cancel up to 8 hours before.
 
-OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal, or anything unrelated to JOTMA, respond ONLY with this exact text:
-"${offTopic}"`;
+OFF-TOPIC RULE: If the user asks about politics, religion, news, medical, legal, or anything unrelated to JOTMA, respond ONLY with a short message (in the user's language) saying you are only here to help with JOTMA bookings and they can contact +1 313 989 6811 or gueyebaye955@gmail.com for other questions.`;
 
   // --- Try Groq first (free, reliable) ---
   if (groqKey) {
