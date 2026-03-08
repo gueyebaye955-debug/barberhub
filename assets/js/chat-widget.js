@@ -418,11 +418,26 @@
 
   // ---- Book link helpers ----
   function extractBookLink(reply) {
-    const match = String(reply || '').match(/BOOK_LINK:(\/\S+)/);
-    if (!match) return { cleanReply: reply, bookUrl: null };
-    const bookUrl = match[1];
-    const cleanReply = reply.replace(/\n?BOOK_LINK:\/\S+/g, '').trim();
-    return { cleanReply, bookUrl };
+    const text = String(reply || '');
+    // 1. Explicit tag: BOOK_LINK:/path
+    const tagMatch = text.match(/BOOK_LINK:(\/\S+)/);
+    if (tagMatch) {
+      return { cleanReply: text.replace(/\n?BOOK_LINK:\/\S+/g, '').trim(), bookUrl: tagMatch[1] };
+    }
+    // 2. Raw URL the AI printed (e.g. https://jotma.net/book.html?barber=1)
+    const urlMatch = text.match(/https?:\/\/\S*\/book\.html\?barber=(\d+)/);
+    if (urlMatch) {
+      const bookUrl = `/book.html?barber=${urlMatch[1]}`;
+      const cleanReply = text.replace(/https?:\/\/\S*\/book\.html\?barber=\d+/g, '').replace(/\s{2,}/g, ' ').trim();
+      return { cleanReply, bookUrl };
+    }
+    // 3. Raw /barbers.html mention
+    const browsMatch = text.match(/https?:\/\/\S*\/barbers\.html/);
+    if (browsMatch) {
+      const cleanReply = text.replace(/https?:\/\/\S*\/barbers\.html/g, '').trim();
+      return { cleanReply, bookUrl: '/barbers.html' };
+    }
+    return { cleanReply: text, bookUrl: null };
   }
 
   function appendBookCard(bookUrl, lang) {
