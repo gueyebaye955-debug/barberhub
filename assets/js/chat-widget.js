@@ -357,12 +357,28 @@
     3: { name: 'Tony Gambino', shop: "Tony's Classic Barbershop", specialty: 'Classic Cuts · Hot Shave · Beard', rating: '4.6', city: 'Thiès', avatar: 'https://i.pravatar.cc/150?img=52' },
   };
 
+  // Keywords that map reply text → provider ID (case-insensitive)
+  const PROVIDER_KEYWORDS = [
+    { id: 1, words: ['carlos', 'carlos cuts', 'carlos rivera'] },
+    { id: 2, words: ['marcus', 'marcus washington', 'fade king'] },
+    { id: 3, words: ['tony', 'tony gambino', 'classic barbershop'] },
+  ];
+
   function extractProfileCard(reply) {
-    const match = String(reply || '').match(/PROFILE_CARD:(\d+)/);
-    if (!match) return { cleanReply: reply, profileId: null };
-    const profileId = Number(match[1]);
-    const cleanReply = reply.replace(/\n?PROFILE_CARD:\d+/g, '').trim();
-    return { cleanReply, profileId };
+    const text = String(reply || '');
+    // Check explicit tag first
+    const tagMatch = text.match(/PROFILE_CARD:(\d+)/);
+    if (tagMatch) {
+      return { cleanReply: text.replace(/\n?PROFILE_CARD:\d+/g, '').trim(), profileId: Number(tagMatch[1]) };
+    }
+    // Fallback: scan reply for provider name mentions
+    const lower = text.toLowerCase();
+    for (const p of PROVIDER_KEYWORDS) {
+      if (p.words.some(w => lower.includes(w))) {
+        return { cleanReply: text, profileId: p.id };
+      }
+    }
+    return { cleanReply: text, profileId: null };
   }
 
   function appendProfileCard(profileId, lang) {
