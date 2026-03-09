@@ -139,10 +139,11 @@ router.post('/register', asyncHandler(async (req, res) => {
   const user = result.rows[0];
 
   if (role === 'barber') {
-    await pool.query(
-      'INSERT INTO barber_profiles(user_id, city) VALUES($1, $2)',
+    const bp = await pool.query(
+      'INSERT INTO barber_profiles(user_id, city) VALUES($1, $2) RETURNING id',
       [user.id, city]
     );
+    user.barber_id = bp.rows[0].id;
   }
 
   const token = makeJwt(user);
@@ -183,8 +184,12 @@ router.post('/login', asyncHandler(async (req, res) => {
   }
 
   clearAttempts(attemptKey);
-  const token = makeJwt(user);
   const { password: _ignoredPassword, ...safeUser } = user;
+  if (safeUser.role === 'barber' && !safeUser.barber_id) {
+    const bp = await pool.query('SELECT id FROM barber_profiles WHERE user_id=$1', [safeUser.id]);
+    if (bp.rows.length) safeUser.barber_id = bp.rows[0].id;
+  }
+  const token = makeJwt(safeUser);
   return res.json({ ok: true, token, user: safeUser });
 }));
 
