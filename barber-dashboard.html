@@ -142,8 +142,13 @@
     const user = Auth.require('barber');
     if (!user) throw new Error('redirect');
 
-    let barber = user.barber_id ? getBarber(user.barber_id) : getAllBarbers()[0];
-    if (!barber) barber = getAllBarbers()[0];
+    let barber = user.barber_id ? getBarber(user.barber_id) : null;
+    if (!barber && user.barber_id) {
+      // BARBERS array is empty in production — load from API then re-render
+      loadApiBarberById(user.barber_id).then(b => {
+        if (b) { barber = b; render(); loadServicesFromAPI(); loadPortfolioManager(); }
+      }).catch(() => {});
+    }
 
     let activeTab = 'overview';
     let editingSvcId = null;
@@ -209,8 +214,8 @@
       } catch (_) {}
     }
 
-    // Kick off API load immediately
-    loadServicesFromAPI();
+    // Kick off API load immediately (only if barber is already resolved)
+    if (barber) loadServicesFromAPI();
 
     // selected image file for upload (set by onSvcImagePick)
     let _svcImageDataUri = null;
@@ -1400,7 +1405,11 @@
       if (e.target === this) closeSvcModal();
     });
 
-    render();
+    if (barber) {
+      render();
+    } else {
+      document.getElementById('dashLayout').innerHTML = '<div style="padding:4rem;text-align:center"><div class="spinner"></div><p style="color:var(--text-muted);margin-top:1rem">Loading your dashboard...</p></div>';
+    }
   </script>
 </body>
 </html>
