@@ -4,6 +4,10 @@
 // ============================================================
 
 const BARBERS = [
+  // Demo barbers removed for production launch
+  // Real providers come from the database via loadApiBarbers()
+];
+const _REMOVED_BARBERS = [
   {
     id: 1,
     first_name: 'Carlos', last_name: 'Rivera',
@@ -217,7 +221,7 @@ const BARBERS = [
       { url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800', caption: 'Cornrows' }
     ]
   }
-];
+]; // end _REMOVED_BARBERS
 
 let API_BARBERS = [];
 
