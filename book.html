@@ -226,8 +226,18 @@
     }
 
     async function initBookingPage() {
+      const loadGuard = setTimeout(() => {
+        const el = document.getElementById('bookContainer');
+        if (el) el.innerHTML = `
+          <div style="max-width:520px;margin:3rem auto;text-align:center;padding:1.5rem">
+            <h2 style="margin-bottom:0.6rem">Took too long to load</h2>
+            <p style="color:var(--text-muted);margin-bottom:1.2rem">Check your connection and try again.</p>
+            <a class="btn btn-primary" href="barbers.html">Browse providers</a>
+          </div>`;
+      }, 10000);
       try {
         barber = await loadApiBarberById(barberId) || getBarber(barberId);
+        clearTimeout(loadGuard);
         if (!barber) {
           window.location.href = 'barbers.html';
           return;
@@ -243,6 +253,7 @@
         if (step === 1) await refreshBookedSlots();
         render();
       } catch (err) {
+        clearTimeout(loadGuard);
         console.error('Booking page failed to initialize:', err);
         document.getElementById('bookContainer').innerHTML = `
           <div style="max-width:520px;margin:3rem auto;text-align:center;padding:1.5rem">
