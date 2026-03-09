@@ -503,17 +503,19 @@
     if (tagMatch) {
       return { cleanReply: text.replace(/\n?PROFILE_CARD:\d+/g, '').trim(), profileId: Number(tagMatch[1]) };
     }
+    // Strip any malformed PROFILE_CARD tags (e.g. PROFILE_CARD:Carlos Cuts Studio) so they never show as raw text
+    const stripped = text.replace(/\n?PROFILE_CARD:[^\n]*/g, '').trim();
     // Only scan reply for provider names if user explicitly named one in their message
-    if (tagOnly) return { cleanReply: text, profileId: null };
-    const lower = text.toLowerCase();
+    if (tagOnly) return { cleanReply: stripped, profileId: null };
+    const lower = stripped.toLowerCase();
     for (const p of PROVIDER_KEYWORDS) {
       if (p.words.some(w => lower.includes(w))) {
-        return { cleanReply: text, profileId: p.id };
+        return { cleanReply: stripped, profileId: p.id };
       }
     }
-    const fuzzyId = fuzzyProviderMatch(text);
-    if (fuzzyId) return { cleanReply: text, profileId: fuzzyId };
-    return { cleanReply: text, profileId: null };
+    const fuzzyId = fuzzyProviderMatch(stripped);
+    if (fuzzyId) return { cleanReply: stripped, profileId: fuzzyId };
+    return { cleanReply: stripped, profileId: null };
   }
 
   function appendProfileCard(profileId, lang) {
@@ -739,12 +741,11 @@
         ? buildLocalFallbackReply(text, _chatLang)
         : rawReply;
       const { cleanReply: r0, showProviders } = extractShowProviders(reply);
-      // Only scan AI reply for provider names if user explicitly named one (or it's a confirm)
+      // Only show card if user explicitly named a provider
       const userNamedProvider = !!detectProvider(text);
-      const isConfirm = /\b(confirm|oui|yes|ok|d'accord|confirme|c'est bon|waaw|parfait|allons|go)\b/i.test(text);
-      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(r0, !userNamedProvider && !isConfirm);
+      const { cleanReply: r1, profileId: pidFromReply } = extractProfileCard(r0, !userNamedProvider);
       const { cleanReply, bookUrl } = extractBookLink(r1);
-      const profileId = pidFromReply || (isConfirm ? getLastProviderFromHistory() : null);
+      const profileId = pidFromReply;
       typing.className = 'bh-msg ai';
       typing.innerHTML = escapeHTML(cleanReply).replace(/\n/g, '<br>');
       if (showProviders && !profileId) appendMultipleCards(_chatLang);

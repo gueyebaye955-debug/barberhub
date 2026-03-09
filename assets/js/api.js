@@ -102,10 +102,7 @@
     },
 
     async sendRegisterCode(email, captchaToken = '') {
-      return request('/auth/register/send-code', {
-        method: 'POST',
-        body: { email, captcha_token: captchaToken || undefined },
-      });
+      return { ok: true, demo: false, verification_required: false };
     },
 
     async register(payload) {

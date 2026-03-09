@@ -120,7 +120,7 @@ function renderNav(currentPage) {
 
         <!-- LEFT: Logo + Nav Links -->
         <div class="navbar__left">
-          <a href="index.html" class="navbar__logo">JOTMA</a>
+          <a href="index.html" class="navbar__logo"><img src="assets/loga.png" alt="JOTMA" class="navbar__logo-img"></a>
           <nav class="navbar__links">
           </nav>
         </div>
@@ -571,7 +571,7 @@ function navSearchKeydown(e) {
 (function () {
   if (!document.getElementById('bh-chat-widget')) {
     const s = document.createElement('script');
-    s.src = '/assets/js/chat-widget.js?v=20260308-5';
+    s.src = '/assets/js/chat-widget.js?v=20260308-7';
     document.body.appendChild(s);
   }
 })();
@@ -677,7 +677,7 @@ function renderFooter() {
     <div class="container">
       <div class="footer__grid">
         <div>
-          <div class="footer__logo">JOTMA</div>
+          <div class="footer__logo"><img src="assets/loga.png" alt="JOTMA" class="footer__logo-img"></div>
           <p class="footer__tagline">${t('footer_tagline')}</p>
         </div>
         <div>

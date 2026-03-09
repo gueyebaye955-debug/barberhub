@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -132,7 +132,7 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=20"></script>
+  <script src="assets/js/nav.js?v=23"></script>
   <script>
     renderNav('barber-dashboard');
     renderFooter();
@@ -155,7 +155,7 @@
     let portfolioMode = 'local';
     let portfolioLoadToken = 0;
 
-    // ── Apply barber onboarding data collected during signup ───────────────────
+    // -- Apply barber onboarding data collected during signup -------------------
     (function applyOnboarding() {
       const raw = localStorage.getItem('bh_barber_onboarding');
       if (!raw) return;
@@ -460,7 +460,7 @@
                         </div>`).join('')}
                     </div>
                     <form onsubmit="sendMsg(event)" class="msg-compose">
-                      <input id="msgInput" class="form-control" placeholder="Type a message…" style="flex:1" autocomplete="off">
+                      <input id="msgInput" class="form-control" placeholder="Type a message�" style="flex:1" autocomplete="off">
                       <button class="btn btn-primary" type="submit">Send</button>
                     </form>`
                 }
@@ -540,9 +540,9 @@
               </div>
               <input type="file" id="portfolioFileInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
               <button class="btn btn-primary" style="width:100%;margin-bottom:0.75rem;font-size:1rem;padding:0.75rem" onclick="document.getElementById('portfolioFileInput').click()">
-                📷 Upload Photo from Device
+                ?? Upload Photo from Device
               </button>
-              <div style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-bottom:0.75rem">— or paste an image URL below —</div>
+              <div style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-bottom:0.75rem">� or paste an image URL below �</div>
               <div class="portfolio-add-grid">
                 <input class="form-control" id="portfolioUrlInput" placeholder="${t('portfolio_add_url_ph')}" inputmode="url" autocomplete="off">
                 <input class="form-control" id="portfolioCaptionInput" placeholder="${t('portfolio_caption_ph')}" maxlength="160" autocomplete="off">
@@ -897,7 +897,7 @@
         return;
       }
 
-      showPortfolioAlert('Resizing photo…', 'info');
+      showPortfolioAlert('Resizing photo�', 'info');
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = new Image();
@@ -1274,7 +1274,7 @@
 
       const btn = document.getElementById('svcSaveBtn');
       btn.disabled = true;
-      btn.textContent = 'Saving…';
+      btn.textContent = 'Saving�';
 
       try {
         let saved;
@@ -1287,7 +1287,7 @@
 
         // Upload image if one was picked
         if (_svcImageDataUri && saved && saved.id) {
-          btn.textContent = 'Uploading image…';
+          btn.textContent = 'Uploading image�';
           try {
             saved = await BH_API.uploadServiceImage(saved.id, _svcImageDataUri);
           } catch (_) { /* image upload failure is non-fatal */ }
@@ -1379,3 +1379,4 @@
   </script>
 </body>
 </html>
+

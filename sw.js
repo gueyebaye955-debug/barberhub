@@ -1,4 +1,4 @@
-const CACHE = 'jotma-v1';
+const CACHE = 'jotma-v7';
 const SHELL = ['/', '/index.html', '/manifest.json', '/assets/css/style.css', '/assets/icon-192.png', '/assets/icon-512.png'];
 
 self.addEventListener('install', e => {

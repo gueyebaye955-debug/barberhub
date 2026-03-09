@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21,15 +21,31 @@
     .filter-panel h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.9rem; }
     .filter-section { margin-bottom: 1.4rem; }
     .chip-group { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .chip {
+      display: inline-flex; align-items: center;
+      background: var(--bg-elevated); border: 1.5px solid var(--border);
+      border-radius: 50px; padding: 0.38rem 0.8rem;
+      font-size: 0.8rem; font-weight: 500; cursor: pointer;
+      font-family: inherit; transition: all 0.18s; color: var(--text-muted); white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--primary); color: var(--primary); }
+    .chip.active { border-color: var(--primary); color: var(--primary); background: rgba(233,69,96,0.12); font-weight: 600; }
     .results-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
     .results-count { font-size: 0.875rem; color: var(--text-muted); }
     @media (max-width: 768px) {
-      .page-layout { grid-template-columns: 1fr; }
-      .filter-panel { position: static; }
+      .page-layout { grid-template-columns: 1fr; gap: 0.75rem; }
+      .filter-panel { position: static; padding: 0.75rem 0.85rem; }
+      .filter-panel h3 { font-size: 0.7rem; letter-spacing: 0.05em; margin-bottom: 0.4rem; margin-top: 0; }
+      .filter-section { margin-bottom: 0.75rem; }
+      .chip-group { gap: 0.25rem; }
+      .chip { padding: 0.28rem 0.65rem; font-size: 0.75rem; }
       .filter-collapsible { display: none; }
       .filter-collapsible.open { display: block; }
-      .filter-toggle-btn { display: flex; align-items: center; gap: 0.5rem; width: 100%; margin-bottom: 1rem; }
-      .results-toolbar { align-items: stretch; }
+      .filter-toggle-btn { display: flex; align-items: center; gap: 0.5rem; width: 100%; margin-bottom: 0; min-height: 40px; font-size: 0.875rem; }
+      .filter-collapsible.open .filter-section:last-of-type { margin-bottom: 0.5rem; }
+      .filter-collapsible .btn.w-full { min-height: 36px; padding: 0.4rem 1rem; font-size: 0.8rem; margin-top: 0.5rem; }
+      .form-control { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+      .results-toolbar { align-items: stretch; margin-bottom: 0.6rem; }
       .results-toolbar .view-toggle { width: 100%; }
       .results-toolbar .view-btn { flex: 1; justify-content: center; }
     }
@@ -51,7 +67,7 @@
       <div class="page-layout">
         <!-- Filter sidebar -->
         <aside class="filter-panel">
-          <button class="btn btn-ghost filter-toggle-btn" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'▲ Hide Filters':'▼ Filters & Sort'">▼ Filters &amp; Sort</button>
+          <button class="btn btn-ghost filter-toggle-btn" onclick="this.nextElementSibling.classList.toggle('open');this.setAttribute('aria-expanded',this.nextElementSibling.classList.contains('open'));this.innerHTML=this.nextElementSibling.classList.contains('open')?'&#9650; Hide Filters':'&#9660; Filters &amp; Sort'" aria-expanded="false">&#9660; Filters &amp; Sort</button>
           <div class="filter-collapsible">
           <div class="filter-section">
             <h3 data-i18n="filter_search_ph">Search</h3>
@@ -66,18 +82,18 @@
             <select class="form-control" id="cityFilter" onchange="applyFilters()">
               <option value="" data-i18n="filter_city_all">All Cities</option>
               <option value="Dakar">Dakar</option>
-              <option value="Thiès">Thiès</option>
+              <option value="Thi�s">Thi�s</option>
               <option value="Diourbel">Diourbel</option>
               <option value="Saint-Louis">Saint-Louis</option>
               <option value="Louga">Louga</option>
               <option value="Matam">Matam</option>
               <option value="Tambacounda">Tambacounda</option>
-              <option value="Kédougou">Kédougou</option>
+              <option value="K�dougou">K�dougou</option>
               <option value="Kaffrine">Kaffrine</option>
               <option value="Kaolack">Kaolack</option>
               <option value="Fatick">Fatick</option>
               <option value="Kolda">Kolda</option>
-              <option value="Sédhiou">Sédhiou</option>
+              <option value="S�dhiou">S�dhiou</option>
               <option value="Ziguinchor">Ziguinchor</option>
             </select>
           </div>
@@ -159,7 +175,7 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=20"></script>
+  <script src="assets/js/nav.js?v=23"></script>
   <script>
     window.__currentNavPage = 'barbers';
     renderNav('barbers');
@@ -585,4 +601,5 @@
   </script>
 </body>
 </html>
+
 

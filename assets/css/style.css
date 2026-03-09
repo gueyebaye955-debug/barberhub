@@ -74,6 +74,9 @@ main        { flex: 1; }
 }
 .navbar__logo span { color: var(--primary); }
 .navbar__logo:hover { text-decoration: none; }
+.navbar__logo-img { height: 36px; width: auto; display: block; }
+.footer__logo-img { height: 40px; width: auto; display: block; }
+.logo { height: 42px; width: auto; }
 
 .navbar__links { display: flex; align-items: center; }
 .navbar__links a {

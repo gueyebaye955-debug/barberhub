@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const pool = require('../db');
-const mailer = require('../mailer');
 const asyncHandler = require('../utils/asyncHandler');
 const { cleanString, normalizeEmail } = require('../utils/validators');
 const passport = require('../utils/passport');
@@ -101,25 +100,9 @@ router.post('/register/send-code', asyncHandler(async (req, res) => {
   const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
   if (exists.rows.length) return res.status(409).json({ error: 'Email already registered' });
 
-  const code = String(Math.floor(100000 + (Math.random() * 900000)));
-  const expires = new Date(Date.now() + 10 * 60 * 1000);
-
-  await pool.query(
-    `INSERT INTO verify_codes(email, code, expires_at, attempts)
-     VALUES($1, $2, $3, 0)
-     ON CONFLICT(email) DO UPDATE
-     SET code=$2, expires_at=$3, attempts=0`,
-    [email, code, expires]
-  );
-
-  const sent = await mailer.sendCode(email, code);
-  if (!sent) {
-    if (isProduction) {
-      return res.status(503).json({ error: 'Email service unavailable. Please try again later.' });
-    }
-    return res.json({ ok: true, demo: true, code });
-  }
-  return res.json({ ok: true, demo: false });
+  // Legacy endpoint retained for older cached clients.
+  // Signup no longer uses email verification codes.
+  return res.json({ ok: true, demo: false, verification_required: false });
 }));
 
 router.post('/register', asyncHandler(async (req, res) => {
@@ -129,11 +112,10 @@ router.post('/register', asyncHandler(async (req, res) => {
   const password = cleanString(req.body?.password, { min: 8, max: 128 });
   const phone = cleanString(req.body?.phone, { max: 30, allowEmpty: true }) || '';
   const city = cleanString(req.body?.city, { max: 100, allowEmpty: true }) || '';
-  const code = cleanString(String(req.body?.code || ''), { min: 6, max: 6 });
   const requestedRole = cleanString(req.body?.role, { max: 20, allowEmpty: true });
   const role = requestedRole || 'customer';
 
-  if (!firstName || !lastName || !email || !password || !code) {
+  if (!firstName || !lastName || !email || !password) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   if (!['customer', 'barber'].includes(role)) {
@@ -144,26 +126,6 @@ router.post('/register', asyncHandler(async (req, res) => {
   if (!captcha.ok) {
     return res.status(400).json({ error: 'CAPTCHA verification failed' });
   }
-
-  const rec = await pool.query('SELECT * FROM verify_codes WHERE email=$1', [email]);
-  if (!rec.rows.length) {
-    return res.status(400).json({ error: 'No verification code found. Request a new one.' });
-  }
-
-  const vc = rec.rows[0];
-  if (new Date() > new Date(vc.expires_at)) {
-    await pool.query('DELETE FROM verify_codes WHERE email=$1', [email]);
-    return res.status(400).json({ error: 'Code expired. Please sign up again.' });
-  }
-  if (vc.attempts >= 3) {
-    return res.status(400).json({ error: 'Too many attempts. Request a new code.' });
-  }
-  if (vc.code !== code) {
-    await pool.query('UPDATE verify_codes SET attempts=attempts+1 WHERE email=$1', [email]);
-    return res.status(400).json({ error: 'Incorrect code' });
-  }
-
-  await pool.query('DELETE FROM verify_codes WHERE email=$1', [email]);
 
   const hash = await bcrypt.hash(password, 12);
   const approved = role === 'customer';

@@ -1,20 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JOTMA – Find &amp; Book Services Near You</title>
+  <title>JOTMA � Find &amp; Book Services Near You</title>
   <meta name="description" content="JOTMA helps you find and book trusted services near you in Senegal. Discover barbers, salons, beauty professionals, and more.">
   <meta name="keywords" content="book services Senegal, barber Dakar, salon Senegal, beauty services Senegal, JOTMA">
   <meta name="author" content="JOTMA">
   <link rel="canonical" href="https://jotma.net">
-  <meta property="og:title" content="JOTMA – Find &amp; Book Services Near You">
+  <meta property="og:title" content="JOTMA � Find &amp; Book Services Near You">
   <meta property="og:description" content="Find and book trusted services near you in Senegal with JOTMA.">
   <meta property="og:image" content="https://jotma.net/preview.jpg">
   <meta property="og:url" content="https://jotma.net">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="JOTMA – Find &amp; Book Services Near You">
+  <meta name="twitter:title" content="JOTMA � Find &amp; Book Services Near You">
   <meta name="twitter:description" content="Find and book local services near you with JOTMA.">
   <meta name="twitter:image" content="https://jotma.net/preview.jpg">
   <link rel="icon" href="/favicon.ico">
@@ -105,54 +105,10 @@
       line-height: 1.7;
     }
 
-    .hero__search {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 0.5rem;
-      margin-bottom: 0.25rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      max-width: 680px;
-      position: relative;
-      overflow: visible;
-    }
-
-    .hero__search-wrap { position: relative; }
-
-    .hero__search-row {
-      display: flex;
-      gap: 0;
-    }
-
     .hero__suggestions {
       top: calc(100% + 6px);
       z-index: 550;
     }
-
-    .hero__field {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex: 1;
-      padding: 0 0.75rem;
-      border-right: 1px solid var(--border);
-    }
-
-    .hero__field:last-of-type { border-right: none; }
-
-    .hero__field input {
-      flex: 1;
-      background: none;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-size: 0.9rem;
-      padding: 0.7rem 0;
-      font-family: inherit;
-    }
-
-    .hero__field input::placeholder { color: var(--text-muted); }
-    .hero__search .btn { border-radius: 10px; flex-shrink: 0; }
 
     .quick-tags {
       display: flex;
@@ -267,12 +223,6 @@
       .hero__content { padding: 1.35rem 0 1.6rem; }
       .hero__title { font-size: clamp(1.6rem, 7vw, 2.25rem); }
       .hero__sub { font-size: 0.95rem; max-width: 100%; }
-      /* Search bar: stack fields vertically, full width */
-      .hero__search { max-width: 100%; }
-      .hero__search-row { flex-direction: column; }
-      .hero__field { border-right: none; border-bottom: 1px solid var(--border); padding: 0.65rem 0.75rem; max-width: 100% !important; min-height: 52px; }
-      .hero__field:last-of-type { border-bottom: none; }
-      .hero__search .btn { width: 100%; border-radius: 8px; padding: 0.9rem; margin-top: 0.25rem; min-height: 52px; font-size: 1rem; }
       /* Quick-tag filters: larger touch targets, span full row */
       .quick-tags { padding: 0.5rem 0.5rem 0; gap: 0.5rem; }
       .quick-tag { flex: 1 1 auto; text-align: center; min-height: 44px; padding: 0.55rem 0.75rem; }
@@ -1048,20 +998,20 @@
             <div class="navbar__suggestions hero__suggestions" id="heroSuggestions" style="display:none"></div>
           </div>
           <div class="quick-tags">
-            <button class="quick-tag" data-city="" aria-pressed="true" onclick="quickCity('', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Toutes les régions</button>
+            <button class="quick-tag" data-city="" aria-pressed="true" onclick="quickCity('', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Toutes les r�gions</button>
             <button class="quick-tag" data-city="Dakar" aria-pressed="false" onclick="quickCity('Dakar', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Dakar</button>
-            <button class="quick-tag" data-city="Thiès" aria-pressed="false" onclick="quickCity('Thiès', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Thiès</button>
+            <button class="quick-tag" data-city="Thi�s" aria-pressed="false" onclick="quickCity('Thi�s', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Thi�s</button>
             <button class="quick-tag" data-city="Diourbel" aria-pressed="false" onclick="quickCity('Diourbel', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Diourbel</button>
             <button class="quick-tag" data-city="Saint-Louis" aria-pressed="false" onclick="quickCity('Saint-Louis', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Saint-Louis</button>
             <button class="quick-tag" data-city="Louga" aria-pressed="false" onclick="quickCity('Louga', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Louga</button>
             <button class="quick-tag" data-city="Matam" aria-pressed="false" onclick="quickCity('Matam', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Matam</button>
             <button class="quick-tag" data-city="Tambacounda" aria-pressed="false" onclick="quickCity('Tambacounda', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Tambacounda</button>
-            <button class="quick-tag" data-city="Kédougou" aria-pressed="false" onclick="quickCity('Kédougou', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Kédougou</button>
+            <button class="quick-tag" data-city="K�dougou" aria-pressed="false" onclick="quickCity('K�dougou', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>K�dougou</button>
             <button class="quick-tag" data-city="Kaffrine" aria-pressed="false" onclick="quickCity('Kaffrine', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Kaffrine</button>
             <button class="quick-tag" data-city="Kaolack" aria-pressed="false" onclick="quickCity('Kaolack', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Kaolack</button>
             <button class="quick-tag" data-city="Fatick" aria-pressed="false" onclick="quickCity('Fatick', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Fatick</button>
             <button class="quick-tag" data-city="Kolda" aria-pressed="false" onclick="quickCity('Kolda', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Kolda</button>
-            <button class="quick-tag" data-city="Sédhiou" aria-pressed="false" onclick="quickCity('Sédhiou', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Sédhiou</button>
+            <button class="quick-tag" data-city="S�dhiou" aria-pressed="false" onclick="quickCity('S�dhiou', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>S�dhiou</button>
             <button class="quick-tag" data-city="Ziguinchor" aria-pressed="false" onclick="quickCity('Ziguinchor', this)"><span class="quick-tag-pin" aria-hidden="true">&#128205;</span>Ziguinchor</button>
           </div>
         </div>
@@ -1169,7 +1119,7 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=20"></script>
+  <script src="assets/js/nav.js?v=23"></script>
   <script>
     window.__currentNavPage = 'index';
     renderNav('index');
@@ -1194,7 +1144,8 @@
       { nameKey: 'cat_nails',       query: 'Nails',    image: 'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=280&h=280&fit=crop' },
       { nameKey: 'cat_brows_lashes',query: 'Brows',    image: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=280&h=280&fit=crop' },
       { nameKey: 'cat_piercing',    query: 'Piercing', image: 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=280&h=280&fit=crop' },
-      { nameKey: 'cat_massage',     query: 'Massage',  image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=280&h=280&fit=crop' }
+      { nameKey: 'cat_massage',     query: 'Massage',  image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=280&h=280&fit=crop' },
+      { nameKey: 'cat_shipper_gp',  query: 'Shipper',  image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=280&h=280&fit=crop' }
     ];
 
     let _heroSearchIndex = { services: [], businesses: [] };
@@ -1470,21 +1421,21 @@
 
     const OFFER_CATEGORIES = [
       { key: 'all',       icon: '',   label: 'All Services' },
-      { key: 'haircut',   icon: '✂️',  label: 'Haircuts',       keywords: ['haircut','hair cut','fade','trim','cut'] },
-      { key: 'beard',     icon: '🧔',  label: 'Beard',           keywords: ['beard','facial hair'] },
-      { key: 'kids',      icon: '👶',  label: 'Kids',            keywords: ['kids','children','child','boy'] },
-      { key: 'specialty', icon: '⭐',  label: 'Specialty',       keywords: ['specialty','special','design'] },
-      { key: 'styling',   icon: '💇',  label: 'Hair Styling',    keywords: ['styling','style','blowout','press'] },
-      { key: 'braids',    icon: '🪮',  label: 'Braids',          keywords: ['braid','twist','loc','dreadlock'] },
-      { key: 'color',     icon: '🎨',  label: 'Hair Color',      keywords: ['color','colour','dye','highlight','tint'] },
-      { key: 'treatment', icon: '🧴',  label: 'Hair Treatment',  keywords: ['treatment','condition','keratin'] },
-      { key: 'nails',     icon: '💅',  label: 'Nails',           keywords: ['nail','manicure','pedicure'] },
-      { key: 'shave',     icon: '🪒',  label: 'Shave',           keywords: ['shave','shaving','razor'] },
-      { key: 'facial',    icon: '🧖',  label: 'Facial',          keywords: ['facial','face clean','cleansing'] },
-      { key: 'skincare',  icon: '🧴',  label: 'Skincare',        keywords: ['skincare','skin care','mask','moistur'] },
-      { key: 'massage',   icon: '💆',  label: 'Massage',         keywords: ['massage','relax'] },
-      { key: 'makeup',    icon: '💄',  label: 'Makeup',          keywords: ['makeup','make up','cosmetic'] },
-      { key: 'brows',     icon: '👁',  label: 'Brows & Lashes',  keywords: ['brow','eyebrow','lash','eyelash'] },
+      { key: 'haircut',   icon: '??',  label: 'Haircuts',       keywords: ['haircut','hair cut','fade','trim','cut'] },
+      { key: 'beard',     icon: '??',  label: 'Beard',           keywords: ['beard','facial hair'] },
+      { key: 'kids',      icon: '??',  label: 'Kids',            keywords: ['kids','children','child','boy'] },
+      { key: 'specialty', icon: '?',  label: 'Specialty',       keywords: ['specialty','special','design'] },
+      { key: 'styling',   icon: '??',  label: 'Hair Styling',    keywords: ['styling','style','blowout','press'] },
+      { key: 'braids',    icon: '??',  label: 'Braids',          keywords: ['braid','twist','loc','dreadlock'] },
+      { key: 'color',     icon: '??',  label: 'Hair Color',      keywords: ['color','colour','dye','highlight','tint'] },
+      { key: 'treatment', icon: '??',  label: 'Hair Treatment',  keywords: ['treatment','condition','keratin'] },
+      { key: 'nails',     icon: '??',  label: 'Nails',           keywords: ['nail','manicure','pedicure'] },
+      { key: 'shave',     icon: '??',  label: 'Shave',           keywords: ['shave','shaving','razor'] },
+      { key: 'facial',    icon: '??',  label: 'Facial',          keywords: ['facial','face clean','cleansing'] },
+      { key: 'skincare',  icon: '??',  label: 'Skincare',        keywords: ['skincare','skin care','mask','moistur'] },
+      { key: 'massage',   icon: '??',  label: 'Massage',         keywords: ['massage','relax'] },
+      { key: 'makeup',    icon: '??',  label: 'Makeup',          keywords: ['makeup','make up','cosmetic'] },
+      { key: 'brows',     icon: '??',  label: 'Brows & Lashes',  keywords: ['brow','eyebrow','lash','eyelash'] },
     ];
 
     let _activeOfferCat = 'all';
@@ -1755,7 +1706,7 @@
 
         <div class="sheet-cta">
           ${isCustomer && services.length
-            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">${minPrice !== null ? (typeof tf === 'function' ? tf('sheet_book_from', { price: fmtPrice(minPrice) }) : 'Book Now — From ' + fmtPrice(minPrice)) : (typeof t === 'function' ? t('sheet_book_now') : 'Book Now')}</a>`
+            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">${minPrice !== null ? (typeof tf === 'function' ? tf('sheet_book_from', { price: fmtPrice(minPrice) }) : 'Book Now � From ' + fmtPrice(minPrice)) : (typeof t === 'function' ? t('sheet_book_now') : 'Book Now')}</a>`
             : !isCustomer
               ? `<a href="login.html" class="btn btn-primary">${typeof t === 'function' ? t('profile_login_book') : 'Log in to Book'}</a>`
               : `<button class="btn btn-ghost" disabled>${typeof t === 'function' ? t('no_services_listed') : 'No services listed'}</button>`}
@@ -2019,3 +1970,4 @@
   </script>
 </body>
 </html>
+

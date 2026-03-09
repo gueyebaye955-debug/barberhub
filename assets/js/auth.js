@@ -138,7 +138,7 @@ const Auth = {
       phone:  data.phone  || '',
       city:   data.city   || '',
       barber_id: data.role === 'barber' ? newId : undefined,
-      approved:  data.role === 'barber' ? false  : undefined
+      approved: typeof data.approved === 'boolean' ? data.approved : data.role !== 'barber'
     };
     stored.push(newUser);
     localStorage.setItem('bh_accounts', JSON.stringify(stored));
@@ -592,5 +592,4 @@ const Reviews = {
     localStorage.setItem(this._key, JSON.stringify(all));
   }
 };
-
 

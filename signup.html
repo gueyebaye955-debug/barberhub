@@ -1,16 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up  JOTMA</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up JOTMA</title>
+  <link rel="icon" href="assets/loga.png" />
+  <link rel="stylesheet" href="assets/css/style.css" />
   <style>
     .auth-wrap { min-height: calc(100vh - 140px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
     .auth-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; width: 100%; max-width: 480px; }
     .auth-logo { text-align: center; margin-bottom: 1.75rem; }
-    .auth-logo span { font-size: 2rem; }
+    .auth-logo img { display: block; width: min(220px, 100%); height: auto; margin: 0 auto 0.85rem; }
     .auth-logo h1 { font-size: 1.5rem; margin: 0.25rem 0 0.25rem; }
     .auth-logo p { color: var(--text-muted); font-size: 0.875rem; }
     .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
@@ -39,8 +39,6 @@
     .pw-strength-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-bottom: 0.3rem; }
     .pw-strength-fill { height: 100%; border-radius: 2px; width: 0; transition: width 0.3s, background 0.3s; }
     .pw-strength-label { font-size: 0.75rem; }
-    .code-input { font-size: 1.6rem; letter-spacing: 0.6rem; text-align: center; font-weight: 700; }
-    .verify-countdown { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 0.4rem; }
   </style>
 </head>
 <body class="page-wrap">
@@ -49,100 +47,115 @@
   <div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-logo">
-        <span></span>
+        <img src="assets/loga.png" alt="JOTMA" />
         <h1 data-i18n="signup_title">Create your account</h1>
         <p data-i18n="signup_sub">Join thousands of users on JOTMA</p>
       </div>
 
       <div id="alertBox"></div>
 
-      <!-- Email verification step (shown after form submit) -->
-      <div id="verifyStep" style="display:none">
-        <div style="text-align:center;margin-bottom:1.5rem">
-          <div style="font-size:2.5rem;margin-bottom:0.5rem">📧</div>
-          <h2 style="font-size:1.2rem;margin:0 0 0.5rem">Check your email</h2>
-          <p style="color:var(--text-muted);font-size:0.875rem">We sent a 6-digit code to<br><strong id="verifyEmailAddr"></strong></p>
-        </div>
-        <div id="verifyAlert"></div>
-        <div class="form-group">
-          <label class="form-label">Verification Code</label>
-          <input type="text" class="form-control code-input" id="codeInput" maxlength="6" placeholder="000000" autocomplete="one-time-code" inputmode="numeric">
-        </div>
-        <div class="verify-countdown" id="verifyCountdown"></div>
-        <button class="btn btn-primary" style="width:100%;margin-top:0.75rem" id="verifyBtn" onclick="submitCode()">Verify &amp; Create Account</button>
-        <div style="text-align:center;margin-top:0.75rem;display:flex;gap:0.5rem;justify-content:center">
-          <button class="btn btn-ghost" id="resendBtn" onclick="resendCode()" style="font-size:0.82rem">Resend code</button>
-          <button class="btn btn-ghost" onclick="cancelVerify()" style="font-size:0.82rem">← Back</button>
-        </div>
-      </div>
-
-      <!-- Role selection -->
       <div class="role-cards">
         <div class="role-card selected" id="roleCustomer" onclick="selectRole('customer')">
-          <div class="role-icon"></div>
+          <div class="role-icon">👤</div>
           <strong data-i18n="signup_role_customer">Customer</strong>
           <p data-i18n="signup_role_cust_sub">Book appointments</p>
         </div>
         <div class="role-card" id="roleBarber" onclick="selectRole('barber')">
-          <div class="role-icon"></div>
-          <strong data-i18n="signup_role_barber">Barber</strong>
+          <div class="role-icon">✂️</div>
+          <strong data-i18n="signup_role_barber">Provider</strong>
           <p data-i18n="signup_role_barb_sub">Manage your shop</p>
         </div>
       </div>
 
       <div class="barber-notice" id="barberNotice">
-        ✅ Barber accounts require admin approval before your profile goes live.
+        Provider accounts require admin approval before your profile goes live.
       </div>
 
-      <!-- Barber-only extras: shop info + service prices -->
       <div class="barber-extras" id="barberExtras">
         <div class="barber-extras__title">Your Shop Info</div>
+
         <div class="form-group">
           <label class="form-label">Shop / Business Name</label>
-          <input type="text" class="form-control" id="shopName" placeholder="e.g. Carlos Cuts, The Fade Factory" oninput="checkShopName(this.value)">
-          <div id="shopNameHint" style="margin-top:0.5rem;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);display:none"></div>
+          <input
+            type="text"
+            class="form-control"
+            id="shopName"
+            placeholder="e.g. Carlos Cuts, The Fade Factory"
+            oninput="checkShopName(this.value)"
+          />
+          <div
+            id="shopNameHint"
+            style="margin-top:0.5rem;font-size:0.82rem;padding:0.5rem 0.75rem;border-radius:var(--radius-sm);display:none"
+          ></div>
         </div>
+
         <div class="form-group">
           <label class="form-label">Years of Experience</label>
           <select class="form-control" id="yearsExp">
             <option value="">Select...</option>
-            <option value="1">Less than 1 year</option>
-            <option value="1">1–2 years</option>
-            <option value="3">3–5 years</option>
-            <option value="6">6–10 years</option>
+            <option value="0">Less than 1 year</option>
+            <option value="1">1-2 years</option>
+            <option value="3">3-5 years</option>
+            <option value="6">6-10 years</option>
             <option value="11">10+ years</option>
           </select>
         </div>
-        <div class="barber-extras__title" style="margin-top:1rem">Your Starting Prices <span style="font-weight:400;color:var(--text-muted)">(optional — you can change later)</span></div>
+
+        <div class="barber-extras__title" style="margin-top:1rem">
+          Your Starting Prices
+          <span style="font-weight:400;color:var(--text-muted)">(optional - you can change later)</span>
+        </div>
+
         <div class="svc-price-grid">
           <div class="svc-price-item">
-            <label>✂️ Fade</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_fade" type="number" min="5" max="500" placeholder="30"></div>
+            <label>Fade</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_fade" type="number" min="5" max="500" placeholder="30" />
+            </div>
           </div>
           <div class="svc-price-item">
-            <label>🧔 Beard Trim</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_beard" type="number" min="5" max="500" placeholder="20"></div>
+            <label>Beard Trim</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_beard" type="number" min="5" max="500" placeholder="20" />
+            </div>
           </div>
           <div class="svc-price-item">
-            <label>💈 Lineup</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_lineup" type="number" min="5" max="500" placeholder="15"></div>
+            <label>Lineup</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_lineup" type="number" min="5" max="500" placeholder="15" />
+            </div>
           </div>
           <div class="svc-price-item">
-            <label>👶 Kids Cut</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_kids" type="number" min="5" max="500" placeholder="20"></div>
+            <label>Kids Cut</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_kids" type="number" min="5" max="500" placeholder="20" />
+            </div>
           </div>
           <div class="svc-price-item">
-            <label>🪒 Hot Shave</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_shave" type="number" min="5" max="500" placeholder="25"></div>
+            <label>Hot Shave</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_shave" type="number" min="5" max="500" placeholder="25" />
+            </div>
           </div>
           <div class="svc-price-item">
-            <label>⭐ Full Service</label>
-            <div class="svc-price-row"><span>$</span><input class="svc-price-input" id="price_full" type="number" min="5" max="500" placeholder="50"></div>
+            <label>Full Service</label>
+            <div class="svc-price-row">
+              <span>$</span>
+              <input class="svc-price-input" id="price_full" type="number" min="5" max="500" placeholder="50" />
+            </div>
           </div>
         </div>
+
         <div class="form-group" style="margin-top:0.75rem">
-          <label class="form-label">Instagram Handle <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-          <input type="text" class="form-control" id="instagram" placeholder="@yourhandle">
+          <label class="form-label">
+            Instagram Handle <span style="color:var(--text-muted);font-weight:400">(optional)</span>
+          </label>
+          <input type="text" class="form-control" id="instagram" placeholder="@yourhandle" />
         </div>
       </div>
 
@@ -150,42 +163,65 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" data-i18n="signup_first_name">First Name</label>
-            <input type="text" class="form-control" id="firstName" placeholder="John" required>
+            <input type="text" class="form-control" id="firstName" placeholder="John" required />
           </div>
           <div class="form-group">
             <label class="form-label" data-i18n="signup_last_name">Last Name</label>
-            <input type="text" class="form-control" id="lastName" placeholder="Doe" required>
+            <input type="text" class="form-control" id="lastName" placeholder="Doe" required />
           </div>
         </div>
+
         <div class="form-group">
           <label class="form-label" data-i18n="signup_email">Email Address</label>
-          <input type="email" class="form-control" id="email" placeholder="you@example.com" required>
+          <input type="email" class="form-control" id="email" placeholder="you@example.com" required />
         </div>
+
         <div class="form-group">
           <label class="form-label" data-i18n="signup_phone">Phone (optional)</label>
-          <input type="tel" class="form-control" id="phone" placeholder="+1 (555) 000-0000">
+          <input type="tel" class="form-control" id="phone" placeholder="+1 (555) 000-0000" />
         </div>
+
         <div class="form-group">
           <label class="form-label" data-i18n="signup_city">City</label>
-          <input type="text" class="form-control" id="city" placeholder="New York" required>
+          <input type="text" class="form-control" id="city" placeholder="New York" required />
         </div>
+
         <div class="form-group">
           <label class="form-label" data-i18n="signup_password">Password</label>
-          <input type="password" class="form-control" id="password" placeholder="At least 8 characters" required minlength="8" oninput="updateStrength(this.value)">
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            placeholder="At least 8 characters"
+            required
+            minlength="8"
+            oninput="updateStrength(this.value)"
+          />
           <div class="pw-strength" id="pwStrength" style="display:none">
             <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwFill"></div></div>
             <span class="pw-strength-label" id="pwLabel"></span>
           </div>
         </div>
+
         <div class="form-group">
           <label class="form-label" data-i18n="signup_confirm_pw">Confirm Password</label>
-          <input type="password" class="form-control" id="confirmPassword" placeholder="" required>
+          <input type="password" class="form-control" id="confirmPassword" required />
         </div>
+
         <div class="form-group" id="captchaSignupWrap" style="display:none">
           <div id="captchaSignup"></div>
           <p id="captchaSignupHint" style="margin-top:0.4rem;font-size:0.78rem;color:var(--text-muted)"></p>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem" id="signupBtn" data-i18n="signup_btn">Create Account</button>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          style="width:100%;margin-top:0.5rem"
+          id="signupBtn"
+          data-i18n="signup_btn"
+        >
+          Create Account
+        </button>
       </form>
 
       <div style="display:flex;align-items:center;gap:0.75rem;margin:1rem 0">
@@ -193,25 +229,36 @@
         <span style="color:var(--text-muted);font-size:0.8rem">or</span>
         <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
-      <a href="/api/auth/google" class="btn btn-ghost" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.6rem">
-        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 6.294C4.672 4.167 6.656 3.58 9 3.58z"/></svg>
+
+      <a
+        href="/api/auth/google"
+        class="btn btn-ghost"
+        style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.6rem"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 6.294C4.672 4.167 6.656 3.58 9 3.58z"/>
+        </svg>
         Sign up with Google
       </a>
 
       <div class="auth-footer">
-        <span data-i18n="signup_have_account">Already have an account?</span> <a href="login.html" data-i18n="signup_signin">Sign in </a>
+        <span data-i18n="signup_have_account">Already have an account?</span>
+        <a href="login.html" data-i18n="signup_signin">Sign in</a>
       </div>
     </div>
   </div>
 
   <footer class="footer" id="footer"></footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=20"></script>
+  <script src="assets/js/nav.js?v=23"></script>
+
   <script>
     renderNav('signup');
     renderFooter();
@@ -220,20 +267,43 @@
     if (Auth.isLoggedIn()) {
       window.location.href = 'index.html';
     }
+
     const STRICT_AUTH = (typeof isProductionRuntime === 'function')
       ? isProductionRuntime()
-      : (location.protocol !== 'file:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
+      : (
+          location.protocol !== 'file:' &&
+          location.hostname !== 'localhost' &&
+          location.hostname !== '127.0.0.1'
+        );
 
-    let selectedRole  = 'customer';
-    let pendingData   = null;
-    let verifyExpiry  = null;
-    let countdownTimer = null;
-    let lastDemoCode = null;
+    let selectedRole = 'customer';
     let signupCaptchaToken = '';
     let signupCaptchaEnabled = false;
 
+    function getText(key, fallback) {
+      try {
+        if (typeof t === 'function') {
+          const value = t(key);
+          if (value && value !== key) return value;
+        }
+      } catch (_) {}
+      return fallback;
+    }
+
+    function showAlert(message, type = 'danger') {
+      const alertBox = document.getElementById('alertBox');
+      if (!alertBox) return;
+      alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    }
+
+    function clearAlert() {
+      const alertBox = document.getElementById('alertBox');
+      if (alertBox) alertBox.innerHTML = '';
+    }
+
     function ensureTurnstileLoaded() {
       if (window.turnstile) return Promise.resolve();
+
       return new Promise((resolve, reject) => {
         const existing = document.querySelector('script[data-turnstile="1"]');
         if (existing) {
@@ -241,6 +311,7 @@
           existing.addEventListener('error', () => reject(new Error('Unable to load CAPTCHA script')), { once: true });
           return;
         }
+
         const script = document.createElement('script');
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
         script.async = true;
@@ -253,13 +324,17 @@
     }
 
     async function initSignupCaptcha() {
-      if (!window.BH_API) return;
+      if (!window.BH_API || typeof window.BH_API.getCaptchaConfig !== 'function') return;
+
       try {
         const cfg = await window.BH_API.getCaptchaConfig();
         if (!cfg?.enabled || !cfg?.site_key) return;
+
         signupCaptchaEnabled = true;
         document.getElementById('captchaSignupWrap').style.display = 'block';
+
         await ensureTurnstileLoaded();
+
         window.turnstile.render('#captchaSignup', {
           sitekey: cfg.site_key,
           callback(token) {
@@ -271,215 +346,219 @@
             signupCaptchaToken = '';
             const hint = document.getElementById('captchaSignupHint');
             if (hint) hint.textContent = 'Please verify CAPTCHA again.';
-          },
+          }
         });
       } catch (_) {}
     }
 
-    /* ── Password strength ── */
-    function checkStrength(pw) {
+    function checkStrength(password) {
       let score = 0;
-      if (pw.length >= 8)           score++;
-      if (/[0-9]/.test(pw))         score++;
-      if (/[A-Z]/.test(pw))         score++;
-      if (/[^A-Za-z0-9]/.test(pw))  score++;
-      if (score <= 1) return { label: 'Weak',   color: '#ef4444', pct: 25  };
-      if (score <= 2) return { label: 'Medium', color: '#f59e0b', pct: 60  };
-      if (score <= 3) return { label: 'Good',   color: '#3b82f6', pct: 80  };
-      return              { label: 'Strong', color: '#10b981', pct: 100 };
+      if (password.length >= 8) score++;
+      if (/[0-9]/.test(password)) score++;
+      if (/[A-Z]/.test(password)) score++;
+      if (/[^A-Za-z0-9]/.test(password)) score++;
+
+      if (score <= 1) return { label: 'Weak', color: '#ef4444', pct: 25 };
+      if (score <= 2) return { label: 'Medium', color: '#f59e0b', pct: 60 };
+      if (score <= 3) return { label: 'Good', color: '#3b82f6', pct: 80 };
+      return { label: 'Strong', color: '#10b981', pct: 100 };
     }
 
-    function updateStrength(pw) {
+    function updateStrength(password) {
       const wrap = document.getElementById('pwStrength');
       const fill = document.getElementById('pwFill');
-      const lbl  = document.getElementById('pwLabel');
-      if (!pw) { wrap.style.display = 'none'; return; }
+      const label = document.getElementById('pwLabel');
+
+      if (!wrap || !fill || !label) return;
+
+      if (!password) {
+        wrap.style.display = 'none';
+        return;
+      }
+
       wrap.style.display = 'block';
-      const s = checkStrength(pw);
-      fill.style.width      = s.pct + '%';
-      fill.style.background = s.color;
-      lbl.textContent       = s.label;
-      lbl.style.color       = s.color;
+      const strength = checkStrength(password);
+      fill.style.width = `${strength.pct}%`;
+      fill.style.background = strength.color;
+      label.textContent = strength.label;
+      label.style.color = strength.color;
     }
 
     function selectRole(role) {
       selectedRole = role;
+
       document.getElementById('roleCustomer').classList.toggle('selected', role === 'customer');
       document.getElementById('roleBarber').classList.toggle('selected', role === 'barber');
       document.getElementById('barberNotice').classList.toggle('show', role === 'barber');
       document.getElementById('barberExtras').classList.toggle('show', role === 'barber');
-      document.getElementById('shopName').required = role === 'barber';
+
+      const shopName = document.getElementById('shopName');
+      if (shopName) shopName.required = role === 'barber';
     }
 
-    /* ── Shop name duplicate check + suggestions ── */
-    function checkShopName(val) {
+    function checkShopName(value) {
       const hint = document.getElementById('shopNameHint');
       if (!hint) return;
-      const name = val.trim();
-      if (!name || name.length < 2) { hint.style.display = 'none'; return; }
 
-      // Collect all existing shop/barber names
-      const existing = new Set();
-      if (typeof getAllBarbers === 'function') {
-        for (const b of getAllBarbers()) {
-          const sn = (b.shop_name || '').trim().toLowerCase();
-          const fn = (`${b.first_name || ''} ${b.last_name || ''}`).trim().toLowerCase();
-          if (sn) existing.add(sn);
-          if (fn) existing.add(fn);
-        }
-      }
-
-      const key = name.toLowerCase();
-      if (!existing.has(key)) {
-        // Name is available
-        hint.style.display = 'block';
-        hint.style.background = 'rgba(16,185,129,0.1)';
-        hint.style.border = '1px solid rgba(16,185,129,0.3)';
-        hint.innerHTML = `<span style="color:#10b981;font-weight:600">✓ "${name}" is available!</span>`;
+      const name = String(value || '').trim();
+      if (!name || name.length < 2) {
+        hint.style.display = 'none';
         return;
       }
 
-      // Name taken — generate suggestions
-      const suffixes = ['1','2','3','NYC','BK','Pro','Official','Cuts','Barbers','Shop'];
+      const existing = new Set();
+
+      if (typeof getAllBarbers === 'function') {
+        for (const barber of getAllBarbers()) {
+          const shop = (barber.shop_name || '').trim().toLowerCase();
+          const full = (`${barber.first_name || ''} ${barber.last_name || ''}`).trim().toLowerCase();
+          if (shop) existing.add(shop);
+          if (full) existing.add(full);
+        }
+      }
+
+      const normalized = name.toLowerCase();
+
+      if (!existing.has(normalized)) {
+        hint.style.display = 'block';
+        hint.style.background = 'rgba(16,185,129,0.1)';
+        hint.style.border = '1px solid rgba(16,185,129,0.3)';
+        hint.innerHTML = `<span style="color:#10b981;font-weight:600">"${name}" is available.</span>`;
+        return;
+      }
+
+      const suffixes = ['1', '2', '3', 'NYC', 'BK', 'Pro', 'Official', 'Cuts', 'Barbers', 'Shop'];
       const suggestions = [];
-      for (const sfx of suffixes) {
-        const candidate = name + sfx;
+
+      for (const suffix of suffixes) {
+        const candidate = `${name}${suffix}`;
         if (!existing.has(candidate.toLowerCase())) {
           suggestions.push(candidate);
           if (suggestions.length >= 4) break;
         }
       }
 
-      const chips = suggestions.map(s => {
-        const safe = s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const chips = suggestions.map((suggestion) => {
+        const safe = suggestion.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return `<button type="button" onclick="document.getElementById('shopName').value='${safe}';checkShopName('${safe}');"
-          style="background:var(--bg-elevated);border:1px solid var(--primary);color:var(--primary);border-radius:50px;padding:0.25rem 0.7rem;font-size:0.8rem;cursor:pointer;font-family:inherit;margin:0.3rem 0.2rem 0 0;display:inline-block">${s}</button>`;
+          style="background:var(--bg-elevated);border:1px solid var(--primary);color:var(--primary);border-radius:50px;padding:0.25rem 0.7rem;font-size:0.8rem;cursor:pointer;font-family:inherit;margin:0.3rem 0.2rem 0 0;display:inline-block">${suggestion}</button>`;
       }).join('');
 
       hint.style.display = 'block';
       hint.style.background = 'rgba(245,158,11,0.1)';
       hint.style.border = '1px solid rgba(245,158,11,0.3)';
-      hint.innerHTML = `<span style="color:#f59e0b;font-weight:600">⚠ "${name}" is already taken.</span>
-        ${suggestions.length ? `<div style="margin-top:0.35rem;color:var(--text-muted);font-size:0.78rem">Try one of these:</div><div style="margin-top:0.2rem">${chips}</div>` : ''}`;
+      hint.innerHTML = `
+        <span style="color:#f59e0b;font-weight:600">"${name}" is already taken.</span>
+        ${suggestions.length ? `<div style="margin-top:0.35rem;color:var(--text-muted);font-size:0.78rem">Try one of these:</div><div style="margin-top:0.2rem">${chips}</div>` : ''}
+      `;
     }
 
-    /* ── EmailJS helper ── */
-    async function sendVerificationEmail(email, name, code) {
-      const cfg = JSON.parse(localStorage.getItem('bh_emailjs') || '{}');
-      if (!cfg.publicKey || !cfg.serviceId || !cfg.templateId) return false;
-      try {
-        emailjs.init({ publicKey: cfg.publicKey });
-        await emailjs.send(cfg.serviceId, cfg.templateId, {
-          to_email: email,
-          to_name:  name,
-          subject:  'JOTMA — Your verification code',
-          message:  `Your JOTMA verification code is: ${code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`
-        });
-        return true;
-      } catch(err) {
-        return false;
-      }
+    function parsePrice(inputId) {
+      const raw = parseFloat(document.getElementById(inputId)?.value || '');
+      return raw > 0 ? Math.round(raw * 100) : null;
     }
 
-    /* ── Countdown timer ── */
-    function startCountdown() {
-      if (countdownTimer) clearInterval(countdownTimer);
-      function tick() {
-        const remaining = Math.max(0, verifyExpiry - Date.now());
-        const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
-        const el = document.getElementById('verifyCountdown');
-        if (!el) return;
-        if (remaining === 0) {
-          el.textContent = 'Code expired. Click "Resend code".';
-          el.style.color = '#ef4444';
-          clearInterval(countdownTimer);
-          document.getElementById('verifyBtn').disabled = true;
-        } else {
-          el.textContent = `Code expires in ${mins}:${String(secs).padStart(2, '0')}`;
-          el.style.color = 'var(--text-muted)';
-        }
-      }
-      tick();
-      countdownTimer = setInterval(tick, 1000);
-    }
-
-    /* ── Show verification UI ── */
-    async function startVerification() {
-      let sent = false;
-      lastDemoCode = null;
-      try {
-        if (window.BH_API) {
-          if (signupCaptchaEnabled && !signupCaptchaToken) {
-            throw new Error('Please complete CAPTCHA verification.');
-          }
-          const response = await window.BH_API.sendRegisterCode(pendingData.email, signupCaptchaToken);
-          if (STRICT_AUTH && response.demo) {
-            throw new Error('Email service is not configured. Please contact support.');
-          }
-          sent = !response.demo;
-          lastDemoCode = response.code || null;
-        } else {
-          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
-          lastDemoCode = String(Math.floor(100000 + Math.random() * 900000));
-          sent = await sendVerificationEmail(pendingData.email, pendingData.first_name, lastDemoCode);
-        }
-      } catch (err) {
-        document.getElementById('alertBox').innerHTML = `<div class="alert alert-danger">${err.message || 'Unable to send verification code.'}</div>`;
-        const btn = document.getElementById('signupBtn');
-        btn.disabled = false;
-        btn.textContent = t('signup_btn');
+    function saveBarberOnboarding() {
+      if (selectedRole !== 'barber') {
+        localStorage.removeItem('bh_barber_onboarding');
         return;
       }
 
-      verifyExpiry = Date.now() + 10 * 60 * 1000;
+      const onboarding = {
+        shop_name: document.getElementById('shopName')?.value.trim() || '',
+        years_exp: document.getElementById('yearsExp')?.value || '',
+        instagram: (document.getElementById('instagram')?.value.trim() || '').replace(/^@/, ''),
+        services: [
+          { name: 'Fade', price: parsePrice('price_fade'), duration: 45, description: 'Classic fade haircut' },
+          { name: 'Beard Trim', price: parsePrice('price_beard'), duration: 20, description: 'Beard shaping and trim' },
+          { name: 'Lineup', price: parsePrice('price_lineup'), duration: 15, description: 'Edge up and lineup' },
+          { name: 'Kids Cut', price: parsePrice('price_kids'), duration: 30, description: 'Haircut for kids 12 and under' },
+          { name: 'Hot Shave', price: parsePrice('price_shave'), duration: 30, description: 'Traditional hot towel shave' },
+          { name: 'Full Service', price: parsePrice('price_full'), duration: 60, description: 'Haircut + beard + lineup' }
+        ].filter(service => service.price !== null)
+      };
 
-      // Hide signup form elements
-      document.getElementById('signupForm').style.display    = 'none';
-      document.querySelector('.role-cards').style.display    = 'none';
-      document.getElementById('barberNotice').style.display  = 'none';
-      document.getElementById('alertBox').innerHTML          = '';
-
-      // Show verify step
-      document.getElementById('verifyStep').style.display    = 'block';
-      document.getElementById('verifyEmailAddr').textContent = pendingData.email;
-      document.getElementById('verifyBtn').disabled          = false;
-      document.getElementById('codeInput').value             = '';
-
-      if (!sent) {
-        document.getElementById('verifyAlert').innerHTML = `<div class="alert" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;border-radius:var(--radius-sm);padding:0.65rem 0.85rem;margin-bottom:1rem;font-size:0.85rem">Demo mode - no mail service configured.<br>Your code is: <strong style="font-size:1.1rem;letter-spacing:0.15rem">${lastDemoCode || ''}</strong></div>`;
-      } else {
-        document.getElementById('verifyAlert').innerHTML = '';
-      }
-
-      startCountdown();
-      setTimeout(() => document.getElementById('codeInput').focus(), 100);
+      localStorage.setItem('bh_barber_onboarding', JSON.stringify(onboarding));
     }
 
-    /* ── Submit the code ── */
-    async function submitCode() {
-      const input   = document.getElementById('codeInput').value.trim();
-      const alertEl = document.getElementById('verifyAlert');
-      const btn     = document.getElementById('verifyBtn');
+    function buildPayload(password) {
+      const approved = selectedRole !== 'barber';
 
-      if (Date.now() > verifyExpiry) {
-        alertEl.innerHTML = `<div class="alert alert-danger">Code expired. Please click "Resend code".</div>`;
-        btn.disabled = true;
+      return {
+        first_name: document.getElementById('firstName').value.trim(),
+        last_name: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        password,
+        role: selectedRole,
+        approved,
+        is_approved: approved,
+        approval_status: approved ? 'approved' : 'pending',
+        status: approved ? 'active' : 'pending',
+        shop_name: selectedRole === 'barber' ? (document.getElementById('shopName').value.trim()) : '',
+        years_exp: selectedRole === 'barber' ? (document.getElementById('yearsExp').value || '') : '',
+        instagram: selectedRole === 'barber'
+          ? ((document.getElementById('instagram').value.trim() || '').replace(/^@/, ''))
+          : '',
+        captcha_token: signupCaptchaToken || undefined
+      };
+    }
+
+    async function registerDirect(payload) {
+      if (window.BH_API) {
+        return await window.BH_API.register(payload);
+      }
+
+      if (STRICT_AUTH) {
+        throw new Error('Service temporarily unavailable. Please try again in a moment.');
+      }
+
+      return await Auth.register(payload);
+    }
+
+    async function handleSignupSubmit(event) {
+      event.preventDefault();
+      clearAlert();
+
+      const form = event.currentTarget;
+      const button = document.getElementById('signupBtn');
+
+      if (!form.reportValidity()) return;
+
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (password !== confirmPassword) {
+        showAlert(getText('signup_pw_mismatch', 'Passwords do not match.'));
         return;
       }
-      btn.disabled    = true;
-      btn.textContent = 'Creating account…';
-      clearInterval(countdownTimer);
+
+      if (checkStrength(password).label === 'Weak') {
+        showAlert('Password is too weak. Use at least 8 characters with a number, uppercase letter, or symbol.');
+        return;
+      }
+
+      if (signupCaptchaEnabled && !signupCaptchaToken) {
+        showAlert('Please complete CAPTCHA verification.');
+        return;
+      }
+
+      if (selectedRole === 'barber') {
+        const shopName = document.getElementById('shopName').value.trim();
+        if (!shopName) {
+          showAlert('Please enter your shop or business name.');
+          return;
+        }
+      }
+
+      saveBarberOnboarding();
+
+      button.disabled = true;
+      button.textContent = 'Creating account...';
 
       try {
-        const payload = { ...pendingData, code: input, role: selectedRole, captcha_token: signupCaptchaToken || undefined };
-        let result;
-        if (window.BH_API) {
-          result = await window.BH_API.register(payload);
-        } else {
-          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
-          result = await Auth.register(payload);
-        }
+        const result = await registerDirect(buildPayload(password));
 
         if (!result || result.ok === false || !result.user) {
           throw new Error(result?.error || 'Registration failed. Please try again.');
@@ -487,123 +566,33 @@
 
         localStorage.setItem('bh_user', JSON.stringify(result.user));
         localStorage.setItem('bh_last_activity', Date.now().toString());
-        const map = { customer: 'dashboard.html', barber: 'barber-dashboard.html', admin: 'admin.html' };
-        window.location.href = map[result.user.role] || 'index.html';
-      } catch (err) {
-        alertEl.innerHTML = `<div class="alert alert-danger">${err.message || 'Invalid verification code.'}</div>`;
-        btn.disabled = false;
-        btn.textContent = 'Verify & Create Account';
-      }
-    }
 
-    /* ── Resend code ── */
-    async function resendCode() {
-      document.getElementById('verifyBtn').disabled = false;
-      document.getElementById('codeInput').value = '';
-      verifyExpiry = Date.now() + 10 * 60 * 1000;
-
-      try {
-        let response;
-        if (window.BH_API) {
-          if (signupCaptchaEnabled && !signupCaptchaToken) {
-            throw new Error('Please complete CAPTCHA verification.');
-          }
-          response = await window.BH_API.sendRegisterCode(pendingData.email, signupCaptchaToken);
-          if (STRICT_AUTH && response.demo) {
-            throw new Error('Email service is not configured. Please contact support.');
-          }
-        } else {
-          if (STRICT_AUTH) throw new Error('Service temporarily unavailable. Please try again in a moment.');
-          response = { demo: true, code: String(Math.floor(100000 + Math.random() * 900000)) };
+        if (result.user.role === 'barber') {
+          const message = 'Your provider account has been created and is waiting for admin approval.';
+          sessionStorage.setItem('bh_post_signup_notice', message);
+          showAlert(message, 'success');
+          setTimeout(() => {
+            window.location.href = 'barber-dashboard.html?pending=1';
+          }, 1000);
+          return;
         }
-        lastDemoCode = response.code || null;
 
-        if (response.demo) {
-          document.getElementById('verifyAlert').innerHTML = `<div class="alert" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;border-radius:var(--radius-sm);padding:0.65rem 0.85rem;margin-bottom:1rem;font-size:0.85rem">Demo mode - new code: <strong style="font-size:1.1rem;letter-spacing:0.15rem">${lastDemoCode || ''}</strong></div>`;
-        } else {
-          document.getElementById('verifyAlert').innerHTML = `<div class="alert" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:var(--radius-sm);padding:0.65rem 0.85rem;margin-bottom:1rem;font-size:0.85rem">New code sent to ${pendingData.email}</div>`;
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        showAlert(error.message || 'Registration failed. Please try again.');
+        button.disabled = false;
+        button.textContent = getText('signup_btn', 'Create Account');
+
+        if (signupCaptchaEnabled && window.turnstile) {
+          try {
+            window.turnstile.reset();
+          } catch (_) {}
+          signupCaptchaToken = '';
         }
-      } catch (err) {
-        document.getElementById('verifyAlert').innerHTML = `<div class="alert alert-danger">${err.message || 'Unable to resend code.'}</div>`;
       }
-
-      startCountdown();
     }
 
-    /* ── Go back to form ── */
-    function cancelVerify() {
-      clearInterval(countdownTimer);
-      lastDemoCode = null;
-      document.getElementById('verifyStep').style.display        = 'none';
-      document.querySelector('.role-cards').style.display        = 'grid';
-      document.getElementById('signupForm').style.display        = 'block';
-      if (selectedRole === 'barber') {
-        document.getElementById('barberNotice').classList.add('show');
-        document.getElementById('barberExtras').classList.add('show');
-      }
-      const btn = document.getElementById('signupBtn');
-      btn.disabled    = false;
-      btn.textContent = t('signup_btn');
-    }
-
-    /* ── Form submit → start verification ── */
-    document.getElementById('signupForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const alertBox = document.getElementById('alertBox');
-      alertBox.innerHTML = '';
-
-      const password = document.getElementById('password').value;
-      const confirm  = document.getElementById('confirmPassword').value;
-
-      if (password !== confirm) {
-        alertBox.innerHTML = `<div class="alert alert-danger">${t('signup_pw_mismatch')}</div>`;
-        return;
-      }
-      if (checkStrength(password).label === 'Weak') {
-        alertBox.innerHTML = `<div class="alert alert-danger">Password is too weak. Use at least 8 characters with a number or uppercase letter.</div>`;
-        return;
-      }
-
-      const btn = document.getElementById('signupBtn');
-      btn.disabled    = true;
-      btn.textContent = 'Sending code…';
-
-      pendingData = {
-        first_name: document.getElementById('firstName').value.trim(),
-        last_name:  document.getElementById('lastName').value.trim(),
-        email:      document.getElementById('email').value.trim(),
-        phone:      document.getElementById('phone').value.trim(),
-        city:       document.getElementById('city').value.trim(),
-        password,
-        role: selectedRole
-      };
-
-      // Save barber onboarding extras to localStorage (applied in barber-dashboard on first load)
-      if (selectedRole === 'barber') {
-        const parsePrice = (id) => { const v = parseFloat(document.getElementById(id)?.value); return v > 0 ? Math.round(v * 100) : null; };
-        const onboarding = {
-          shop_name:      document.getElementById('shopName')?.value.trim() || '',
-          years_exp:      document.getElementById('yearsExp')?.value || '',
-          instagram:      (document.getElementById('instagram')?.value.trim() || '').replace(/^@/, ''),
-          services: [
-            { name: 'Fade',         price: parsePrice('price_fade'),  duration: 45, description: 'Classic fade haircut' },
-            { name: 'Beard Trim',   price: parsePrice('price_beard'), duration: 20, description: 'Beard shaping and trim' },
-            { name: 'Lineup',       price: parsePrice('price_lineup'),duration: 15, description: 'Edge up and lineup' },
-            { name: 'Kids Cut',     price: parsePrice('price_kids'),  duration: 30, description: 'Haircut for kids 12 and under' },
-            { name: 'Hot Shave',    price: parsePrice('price_shave'), duration: 30, description: 'Traditional hot towel shave' },
-            { name: 'Full Service', price: parsePrice('price_full'),  duration: 60, description: 'Haircut + beard + lineup' },
-          ].filter((s) => s.price !== null),
-        };
-        localStorage.setItem('bh_barber_onboarding', JSON.stringify(onboarding));
-      }
-
-      await startVerification();
-    });
-
-    /* ── Allow Enter key in code input ── */
-    document.getElementById('codeInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); submitCode(); }
-    });
+    document.getElementById('signupForm').addEventListener('submit', handleSignupSubmit);
     initSignupCaptcha();
   </script>
 </body>
