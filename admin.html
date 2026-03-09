@@ -130,15 +130,19 @@
     let apiRecentErrors = null;
     let apiMetricsLoading = false;
     let apiAllUsers = null;
+    let apiApprovedBarbers = null;
 
     async function refreshApiUsers() {
       if (!window.BH_API) return;
       try {
-        const data = await window.BH_API.adminGetUsers();
-        if (Array.isArray(data)) {
-          apiAllUsers = data;
-          render();
-        }
+        const [users, barbers] = await Promise.all([
+          window.BH_API.adminGetUsers(),
+          window.BH_API.getBarbers({ limit: 100 }),
+        ]);
+        if (Array.isArray(users)) apiAllUsers = users;
+        if (barbers && Array.isArray(barbers.data)) apiApprovedBarbers = barbers.data;
+        else if (Array.isArray(barbers)) apiApprovedBarbers = barbers;
+        render();
       } catch (_) {}
     }
 
@@ -177,7 +181,7 @@
     function render() {
       const allAccounts = apiAllUsers || Auth.getAccounts();
       const allBookings = Bookings.getAll();
-      const allBarbers  = getAllBarbers();
+      const allBarbers  = apiApprovedBarbers || getAllBarbers();
 
       const customers = allAccounts.filter(a => a.role === 'customer');
       const barbers   = allAccounts.filter(a => a.role === 'barber');
@@ -364,8 +368,8 @@
                     const bkCnt = allBookings.filter(bk => bk.barber_id === b.id).length;
                     return `<tr>
                       <td><strong>${escapeHTML(b.shop_name || b.first_name+' '+b.last_name)}</strong><br><span style="color:var(--text-muted);font-size:0.78rem">${escapeHTML(b.first_name)} ${escapeHTML(b.last_name)}</span></td>
-                      <td>${escapeHTML(b.city)}</td>
-                      <td> ${b.rating.toFixed(1)}</td>
+                      <td>${escapeHTML(b.city || '—')}</td>
+                      <td> ${b.rating != null ? Number(b.rating).toFixed(1) : '—'}</td>
                       <td>${bkCnt}</td>
                       <td>${b.verified ? '<span class="status-badge badge-verified"> Verified</span>' : '<span style="color:var(--text-muted);font-size:0.8rem"></span>'}</td>
                       <td><a href="${getBarberProfileUrl(b.id)}" class="btn btn-sm btn-ghost">${t('admin_view_profile')}</a></td>
