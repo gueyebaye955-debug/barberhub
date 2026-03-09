@@ -15,6 +15,12 @@ const { uploadImage, deleteImage, isConfigured: cloudinaryConfigured } = require
 
 const MAX_PORTFOLIO_PHOTOS = 12;
 
+function isMissingRelation(error, relationName) {
+  if (!error || error.code !== '42P01') return false;
+  if (!relationName) return true;
+  return String(error.message || '').includes(relationName);
+}
+
 async function resolveBarberProfileId(userId, db = pool) {
   const result = await db.query('SELECT id FROM barber_profiles WHERE user_id=$1', [userId]);
   if (!result.rows.length) return null;
@@ -22,14 +28,21 @@ async function resolveBarberProfileId(userId, db = pool) {
 }
 
 async function fetchPortfolioByBarberId(barberId, db = pool) {
-  const result = await db.query(
-    `SELECT id, image_url, caption, sort_order, created_at
-     FROM barber_portfolio_photos
-     WHERE barber_id = $1
-     ORDER BY sort_order ASC, created_at ASC, id ASC`,
-    [barberId]
-  );
-  return result.rows;
+  try {
+    const result = await db.query(
+      `SELECT id, image_url, caption, sort_order, created_at
+       FROM barber_portfolio_photos
+       WHERE barber_id = $1
+       ORDER BY sort_order ASC, created_at ASC, id ASC`,
+      [barberId]
+    );
+    return result.rows;
+  } catch (error) {
+    if (isMissingRelation(error, 'barber_portfolio_photos')) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 router.get('/', asyncHandler(async (req, res) => {
@@ -68,12 +81,14 @@ router.get('/', asyncHandler(async (req, res) => {
     : sort === 'price' ? 'min_price ASC NULLS LAST'
     : 'bp.rating DESC';
 
-  const [countResult, dataResult] = await Promise.all([
-    pool.query(
-      `SELECT COUNT(DISTINCT bp.id)::int AS total FROM barber_profiles bp JOIN users u ON u.id = bp.user_id ${where}`,
-      params
-    ),
-    pool.query(`
+  const countResult = await pool.query(
+    `SELECT COUNT(DISTINCT bp.id)::int AS total FROM barber_profiles bp JOIN users u ON u.id = bp.user_id ${where}`,
+    params
+  );
+
+  let dataResult;
+  try {
+    dataResult = await pool.query(`
       SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
              json_agg(DISTINCT to_jsonb(s)) FILTER (WHERE s.id IS NOT NULL) AS services,
              COUNT(DISTINCT p.id)::int AS portfolio_count,
@@ -86,8 +101,23 @@ router.get('/', asyncHandler(async (req, res) => {
       GROUP BY bp.id, u.id
       ORDER BY ${orderBy}
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, limit, offset]),
-  ]);
+    `, [...params, limit, offset]);
+  } catch (error) {
+    if (!isMissingRelation(error, 'barber_portfolio_photos')) throw error;
+    dataResult = await pool.query(`
+      SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
+             json_agg(DISTINCT to_jsonb(s)) FILTER (WHERE s.id IS NOT NULL) AS services,
+             0::int AS portfolio_count,
+             MIN(s.price) AS min_price
+      FROM barber_profiles bp
+      JOIN users u ON u.id = bp.user_id
+      LEFT JOIN services s ON s.barber_id = bp.id
+      ${where}
+      GROUP BY bp.id, u.id
+      ORDER BY ${orderBy}
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `, [...params, limit, offset]);
+  }
 
   const total = countResult.rows[0].total;
   return res.json({
@@ -103,13 +133,25 @@ router.get('/:id', asyncHandler(async (req, res) => {
   const barberId = parsePositiveInt(req.params.id);
   if (!barberId) return res.status(400).json({ error: 'Invalid barber id' });
 
-  const barber = await pool.query(`
-    SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
-           COALESCE((SELECT COUNT(*)::int FROM barber_portfolio_photos p WHERE p.barber_id = bp.id), 0) AS portfolio_count
-    FROM barber_profiles bp
-    JOIN users u ON u.id = bp.user_id
-    WHERE bp.id = $1 AND u.approved = true
-  `, [barberId]);
+  let barber;
+  try {
+    barber = await pool.query(`
+      SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
+             COALESCE((SELECT COUNT(*)::int FROM barber_portfolio_photos p WHERE p.barber_id = bp.id), 0) AS portfolio_count
+      FROM barber_profiles bp
+      JOIN users u ON u.id = bp.user_id
+      WHERE bp.id = $1 AND u.approved = true
+    `, [barberId]);
+  } catch (error) {
+    if (!isMissingRelation(error, 'barber_portfolio_photos')) throw error;
+    barber = await pool.query(`
+      SELECT bp.*, u.first_name, u.last_name, u.email, u.phone,
+             0::int AS portfolio_count
+      FROM barber_profiles bp
+      JOIN users u ON u.id = bp.user_id
+      WHERE bp.id = $1 AND u.approved = true
+    `, [barberId]);
+  }
 
   if (!barber.rows.length) return res.status(404).json({ error: 'Barber not found' });
 

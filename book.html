@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/assets/logoo.png" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
   <title>Book Appointment  JOTMA</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d9488">
@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="JOTMA">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=27">
   <style>
     .book-layout { display: grid; grid-template-columns: 300px 1fr; gap: 2rem; padding: 2rem 0 4rem; }
     .book-sidebar { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; position: sticky; top: 80px; height: fit-content; }
@@ -82,16 +82,46 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=23"></script>
+  <script src="assets/js/nav.js?v=24"></script>
   <script>
     renderNav('book');
     renderFooter();
     applyI18n();
 
+    function getBookRedirectUrl() {
+      const page = (location.pathname.split('/').pop() || 'book.html').replace(/^\//, '');
+      return `${page}${location.search}`;
+    }
+
+    function renderCustomerAccountRequired(currentUser) {
+      const accountLabel = currentUser.role === 'barber' ? 'provider' : currentUser.role;
+      const switchUrl = `login.html?redirect=${encodeURIComponent(getBookRedirectUrl())}`;
+      const dashboardUrl = currentUser.role === 'barber'
+        ? 'barber-dashboard.html'
+        : (currentUser.role === 'admin' ? 'admin.html' : 'dashboard.html');
+      document.getElementById('bookContainer').innerHTML = `
+        <div style="max-width:520px;margin:3rem auto;text-align:center;padding:1.5rem">
+          <h2 style="margin-bottom:0.6rem">Customer account required</h2>
+          <p style="color:var(--text-muted);margin-bottom:1.2rem">
+            You are signed in as a ${accountLabel}. Please use a customer account to book appointments.
+          </p>
+          <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+            <a class="btn btn-primary" href="${switchUrl}" onclick="localStorage.removeItem('bh_user');localStorage.removeItem('bh_last_activity');localStorage.removeItem('bh_token');">
+              Use a customer account
+            </a>
+            <a class="btn btn-ghost" href="${dashboardUrl}">Go to dashboard</a>
+          </div>
+        </div>`;
+    }
+
     const user = Auth.getUser();
-    if (!user || user.role !== 'customer') {
-      window.location.href = 'login.html';
+    if (!user) {
+      window.location.href = `login.html?redirect=${encodeURIComponent(getBookRedirectUrl())}`;
       throw new Error('redirect');
+    }
+    if (user.role !== 'customer') {
+      renderCustomerAccountRequired(user);
+      throw new Error('customer_required');
     }
 
     const params     = new URLSearchParams(location.search);
@@ -697,4 +727,3 @@
   </script>
 </body>
 </html>
-

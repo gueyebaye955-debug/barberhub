@@ -12,6 +12,7 @@
   const _isDevServer = location.protocol === 'file:' ||
     ((_h === 'localhost' || _h === '127.0.0.1') && location.port !== '4000' && location.port !== '80' && location.port !== '443' && location.port !== '');
   const DEFAULT_BASE = _isDevServer ? RAILWAY_API : '/api';
+  const REQUEST_TIMEOUT_MS = 12000;
 
   function getBaseUrl() {
     if (_isProductionRuntime) return DEFAULT_BASE;
@@ -53,12 +54,31 @@
       if (token) reqHeaders.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${getBaseUrl()}${path}`, {
-      method,
-      headers: reqHeaders,
-      body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
-      credentials: 'same-origin',
-    });
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller
+      ? setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+      : null;
+
+    let response;
+    try {
+      response = await fetch(`${getBaseUrl()}${path}`, {
+        method,
+        headers: reqHeaders,
+        body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
+        credentials: 'same-origin',
+        signal: controller ? controller.signal : undefined,
+      });
+    } catch (error) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (error && error.name === 'AbortError') {
+        const timeoutError = new Error('Request timeout');
+        timeoutError.code = 'ETIMEDOUT';
+        throw timeoutError;
+      }
+      throw error;
+    }
+
+    if (timeoutId) clearTimeout(timeoutId);
 
     const contentType = response.headers.get('content-type') || '';
     const payload = contentType.includes('application/json')
@@ -371,6 +391,9 @@
     },
     async updateBilling(barberId, data) {
       return request(`/billing/${encodeURIComponent(barberId)}`, { method: 'PATCH', auth: true, body: data });
+    },
+    async adminDeleteUser(id) {
+      return request(`/users/${encodeURIComponent(id)}`, { method: 'DELETE', auth: true });
     },
   };
 

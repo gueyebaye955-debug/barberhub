@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/assets/logoo.png" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
   <title>Login  JOTMA</title>
   <link rel="icon" href="assets/loga.png">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=27">
   <style>
-    .auth-wrap { min-height: calc(100vh - 140px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .auth-wrap { min-height: calc(100dvh - 140px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
     .auth-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem; width: 100%; max-width: 420px; }
     .auth-logo { text-align: center; margin-bottom: 1.75rem; }
     .auth-logo img { display: block; width: min(220px, 100%); height: auto; margin: 0 auto 0.85rem; }
@@ -145,6 +145,21 @@
       return msg || 'Unable to sign in. Please try again.';
     }
 
+    const DASHBOARD_MAP = { customer: 'dashboard.html', barber: 'barber-dashboard.html', admin: 'admin.html' };
+
+    function getSafeRedirect() {
+      const raw = new URLSearchParams(location.search).get('redirect');
+      if (!raw) return '';
+      const decoded = decodeURIComponent(raw);
+      return /^[a-zA-Z0-9_\-]+\.html(\?[^#]*)?$/.test(decoded) ? decoded : '';
+    }
+
+    function getPostLoginDestination(user) {
+      const redirect = getSafeRedirect();
+      if (redirect) return redirect;
+      return DASHBOARD_MAP[user.role] || 'index.html';
+    }
+
     // Handle Google OAuth redirect (token comes back in URL params)
     (function handleOAuthRedirect() {
       const p = new URLSearchParams(location.search);
@@ -160,16 +175,14 @@
           const user = JSON.parse(decodeURIComponent(userRaw));
           if (window.BH_API) window.BH_API.setSession(token, user);
           else { localStorage.setItem('bh_token', token); localStorage.setItem('bh_user', JSON.stringify(user)); }
-          const map = { customer: 'dashboard.html', barber: 'barber-dashboard.html', admin: 'admin.html' };
-          window.location.replace(map[user.role] || 'index.html');
+          window.location.replace(getPostLoginDestination(user));
         } catch (_) {}
       }
     }());
 
     if (Auth.isLoggedIn()) {
       const user = Auth.getUser();
-      const map = { customer: 'dashboard.html', barber: 'barber-dashboard.html', admin: 'admin.html' };
-      window.location.href = map[user.role] || 'index.html';
+      window.location.href = getPostLoginDestination(user);
     }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -212,16 +225,7 @@
 
       localStorage.setItem('bh_user', JSON.stringify(result.user));
       localStorage.setItem('bh_last_activity', Date.now().toString());
-
-      const params = new URLSearchParams(location.search);
-      const redirect = params.get('redirect');
-      const map = { customer: 'dashboard.html', barber: 'barber-dashboard.html', admin: 'admin.html' };
-      // Only allow safe relative redirects (no external URLs, no javascript:)
-      if (redirect && /^[a-zA-Z0-9_\-]+\.html(\?[^#]*)?$/.test(decodeURIComponent(redirect))) {
-        window.location.href = decodeURIComponent(redirect);
-      } else {
-        window.location.href = map[result.user.role] || 'index.html';
-      }
+      window.location.href = getPostLoginDestination(result.user);
     });
     initLoginCaptcha();
   </script>

@@ -115,16 +115,17 @@
   // ---- Styles ----
   const style = document.createElement('style');
   style.textContent = `
-    #bh-chat-widget { position: fixed; right: 1.5rem; bottom: calc(var(--bh-chat-base-bottom, 2.5rem) + env(safe-area-inset-bottom, 0px)); z-index: 9999; font-family: inherit; }
+    #bh-chat-widget { position: fixed; right: 1.5rem; bottom: calc(var(--bh-chat-base-bottom, 2.5rem) + env(safe-area-inset-bottom, 0px)); z-index: 9999; font-family: inherit; max-width: calc(100vw - 1rem); }
     #bh-chat-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; padding: 0; cursor: pointer; box-shadow: 0 6px 20px rgba(233,69,96,0.45); display: grid; place-items: center; transition: transform 0.2s, box-shadow 0.2s; }
     #bh-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(233,69,96,0.55); }
     #bh-chat-btn svg { width: 24px; height: 24px; }
-    #bh-chat-box { display: none; flex-direction: column; width: 340px; max-width: calc(100vw - 2rem); height: 480px; max-height: min(480px, calc(100dvh - 1.5rem)); background: var(--bg-card, #1a1a2e); border: 1px solid var(--border, #2a2a3e); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 0.75rem; }
+    #bh-chat-box { display: none; flex-direction: column; width: 340px; max-width: calc(100vw - 2rem); height: 480px; max-height: min(480px, calc(100dvh - 1.5rem)); background: var(--bg-card, #1a1a2e); border: 1px solid var(--border, #2a2a3e); border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); overflow: hidden; margin-bottom: 0.75rem; min-height: 0; }
     #bh-chat-box.open { display: flex; }
-    #bh-chat-header { background: var(--primary, #e94560); color: #fff; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
-    #bh-chat-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 0.25rem; opacity: 0.85; }
-    #bh-chat-header button:hover { opacity: 1; }
-    #bh-chat-messages { flex: 1; overflow-y: auto; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    #bh-chat-header { background: var(--primary, #e94560); color: #fff; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; }
+    #bh-chat-title { flex: 1; }
+    #bh-chat-header button { background: rgba(255,255,255,0.18); border: none; color: #fff; cursor: pointer; font-size: 1.4rem; line-height: 1; padding: 0.3rem 0.55rem; border-radius: 8px; opacity: 1; flex-shrink: 0; }
+    #bh-chat-header button:hover { background: rgba(255,255,255,0.32); }
+    #bh-chat-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
     .bh-msg { max-width: 85%; padding: 0.65rem 0.9rem; border-radius: 14px; font-size: 0.87rem; line-height: 1.55; word-break: break-word; }
     .bh-msg.user { background: var(--primary, #e94560); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
     .bh-msg.ai { background: var(--bg-elevated, #252540); color: var(--text, #e0e0e0); align-self: flex-start; border-bottom-left-radius: 4px; }
@@ -132,7 +133,7 @@
     .bh-lang-btn { background: var(--primary, #e94560); color: #fff; border: none; border-radius: 999px; padding: 0.4rem 0.9rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s; white-space: nowrap; }
     .bh-lang-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
     .bh-lang-btn:disabled { cursor: default; }
-    #bh-chat-input-row { display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.75rem; border-top: 1px solid var(--border, #2a2a3e); flex-shrink: 0; background: var(--bg-card, #1a1a2e); }
+    #bh-chat-input-row { display: flex; align-items: flex-end; gap: 0.5rem; padding: 0.75rem; padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border, #2a2a3e); flex-shrink: 0; background: var(--bg-card, #1a1a2e); }
     #bh-chat-input { flex: 1; background: var(--bg-elevated, #252540); border: 1px solid var(--border, #2a2a3e); border-radius: 12px; color: var(--text, #e0e0e0); padding: 0.55rem 0.75rem; font-size: 1rem; outline: none; resize: none; height: 38px; max-height: 90px; overflow-y: auto; font-family: inherit; }
     #bh-chat-input:focus { border-color: var(--primary, #e94560); }
     #bh-chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -149,25 +150,36 @@
     @keyframes bh-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
     @media (max-width: 480px) {
       #bh-chat-widget { --bh-chat-base-bottom: 4.75rem; right: 1rem; }
-      #bh-chat-box { width: calc(100vw - 2rem); height: min(420px, calc(100dvh - 7rem)); }
+      #bh-chat-box { width: calc(100vw - 2rem); height: min(420px, calc(100dvh - 7rem)); max-height: calc(100dvh - 7rem); }
       #bh-chat-btn { width: 52px; height: 52px; }
     }
-    /* Keyboard open: pin chat to visual viewport bottom, hide bottom offset */
+    /* Keyboard open: expand chat to fill exact visual viewport (above keyboard) */
     body.keyboard-open #bh-chat-widget {
-      bottom: env(safe-area-inset-bottom, 0px);
+      left: 0;
+      right: 0;
+      bottom: 0;
       --bh-chat-base-bottom: 0px;
     }
     body.keyboard-open #bh-chat-box {
-      height: calc(var(--bh-visual-height, 100dvh) - 0.5rem);
-      max-height: calc(var(--bh-visual-height, 100dvh) - 0.5rem);
-      border-radius: 0;
-      margin-bottom: 0;
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: auto;
+      /* --bh-visual-height is set by nav.js = window.visualViewport.height (area above keyboard) */
+      height: var(--bh-visual-height, 100dvh);
+      max-height: var(--bh-visual-height, 100dvh);
       width: 100vw;
       max-width: 100vw;
-      right: 0;
-      left: 0;
-      position: fixed;
-      bottom: env(safe-area-inset-bottom, 0px);
+      border-radius: 0;
+      margin: 0;
+      padding-bottom: 0;
+    }
+    body.keyboard-open #bh-chat-messages {
+      padding-bottom: 0.5rem;
+    }
+    body.keyboard-open #bh-chat-input-row {
+      padding-bottom: 0.75rem;
     }
   `;
   document.head.appendChild(style);
@@ -178,8 +190,8 @@
   widget.innerHTML = `
     <div id="bh-chat-box">
       <div id="bh-chat-header">
+        <button id="bh-chat-close" title="Close">&#x2190;</button>
         <span id="bh-chat-title"></span>
-        <button id="bh-chat-close" title="Close">&#x2715;</button>
       </div>
       <div id="bh-chat-messages"></div>
       <div id="bh-chat-input-row">
@@ -212,6 +224,14 @@
   const voicePill = document.getElementById('bh-chat-voice-pill');
   const voiceTime = document.getElementById('bh-chat-voice-time');
   const chatHistory = [];
+
+  function keepComposerVisible(delay = 0) {
+    if (!isOpen) return;
+    window.setTimeout(() => {
+      messages.scrollTop = messages.scrollHeight;
+      try { input.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+    }, delay);
+  }
 
   function updateLabels() {
     document.getElementById('bh-chat-title').textContent = L('title');
@@ -385,7 +405,7 @@
     collectGPS(); // silent GPS — no chat prompt
     if (messages.children.length === 0) showLangGreeting();
     input.focus();
-    setTimeout(() => { messages.scrollTop = messages.scrollHeight; }, 80);
+    keepComposerVisible(80);
   }
 
   function close() {
@@ -397,6 +417,15 @@
 
   btn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
+  input.addEventListener('focus', () => keepComposerVisible(120));
+  window.addEventListener('bh-keyboard-state', (event) => {
+    if (event && event.detail && event.detail.open) keepComposerVisible(80);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (isOpen && document.body.classList.contains('keyboard-open')) keepComposerVisible(30);
+    }, { passive: true });
+  }
 
   // ---- XHR fallback ----
   function postWithXhr(endpoint, payload, timeoutMs) {

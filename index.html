@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/assets/logoo.png" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JOTMA � Find &amp; Book Services Near You</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>JOTMA - Find &amp; Book Services Near You</title>
   <meta name="description" content="JOTMA helps you find and book trusted services near you in Senegal. Discover barbers, salons, beauty professionals, and more.">
   <meta name="keywords" content="book services Senegal, barber Dakar, salon Senegal, beauty services Senegal, JOTMA">
   <meta name="author" content="JOTMA">
@@ -25,7 +25,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="JOTMA">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=27">
   <link rel="preconnect" href="https://i.pravatar.cc" crossorigin>
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
   <style>
@@ -279,10 +279,11 @@
       transition: transform 0.2s, box-shadow 0.2s;
       position: relative;
     }
-    .barber-circle-item:hover .barber-circle-avatar,
-    .barber-circle-item:active .barber-circle-avatar {
-      transform: scale(1.06);
-      box-shadow: 0 0 0 5px rgba(233,69,96,0.25);
+    @media (hover: hover) {
+      .barber-circle-item:hover .barber-circle-avatar {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 5px rgba(233,69,96,0.25);
+      }
     }
     .barber-circle-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .barber-circle-verified {
@@ -415,18 +416,27 @@
 
     /* ===== Modern Booking Layout (same design system) ===== */
     .home-main {
-      padding: 0.5rem 0 6rem;
+      padding: 0.45rem 0 calc(5.9rem + env(safe-area-inset-bottom));
+    }
+
+    .home-search-section,
+    .home-section {
+      overflow-x: clip;
     }
 
     .home-section {
-      padding: 0.62rem 0 0;
+      padding: 0.85rem 0 0;
+      scroll-margin-top: 5rem;
     }
 
     .home-search-panel {
-      padding: 0.65rem;
+      width: 100%;
+      max-width: 100%;
+      padding: 0.72rem;
       background: var(--bg-card);
       border-radius: var(--radius);
       border: 1px solid var(--border);
+      box-sizing: border-box;
     }
 
     .home-hero-title {
@@ -450,11 +460,19 @@
       position: relative;
       display: flex;
       align-items: center;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
       gap: 0.35rem;
       padding: 0.14rem;
+      min-width: 0;
+      width: 100%;
+      min-height: 46px;
+      max-width: 100%;
       border-radius: 999px;
       border: 1px solid var(--border);
       background: var(--bg-elevated);
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .home-search-icon {
@@ -465,23 +483,30 @@
     }
 
     .home-search-input {
-      flex: 1;
+      flex: 1 1 auto;
       min-width: 0;
+      width: auto;
       border: none;
       background: transparent;
       color: var(--text);
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 16px;
+      line-height: 1.25;
       outline: none;
       padding: 0.5rem 0.1rem;
+      -webkit-appearance: none;
+      appearance: none;
     }
+    .home-search-input:focus { outline: none; box-shadow: none; border: none; }
+    .home-search-input[readonly] { cursor: pointer; }
 
     .home-search-btn {
       border-radius: 999px;
       padding: 0 0.78rem;
       min-height: 36px;
       font-size: 0.82rem;
-      flex-shrink: 0;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
 
     .home-search-panel .quick-tags {
@@ -492,6 +517,7 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
       padding: 0.34rem 0 0;
+      -webkit-overflow-scrolling: touch;
     }
 
     .home-search-panel .quick-tags::-webkit-scrollbar {
@@ -519,6 +545,186 @@
       border-color: var(--primary);
       color: var(--primary);
       background: rgba(233, 69, 96, 0.14);
+    }
+
+    body.mobile-search-open {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body.mobile-search-open .bottom-nav {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mobile-search-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      background: rgba(7, 10, 18, 0.86);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+
+    .mobile-search-layer.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-search-layer__panel {
+      min-height: 100dvh;
+      background: var(--bg);
+      padding: calc(env(safe-area-inset-top) + 0.75rem) 1rem calc(env(safe-area-inset-bottom) + 1rem);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transform: translateY(14px);
+      transition: transform 0.18s ease;
+    }
+
+    .mobile-search-layer.open .mobile-search-layer__panel {
+      transform: translateY(0);
+    }
+
+    .mobile-search-layer__header {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .mobile-search-layer__back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 0.95rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+
+    .mobile-search-layer__field {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.14rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      box-sizing: border-box;
+    }
+
+    .mobile-search-layer__icon {
+      margin-left: 0.45rem;
+      opacity: 0.8;
+      font-size: 0.84rem;
+      flex-shrink: 0;
+    }
+
+    .mobile-search-layer__input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px !important;
+      line-height: 1.25;
+      outline: none;
+      padding: 0.5rem 0.1rem;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .mobile-search-layer__body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-bottom: 0.25rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-search-layer__popular[hidden] {
+      display: none !important;
+    }
+
+    .mobile-search-layer__section-title {
+      margin-bottom: 0.55rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .mobile-search-layer__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .mobile-search-layer__chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.86rem;
+      cursor: pointer;
+    }
+
+    .mobile-search-layer__chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .mobile-search-layer__suggestions {
+      position: relative;
+      top: auto;
+      left: auto;
+      right: auto;
+      margin-top: 0.4rem;
+      max-height: none;
+      box-shadow: none;
+      border-radius: var(--radius);
+    }
+
+    @media (min-width: 769px) {
+      .mobile-search-layer {
+        display: none !important;
+      }
+    }
+
+    /* On mobile: make the home search bar a visual-only trigger.
+       pointer-events:none on the input prevents iOS from focusing it or showing the keyboard.
+       The wrapper captures the tap and opens the overlay instead. */
+    @media (max-width: 768px) {
+      .home-search-input {
+        pointer-events: none;
+        user-select: none;
+        -webkit-user-select: none;
+        caret-color: transparent;
+      }
+      .home-search-wrap {
+        cursor: pointer;
+      }
     }
 
     .hero__suggestions {
@@ -649,6 +855,7 @@
 
     .offer-card {
       width: 260px;
+      max-width: 100%;
       flex-shrink: 0;
       text-decoration: none;
       color: inherit;
@@ -778,6 +985,7 @@
       flex-direction: column;
       justify-content: center;
       gap: 0.2rem;
+      min-width: 0;
     }
 
     .recommend-name {
@@ -785,6 +993,7 @@
       font-size: 0.92rem;
       font-weight: 700;
       color: var(--text);
+      overflow-wrap: anywhere;
     }
 
     .recommend-meta {
@@ -808,10 +1017,15 @@
       left: 0;
       right: 0;
       bottom: 0;
+      width: 100%;
+      max-width: 100vw;
       z-index: 920;
       border-top: 1px solid var(--border);
       background: rgba(13, 13, 32, 0.98);
       backdrop-filter: blur(10px);
+      padding-bottom: env(safe-area-inset-bottom);
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
     }
 
     .bottom-nav__inner {
@@ -819,6 +1033,7 @@
       margin: 0 auto;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
+      padding-bottom: env(safe-area-inset-bottom);
     }
 
     .bottom-nav__item {
@@ -848,6 +1063,11 @@
       color: var(--primary);
     }
 
+    body.keyboard-open .bottom-nav {
+      display: none;
+      pointer-events: none;
+    }
+
     @media (min-width: 1025px) {
       .bottom-nav {
         display: none;
@@ -862,23 +1082,173 @@
       }
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 768px) {
+      .home-main {
+        padding: 0.38rem 0 calc(5.65rem + env(safe-area-inset-bottom));
+      }
+
+      .home-section {
+        padding-top: 0.95rem;
+      }
+
+      .home-section .container,
+      .home-search-section .container {
+        overflow-x: clip;
+      }
+
+      .home-search-panel {
+        padding: 0.68rem;
+      }
+
+      .home-hero-title {
+        font-size: clamp(1.08rem, 4.8vw, 1.34rem);
+      }
+
+      .home-search-wrap {
+        gap: 0.4rem;
+        min-height: 48px;
+      }
+
+      .home-search-input {
+        font-size: 16px;
+        padding: 0.55rem 0.1rem;
+      }
+
       .home-search-btn {
-        min-width: 88px;
+        min-height: 40px;
+        padding: 0 0.85rem;
+        font-size: 0.78rem;
+      }
+
+      .home-search-panel .quick-tags {
+        gap: 0.4rem;
+        padding-top: 0.5rem;
+      }
+
+      .home-search-panel .quick-tag {
+        min-height: 34px;
+        padding: 0.3rem 0.62rem;
+        font-size: 0.72rem;
+      }
+
+      .home-section-head {
+        margin-bottom: 0.8rem;
+      }
+
+      .category-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        overflow: visible;
+        padding: 0.1rem 0 0.2rem;
+      }
+
+      .category-item {
+        width: auto;
+        min-width: 0;
+      }
+
+      .category-thumb {
+        width: min(100%, 72px);
+        height: auto;
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+      }
+
+      .category-name {
+        width: 100%;
+        font-size: 0.72rem;
+      }
+
+      .offer-filter-row {
+        gap: 0.38rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .offer-filter-btn {
+        min-height: 32px;
+        padding: 0.32rem 0.72rem;
+        font-size: 0.74rem;
+      }
+
+      .offer-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.78rem;
+        overflow: visible;
+        padding: 0.05rem 0 0.2rem;
       }
 
       .offer-card {
-        width: 84vw;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .offer-media {
+        height: clamp(132px, 28vw, 154px);
+      }
+
+      .offer-body {
+        padding: 0.66rem;
+      }
+
+      .offer-name {
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: unset;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.28;
+        min-height: 2.45em;
+      }
+
+      .recommend-list {
+        gap: 0.8rem;
+      }
+
+      .recommend-card {
+        grid-template-columns: 88px minmax(0, 1fr);
+        gap: 0.62rem;
+      }
+
+      .recommend-media {
+        width: 88px;
+        height: 88px;
+      }
+
+      .recommend-body {
+        padding: 0.52rem 0.62rem 0.52rem 0;
+      }
+
+      .bottom-nav__item {
+        min-height: 56px;
+        padding: 0.42rem 0.25rem 0.52rem;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .home-search-btn {
+        min-width: 0;
+        padding: 0 0.75rem;
+      }
+
+      .home-search-wrap {
+        gap: 0.32rem;
+      }
+
+      .offer-card {
+        width: 100%;
       }
     }
 
     @media (max-width: 430px) {
       .home-main {
-        padding: 0.32rem 0 5.5rem;
+        padding: 0.25rem 0 calc(5.45rem + env(safe-area-inset-bottom));
       }
 
       .home-search-panel {
-        padding: 0.52rem;
+        padding: 0.56rem;
       }
 
       .home-hero-title {
@@ -889,6 +1259,7 @@
       .home-search-wrap {
         gap: 0.28rem;
         padding: 0.1rem;
+        min-height: 46px;
       }
 
       .home-search-icon {
@@ -897,14 +1268,14 @@
       }
 
       .home-search-input {
-        font-size: 0.84rem;
+        font-size: 16px;
         padding: 0.42rem 0;
       }
 
       .home-search-btn {
-        min-height: 33px;
-        min-width: 74px;
-        padding: 0 0.62rem;
+        min-height: 38px;
+        min-width: 0;
+        padding: 0 0.68rem;
         font-size: 0.75rem;
       }
 
@@ -914,13 +1285,13 @@
       }
 
       .home-search-panel .quick-tag {
-        min-height: 27px;
-        padding: 0.19rem 0.48rem;
-        font-size: 0.66rem;
+        min-height: 32px;
+        padding: 0.26rem 0.54rem;
+        font-size: 0.68rem;
       }
 
       .home-section {
-        padding-top: 0.38rem;
+        padding-top: 0.82rem;
       }
 
       .home-section-head {
@@ -928,31 +1299,30 @@
       }
 
       .category-row {
-        gap: 0.68rem;
-        padding: 0.1rem 0.04rem 0.24rem;
+        gap: 0.58rem;
+        padding: 0.08rem 0 0.18rem;
       }
 
       .category-item {
-        width: 74px;
         gap: 0.3rem;
       }
 
       .category-thumb {
-        width: 67px;
-        height: 67px;
+        width: min(100%, 64px);
       }
 
       .category-name {
-        font-size: 0.7rem;
+        font-size: 0.68rem;
       }
 
       .offer-row {
-        gap: 0.6rem;
-        padding-bottom: 0.3rem;
+        grid-template-columns: 1fr;
+        gap: 0.68rem;
+        padding-bottom: 0.15rem;
       }
 
       .offer-card {
-        width: 78vw;
+        width: 100%;
       }
 
       .recommend-list {
@@ -972,6 +1342,42 @@
       .recommend-body {
         padding: 0.44rem 0.52rem 0.44rem 0;
       }
+
+      .bottom-nav__label {
+        font-size: 0.66rem;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .home-search-panel {
+        padding: 0.5rem;
+      }
+
+      .home-search-btn {
+        padding: 0 0.58rem;
+        font-size: 0.72rem;
+      }
+
+      .home-search-panel .quick-tag {
+        padding: 0.24rem 0.5rem;
+        font-size: 0.66rem;
+      }
+
+      .category-row {
+        gap: 0.5rem;
+      }
+
+      .category-thumb {
+        width: min(100%, 58px);
+      }
+    }
+
+    /* ── Touch devices: kill hover transforms that override style.css fixes ── */
+    @media (hover: none) {
+      .local-city-card:hover        { transform: none !important; }
+      .category-item:hover .category-thumb { transform: none !important; border-color: var(--border) !important; }
+      /* Speed up profile-sheet slide so it feels like a snap, not a zoom */
+      .profile-sheet-panel          { transition: transform 0.12s ease !important; }
     }
   </style>
 </head>
@@ -981,7 +1387,7 @@
   <main class="home-main">
     <section class="home-search-section">
       <div class="container">
-        <div class="home-search-panel card fade-in">
+        <div class="home-search-panel card">
           <h1 class="home-hero-title" data-i18n="home_hero_title">Find and book services near you</h1>
           <div class="home-search-wrap">
             <span class="home-search-icon" aria-hidden="true">&#128269;</span>
@@ -995,7 +1401,7 @@
               oninput="heroSearchSuggest(this.value)"
               onkeydown="heroSearchKeydown(event)"
               onblur="setTimeout(()=>{const b=document.getElementById('heroSuggestions');if(b)b.style.display='none'},300)">
-            <button class="btn btn-primary btn-sm home-search-btn" onclick="doSearch()" data-i18n="home_search_btn">Search</button>
+            <button class="btn btn-primary btn-sm home-search-btn" id="homeSearchBtn" onclick="doSearch()" data-i18n="home_search_btn">Search</button>
             <div class="navbar__suggestions hero__suggestions" id="heroSuggestions" style="display:none"></div>
           </div>
           <div class="quick-tags">
@@ -1018,6 +1424,33 @@
         </div>
       </div>
     </section>
+    <div class="mobile-search-layer" id="mobileSearchLayer" aria-hidden="true">
+      <div class="mobile-search-layer__panel" role="dialog" aria-modal="true" aria-label="Search">
+        <div class="mobile-search-layer__header">
+          <button type="button" class="mobile-search-layer__back" onclick="closeMobileSearchOverlay()" aria-label="Close search">&#8592;</button>
+          <div class="mobile-search-layer__field">
+            <span class="mobile-search-layer__icon" aria-hidden="true">&#128269;</span>
+            <input
+              type="search"
+              id="mobileSearchInput"
+              class="mobile-search-layer__input"
+              placeholder="Search services or barbers"
+              data-i18n-ph="home_search_ph"
+              autocomplete="off"
+              oninput="heroSearchSuggest(this.value)"
+              onkeydown="heroSearchKeydown(event)"
+              onblur="setTimeout(heroHideSuggestions,300)">
+          </div>
+        </div>
+        <div class="mobile-search-layer__body">
+          <div class="mobile-search-layer__popular" id="mobileSearchPopular">
+            <div class="mobile-search-layer__section-title">Popular searches</div>
+            <div class="mobile-search-layer__chips" id="mobileSearchPopularChips"></div>
+          </div>
+          <div class="navbar__suggestions mobile-search-layer__suggestions" id="mobileSearchSuggestions" style="display:none"></div>
+        </div>
+      </div>
+    </div>
     <section class="home-section home-section--categories">
       <div class="container">
         <div class="home-section-head">
@@ -1120,13 +1553,33 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=23"></script>
+  <script src="assets/js/nav.js?v=24"></script>
   <script>
     window.__currentNavPage = 'index';
     renderNav('index');
     renderFooter();
     applyI18n();
     if (typeof Analytics !== 'undefined') Analytics.track('homepage_view');
+
+    // ── Keep bottom nav pinned when virtual keyboard opens (iOS/Android) ──
+    (function () { return; // shared nav.js owns mobile keyboard state
+      if (!window.visualViewport) return;
+      var bottomNav = document.querySelector('.bottom-nav');
+      if (!bottomNav) return;
+      function onViewportResize() {
+        var keyboardHeight = window.innerHeight - window.visualViewport.height;
+        if (keyboardHeight > 80) {
+          // Keyboard is open — pin nav above keyboard
+          document.body.classList.add('keyboard-open');
+          document.documentElement.style.setProperty('--bh-keyboard-offset', '-' + keyboardHeight + 'px');
+        } else {
+          document.body.classList.remove('keyboard-open');
+          document.documentElement.style.setProperty('--bh-keyboard-offset', '0px');
+        }
+      }
+      window.visualViewport.addEventListener('resize', onViewportResize);
+      window.visualViewport.addEventListener('scroll', onViewportResize);
+    })();
 
     // Search
     const DEFAULT_SERVICE_SUGGESTIONS = [
@@ -1152,6 +1605,8 @@
     let _heroSearchIndex = { services: [], businesses: [] };
     let _heroCurrentSuggestions = [];
     let _activeCityFilter = '';
+    let _mobileSearchOverlayOpen = false;
+    let _mobileSearchScrollY = 0;
 
     function _heroEsc(str) {
       if (typeof escapeHTML === 'function') return escapeHTML(str);
@@ -1188,6 +1643,12 @@
       const match = text.slice(i, i + q.length);
       const end = text.slice(i + q.length);
       return `${_heroEsc(start)}<span class="navbar__sugg-match">${_heroEsc(match)}</span><span class="navbar__sugg-rest">${_heroEsc(end)}</span>`;
+    }
+
+    function _heroJsString(value) {
+      return String(value || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'");
     }
 
     function _refreshSearchIndex(barbers) {
@@ -1231,28 +1692,215 @@
       };
     }
 
+    function _useMobileSearchOverlay() {
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function _getHeroSearchElements() {
+      if (_mobileSearchOverlayOpen) {
+        return {
+          input: document.getElementById('mobileSearchInput') || document.getElementById('searchInput'),
+          box: document.getElementById('mobileSearchSuggestions') || document.getElementById('heroSuggestions')
+        };
+      }
+      return {
+        input: document.getElementById('searchInput'),
+        box: document.getElementById('heroSuggestions')
+      };
+    }
+
+    function _syncHeroSearchInputs(value) {
+      const next = String(value || '');
+      const homeInput = document.getElementById('searchInput');
+      const overlayInput = document.getElementById('mobileSearchInput');
+      if (homeInput && homeInput.value !== next) homeInput.value = next;
+      if (overlayInput && overlayInput.value !== next) overlayInput.value = next;
+      _updateMobileSearchPopular();
+    }
+
+    function _updateMobileSearchPopular() {
+      const popular = document.getElementById('mobileSearchPopular');
+      if (!popular) return;
+      const query = String(document.getElementById('mobileSearchInput')?.value || '').trim();
+      popular.hidden = !_mobileSearchOverlayOpen || !!query;
+    }
+
+    function _lockMobileSearchScroll() {
+      _mobileSearchScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.classList.add('mobile-search-open');
+      document.body.style.top = `-${_mobileSearchScrollY}px`;
+    }
+
+    function _unlockMobileSearchScroll() {
+      const scrollY = _mobileSearchScrollY;
+      document.body.classList.remove('mobile-search-open');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollY);
+    }
+
+    function _renderMobileSearchPopular() {
+      const chips = document.getElementById('mobileSearchPopularChips');
+      if (!chips) return;
+      const labels = Array.from(new Set(DEFAULT_SERVICE_SUGGESTIONS)).slice(0, 6);
+      chips.innerHTML = labels.map((label) => (
+        `<button type="button" class="mobile-search-layer__chip" onclick="mobileSearchUsePopular('${_heroJsString(label)}')">${_heroEsc(label)}</button>`
+      )).join('');
+    }
+
+    function openMobileSearchOverlay(initialValue = '') {
+      if (!_useMobileSearchOverlay()) return;
+      const overlay = document.getElementById('mobileSearchLayer');
+      const input = document.getElementById('mobileSearchInput');
+      if (!overlay || !input) return;
+
+      const nextValue = String(initialValue || document.getElementById('searchInput')?.value || '');
+      _renderMobileSearchPopular();
+      _syncHeroSearchInputs(nextValue);
+      heroHideSuggestions();
+      _mobileSearchOverlayOpen = true;
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      _lockMobileSearchScroll();
+
+      window.setTimeout(() => {
+        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+        const caret = input.value.length;
+        if (typeof input.setSelectionRange === 'function') input.setSelectionRange(caret, caret);
+        if (nextValue.trim()) {
+          heroSearchSuggest(nextValue);
+        } else {
+          _updateMobileSearchPopular();
+        }
+      }, 30);
+    }
+
+    function closeMobileSearchOverlay(options = {}) {
+      if (!_mobileSearchOverlayOpen) return;
+      const overlay = document.getElementById('mobileSearchLayer');
+      _mobileSearchOverlayOpen = false;
+      heroHideSuggestions();
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+      _updateMobileSearchPopular();
+      _unlockMobileSearchScroll();
+      if (options.restoreFocus !== false) {
+        document.getElementById('searchInput')?.blur();
+      }
+    }
+
+    function mobileSearchUsePopular(query) {
+      const value = String(query || '').trim();
+      if (!value) return;
+      if (!_mobileSearchOverlayOpen) openMobileSearchOverlay(value);
+      _syncHeroSearchInputs(value);
+      heroSearchSuggest(value);
+      const input = document.getElementById('mobileSearchInput');
+      if (input) {
+        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+        const caret = input.value.length;
+        if (typeof input.setSelectionRange === 'function') input.setSelectionRange(caret, caret);
+      }
+    }
+
+    function _syncMobileSearchTriggerState() {
+      const homeInput = document.getElementById('searchInput');
+      if (!homeInput) return;
+      const useOverlay = _useMobileSearchOverlay();
+      homeInput.readOnly = useOverlay;
+      if (useOverlay) {
+        homeInput.setAttribute('aria-haspopup', 'dialog');
+      } else {
+        homeInput.removeAttribute('aria-haspopup');
+        if (_mobileSearchOverlayOpen) closeMobileSearchOverlay({ restoreFocus: false });
+      }
+    }
+
+    function _bindMobileSearchTrigger() {
+      const homeInput = document.getElementById('searchInput');
+      const homeWrap  = homeInput ? homeInput.closest('.home-search-wrap') : null;
+      const homeBtn   = document.getElementById('homeSearchBtn');
+      if (!homeInput) return;
+
+      // Wrap click: open overlay on mobile (input has pointer-events:none via CSS,
+      // so the tap always bubbles up to the wrap — iOS cannot focus the input directly)
+      if (homeWrap && homeWrap.dataset.mobileSearchBound !== '1') {
+        homeWrap.dataset.mobileSearchBound = '1';
+        homeWrap.addEventListener('click', (event) => {
+          if (!_useMobileSearchOverlay()) return;
+          event.preventDefault();
+          event.stopPropagation();
+          openMobileSearchOverlay(homeInput.value);
+        });
+      }
+
+      // Belt-and-suspenders: if iOS somehow still focuses the input, immediately open overlay
+      if (homeInput.dataset.mobileSearchBound !== '1') {
+        homeInput.dataset.mobileSearchBound = '1';
+        homeInput.addEventListener('focus', () => {
+          if (!_useMobileSearchOverlay()) return;
+          homeInput.blur();
+          openMobileSearchOverlay(homeInput.value);
+        });
+      }
+
+      // Search button on mobile also opens overlay
+      if (homeBtn && homeBtn.dataset.mobileSearchBound !== '1') {
+        homeBtn.dataset.mobileSearchBound = '1';
+        homeBtn.addEventListener('click', (event) => {
+          if (!_useMobileSearchOverlay()) return;
+          event.preventDefault();
+          event.stopPropagation();
+          openMobileSearchOverlay(homeInput.value);
+        });
+      }
+
+      if (document.body.dataset.mobileSearchGlobalBound !== '1') {
+        document.body.dataset.mobileSearchGlobalBound = '1';
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && _mobileSearchOverlayOpen) closeMobileSearchOverlay();
+        });
+        window.addEventListener('resize', _syncMobileSearchTriggerState, { passive: true });
+      }
+
+      _renderMobileSearchPopular();
+      _syncMobileSearchTriggerState();
+      _updateMobileSearchPopular();
+    }
+
     function heroHideSuggestions() {
-      const box = document.getElementById('heroSuggestions');
-      if (box) box.style.display = 'none';
+      const boxes = [
+        document.getElementById('heroSuggestions'),
+        document.getElementById('mobileSearchSuggestions')
+      ];
+      for (const box of boxes) {
+        if (box) box.style.display = 'none';
+      }
       _heroCurrentSuggestions = [];
+      _updateMobileSearchPopular();
     }
 
     function heroPickSuggestion(index) {
       const item = _heroCurrentSuggestions[index];
       if (!item) return;
-      const input = document.getElementById('searchInput');
-      if (input) input.value = item.name || '';
+      _syncHeroSearchInputs(item.name || '');
       heroHideSuggestions();
       if (item.type === 'business' && item.city) {
         _activeCityFilter = item.city;
         _syncCityButtonsUI();
         renderHomeSections();
       }
+      const input = _getHeroSearchElements().input;
+      if (input && _mobileSearchOverlayOpen) {
+        try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+      }
     }
 
     function heroSearchSuggest(value) {
-      const box = document.getElementById('heroSuggestions');
+      const { box } = _getHeroSearchElements();
       if (!box) return;
+      _syncHeroSearchInputs(value);
       const queryRaw = String(value || '').trim();
       const query = _normalizeSearch(queryRaw);
       if (!query) {
@@ -1313,10 +1961,11 @@
 
       box.innerHTML = html;
       box.style.display = 'block';
+      _updateMobileSearchPopular();
     }
 
     function heroSearchKeydown(e) {
-      const box = document.getElementById('heroSuggestions');
+      const { box } = _getHeroSearchElements();
       const items = box ? Array.from(box.querySelectorAll('.navbar__sugg-item')) : [];
       if (!box || box.style.display === 'none' || !items.length) {
         if (e.key === 'Enter') {
@@ -1350,18 +1999,29 @@
     }
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.home-search-wrap') && !e.target.closest('#heroSuggestions')) {
+      if (
+        !e.target.closest('.home-search-wrap') &&
+        !e.target.closest('#heroSuggestions') &&
+        !e.target.closest('.mobile-search-layer__field') &&
+        !e.target.closest('#mobileSearchSuggestions') &&
+        !e.target.closest('#mobileSearchPopular')
+      ) {
         heroHideSuggestions();
       }
     });
 
     function doSearch() {
-      const q = document.getElementById('searchInput').value.trim();
+      if (_useMobileSearchOverlay() && !_mobileSearchOverlayOpen) {
+        openMobileSearchOverlay(document.getElementById('searchInput')?.value || '');
+        return;
+      }
+      const q = String(_getHeroSearchElements().input?.value || document.getElementById('searchInput')?.value || '').trim();
       const city = _activeCityFilter.trim();
       if (typeof Analytics !== 'undefined') Analytics.track('barber_search', { source: 'homepage_search', query: q, city });
       const params = new URLSearchParams();
       if (q) params.set('q', q);
       if (city) params.set('city', city);
+      if (_mobileSearchOverlayOpen) closeMobileSearchOverlay({ restoreFocus: false });
       window.location.href = `barbers.html?${params.toString()}`;
     }
 
@@ -1384,6 +2044,8 @@
       renderHomeSections();
     }
 
+    _bindMobileSearchTrigger();
+
     function renderCategories() {
       const row = document.getElementById('categoryRow');
       if (!row) return;
@@ -1401,6 +2063,18 @@
 
     function _barberDisplayName(barber) {
       return String(barber.shop_name || `${barber.first_name || ''} ${barber.last_name || ''}`).trim() || 'Barber';
+    }
+
+    function getBookUrl(id, serviceId) {
+      const query = new URLSearchParams();
+      query.set('barber', String(id));
+      if (Number.isInteger(parseInt(serviceId, 10))) query.set('service', String(serviceId));
+      return `book.html?${query.toString()}`;
+    }
+
+    function getLoginRedirectUrl(target) {
+      const safeTarget = String(target || '').replace(/^\//, '');
+      return `login.html?redirect=${encodeURIComponent(safeTarget)}`;
     }
 
     function _barberCardImage(barber) {
@@ -1676,6 +2350,7 @@
       const totalReviews = Number.isFinite(Number(barber.total_reviews)) ? Number(barber.total_reviews) : 0;
       const avatarSrc = getBarberAvatar(barber);
       const nextAvail = getNextAvailable(barber);
+      const bookingUrl = getBookUrl(barber.id);
 
       document.getElementById('profileSheetContent').innerHTML = `
         <div class="sheet-profile-hero">
@@ -1707,9 +2382,9 @@
 
         <div class="sheet-cta">
           ${isCustomer && services.length
-            ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg">${minPrice !== null ? (typeof tf === 'function' ? tf('sheet_book_from', { price: fmtPrice(minPrice) }) : 'Book Now � From ' + fmtPrice(minPrice)) : (typeof t === 'function' ? t('sheet_book_now') : 'Book Now')}</a>`
+            ? `<a href="${bookingUrl}" class="btn btn-primary btn-lg">${minPrice !== null ? (typeof tf === 'function' ? tf('sheet_book_from', { price: fmtPrice(minPrice) }) : 'Book Now - From ' + fmtPrice(minPrice)) : (typeof t === 'function' ? t('sheet_book_now') : 'Book Now')}</a>`
             : !isCustomer
-              ? `<a href="login.html" class="btn btn-primary">${typeof t === 'function' ? t('profile_login_book') : 'Log in to Book'}</a>`
+              ? `<a href="${getLoginRedirectUrl(bookingUrl)}" class="btn btn-primary">${typeof t === 'function' ? t('profile_login_book') : 'Log in to Book'}</a>`
               : `<button class="btn btn-ghost" disabled>${typeof t === 'function' ? t('no_services_listed') : 'No services listed'}</button>`}
           <a href="${getBarberProfileUrl(barber.id)}" class="btn btn-outline">${typeof t === 'function' ? t('sheet_full_profile') : 'Full Profile'}</a>
           ${isCustomer ? `<button class="btn btn-sm ${isFav ? 'btn-danger' : 'btn-ghost'}" onclick="sheetToggleFav()">${isFav ? (typeof t === 'function' ? t('sheet_saved_btn') : 'Saved') : (typeof t === 'function' ? t('sheet_save_btn') : 'Save')}</button>` : ''}
@@ -1971,4 +2646,3 @@
   </script>
 </body>
 </html>
-

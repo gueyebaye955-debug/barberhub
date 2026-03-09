@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/assets/logoo.png" type="image/png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
   <script>if (/\/barber\/\d+/.test(location.pathname)) document.write('<base href="/">');</script>
   <title>Provider Profile | JOTMA</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'></text></svg>">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=27">
   <style>
     .master-sticky-wrap {
       position: sticky;
@@ -339,7 +339,7 @@
   <script src="assets/js/api.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/auth.js"></script>
-  <script src="assets/js/nav.js?v=23"></script>
+  <script src="assets/js/nav.js?v=24"></script>
   <script>
     window.__currentNavPage = 'profile';
     renderNav('profile');
@@ -377,6 +377,18 @@
       if (!Number.isInteger(safeId) || safeId <= 0) return fallback;
       if (location.protocol === 'file:') return fallback;
       return `${location.origin}/barber/${safeId}`;
+    }
+
+    function getBookUrl(id, serviceId) {
+      const query = new URLSearchParams();
+      query.set('barber', String(id));
+      if (Number.isInteger(parseInt(serviceId, 10))) query.set('service', String(serviceId));
+      return `book.html?${query.toString()}`;
+    }
+
+    function getLoginRedirectUrl(target) {
+      const safeTarget = String(target || '').replace(/^\//, '');
+      return `login.html?redirect=${encodeURIComponent(safeTarget)}`;
     }
 
     function getServiceImageList(service) {
@@ -528,11 +540,12 @@
       const ratingValue = Number.isFinite(Number(barber?.rating)) ? Number(barber.rating) : 0;
       const totalReviews = Number.isFinite(Number(barber?.total_reviews)) ? Number(barber.total_reviews) : 0;
       const portfolio = Array.isArray(barber.portfolio) ? barber.portfolio : [];
+      const bookingUrl = getBookUrl(barber.id);
       const bookCta = isCustomer
         ? (services.length
-          ? `<a href="book.html?barber=${barber.id}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
+          ? `<a href="${bookingUrl}" class="btn btn-primary btn-lg btn-block">${t('profile_book_btn')}</a>`
           : `<button class="btn btn-ghost btn-lg btn-block" disabled>${t('no_services_listed')}</button>`)
-        : `<a href="login.html" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`;
+        : `<a href="${getLoginRedirectUrl(bookingUrl)}" class="btn btn-primary btn-lg btn-block">${t('profile_login_book')}</a>`;
       const minPriceLabel = minPrice === null ? 'Pricing available on profile' : `${t('profile_from')} ${fmtPrice(minPrice)}`;
 
       document.getElementById('main').innerHTML = `
@@ -864,4 +877,3 @@
   </script>
 </body>
 </html>
-

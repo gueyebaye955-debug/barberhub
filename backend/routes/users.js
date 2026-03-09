@@ -118,6 +118,15 @@ router.get('/', requireAuth, requireRole('admin'), asyncHandler(async (_req, res
   return res.json(result.rows);
 }));
 
+router.delete('/:id', requireAuth, requireRole('admin'), asyncHandler(async (req, res) => {
+  const userId = parsePositiveInt(req.params.id);
+  if (!userId) return res.status(400).json({ error: 'Invalid user id' });
+
+  const result = await pool.query('DELETE FROM users WHERE id=$1 RETURNING id', [userId]);
+  if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+  return res.json({ ok: true });
+}));
+
 router.patch('/:id/approve', requireAuth, requireRole('admin'), asyncHandler(async (req, res) => {
   const userId = parsePositiveInt(req.params.id);
   if (!userId) return res.status(400).json({ error: 'Invalid user id' });
