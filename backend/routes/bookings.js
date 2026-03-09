@@ -222,8 +222,9 @@ router.patch('/:id/status', requireAuth, asyncHandler(async (req, res) => {
   const b = booking.rows[0];
   const { id, role } = req.user;
 
-  if (role === 'customer' && b.customer_id !== id) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (role === 'customer') {
+    if (b.customer_id !== id) return res.status(403).json({ error: 'Forbidden' });
+    if (status !== 'cancelled') return res.status(403).json({ error: 'Customers can only cancel bookings' });
   }
   if (role === 'barber') {
     const barberProfile = await pool.query('SELECT id FROM barber_profiles WHERE user_id=$1', [id]);

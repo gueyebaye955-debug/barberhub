@@ -492,6 +492,7 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/metrics', require('./routes/metrics'));
+app.use('/api/billing', require('./routes/billing'));
 const chatLimit = require('express-rate-limit')({ windowMs: 60000, max: 20 });
 const handleChat = asyncHandler(async (req, res) => {
   const https = require('https');

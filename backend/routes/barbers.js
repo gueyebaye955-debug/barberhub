@@ -485,6 +485,17 @@ router.delete('/me/services/:id', requireAuth, requireRole('barber'), asyncHandl
   return res.json({ ok: true });
 }));
 
+// ── Wave number ──────────────────────────────────────────────────────────────
+
+router.patch('/me/wave-number', requireAuth, requireRole('barber'), asyncHandler(async (req, res) => {
+  const barberProfileId = await resolveBarberProfileId(req.user.id);
+  if (!barberProfileId) return res.status(404).json({ error: 'Barber profile not found' });
+
+  const waveNumber = cleanString(req.body?.wave_number, { max: 30, allowEmpty: true }) || null;
+  await pool.query('UPDATE barber_profiles SET wave_number=$1 WHERE id=$2', [waveNumber, barberProfileId]);
+  return res.json({ ok: true, wave_number: waveNumber });
+}));
+
 // ── Booked slots ─────────────────────────────────────────────────────────────
 
 router.get('/:id/booked-slots', asyncHandler(async (req, res) => {

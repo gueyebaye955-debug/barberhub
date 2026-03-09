@@ -409,7 +409,7 @@
             </div>
             <div id="waveSection" style="display:${sel.paymentMethod==='wave'?'block':'none'};background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem">
               ${(() => {
-                const ph = (barber.phone || '').replace(/\D/g,'') || '3139896811';
+                const ph = (barber.wave_number || barber.phone || '').replace(/\D/g,'') || '3139896811';
                 const deposit = Math.ceil(sel.service.price * 0.10 * 100) / 100;
                 return `<p style="margin-bottom:0.5rem;font-size:0.875rem">Send a <strong>10% deposit of ${fmtPrice(deposit)}</strong> <span style="color:var(--text-muted);font-size:0.8rem">(total: ${fmtPrice(sel.service.price)})</span> to this Wave number:</p>
                 <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.08em;color:#2563eb;margin-bottom:1rem">📱 ${ph}</div>

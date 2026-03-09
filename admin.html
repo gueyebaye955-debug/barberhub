@@ -132,6 +132,8 @@
     let apiMetricsLoading = false;
     let apiAllUsers = null;
     let apiApprovedBarbers = null;
+    let apiBilling = null;
+    let billingMonth = new Date().toISOString().slice(0, 7);
 
     async function refreshApiUsers() {
       if (!window.BH_API) return;
@@ -216,6 +218,7 @@
             <div class="dash-nav-item ${activeTab==='barbers'?'active':''}" onclick="switchTab('barbers')"> ${t('admin_barbers')}${pBadge}</div>
             <div class="dash-nav-item ${activeTab==='users'?'active':''}" onclick="switchTab('users')"> ${t('admin_users')}</div>
             <div class="dash-nav-item ${activeTab==='bookings'?'active':''}" onclick="switchTab('bookings')"> ${t('admin_bookings')}</div>
+            <div class="dash-nav-item ${activeTab==='billing'?'active':''}" onclick="switchTab('billing');refreshBilling()"> 💙 Billing</div>
             <div class="dash-nav-item ${activeTab==='settings'?'active':''}" onclick="switchTab('settings')"> Notifications</div>
             <div class="dash-nav-item" onclick="Auth.logout()" style="color:var(--text-muted)">${t('dash_signout')}</div>
           </nav>
@@ -480,13 +483,81 @@
               </table>
             </div>`}
           </div>
+
+          <!-- Billing -->
+          <div class="dash-panel ${activeTab==='billing'?'active':''}" id="panel-billing">
+            <p style="color:var(--text-muted)">Loading billing data...</p>
+          </div>
+
         </div>`;
+      if (activeTab === 'billing') renderBillingPanel();
     }
 
     function switchTab(tab) {
       activeTab = tab;
       render();
       if (tab === 'stats') refreshApiMetrics();
+      if (tab === 'billing') refreshBilling();
+    }
+
+    async function refreshBilling() {
+      if (!window.BH_API) return;
+      try {
+        apiBilling = await window.BH_API.getBilling(billingMonth);
+        renderBillingPanel();
+      } catch (e) {
+        const el = document.getElementById('panel-billing');
+        if (el) el.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+      }
+    }
+
+    function renderBillingPanel() {
+      const el = document.getElementById('panel-billing');
+      if (!el) return;
+      const records = apiBilling?.records || [];
+      const month = apiBilling?.month || billingMonth;
+      const paid = records.filter(r => r.paid).length;
+      const unpaid = records.filter(r => !r.paid).length;
+
+      el.innerHTML = `
+        <h2>💙 Billing</h2>
+        <p class="sub">Track monthly platform fees from providers</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <input type="month" value="${month}" onchange="billingMonth=this.value;refreshBilling()"
+            style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);padding:0.4rem 0.75rem;color:var(--text);font-size:0.9rem">
+          <span style="font-size:0.875rem;color:var(--text-muted)">✅ ${paid} paid &nbsp; ❌ ${unpaid} unpaid</span>
+        </div>
+        ${records.length === 0 ? `<p style="color:var(--text-muted)">No approved providers found.</p>` : `
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Provider</th><th>Wave Number</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${records.map(r => `<tr>
+                <td>
+                  <strong>${escapeHTML(r.shop_name || r.first_name + ' ' + r.last_name)}</strong><br>
+                  <span style="font-size:0.78rem;color:var(--text-muted)">${escapeHTML(r.email)}</span>
+                </td>
+                <td>${r.wave_number ? `<a href="https://wa.me/${r.wave_number.replace(/\D/g,'')}" target="_blank" style="color:#2563eb">${escapeHTML(r.wave_number)}</a>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                <td><input type="number" value="${r.amount||0}" min="0" id="amt_${r.barber_id}" style="width:80px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.4rem;color:var(--text)"></td>
+                <td>${r.paid
+                  ? `<span class="status-badge badge-approved">✅ Paid${r.paid_at ? ' ' + new Date(r.paid_at).toLocaleDateString() : ''}</span>`
+                  : `<span class="status-badge badge-pending">❌ Unpaid</span>`}</td>
+                <td>
+                  <button class="btn btn-sm" style="background:rgba(16,185,129,0.1);color:var(--green);border:1px solid rgba(16,185,129,0.3)" onclick="markBilling(${r.barber_id},true)">Mark Paid</button>
+                  ${r.paid ? `<button class="btn btn-sm btn-ghost" style="margin-left:0.3rem" onclick="markBilling(${r.barber_id},false)">Undo</button>` : ''}
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`}`;
+    }
+
+    async function markBilling(barberId, paid) {
+      const amount = parseInt(document.getElementById(`amt_${barberId}`)?.value || '0', 10);
+      try {
+        await window.BH_API.updateBilling(barberId, { paid, amount, month: billingMonth });
+        await refreshBilling();
+      } catch (e) { alert(e.message); }
     }
 
     async function runUptimeChecksNow() {

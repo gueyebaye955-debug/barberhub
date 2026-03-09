@@ -145,7 +145,7 @@ async function sendBookingEmail(type, toEmail, data) {
     ? `<tr><td style="padding:0.4rem 0;color:#aaa">Customer email</td><td><strong>${data.customerEmail}</strong></td></tr>`
     : '';
   const notesRow = data.notes
-    ? `<tr><td style="padding:0.4rem 0;color:#aaa">Notes</td><td><strong>${data.notes}</strong></td></tr>`
+    ? `<tr><td style="padding:0.4rem 0;color:#aaa">Notes</td><td><strong>${String(data.notes).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</strong></td></tr>`
     : '';
 
   const templates = {

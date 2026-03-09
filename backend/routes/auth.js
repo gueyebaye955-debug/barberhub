@@ -98,7 +98,7 @@ router.post('/register/send-code', asyncHandler(async (req, res) => {
   }
 
   const exists = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
-  if (exists.rows.length) return res.status(409).json({ error: 'Email already registered' });
+  if (exists.rows.length) return res.status(409).json({ error: 'Registration failed. Please check your details.' });
 
   // Legacy endpoint retained for older cached clients.
   // Signup no longer uses email verification codes.

@@ -362,6 +362,16 @@
     async adminApproveUser(id, approved) {
       return request(`/users/${id}/approve`, { method: 'PATCH', body: { approved }, auth: true });
     },
+    async updateWaveNumber(waveNumber) {
+      return request('/barbers/me/wave-number', { method: 'PATCH', auth: true, body: { wave_number: waveNumber } });
+    },
+    async getBilling(month) {
+      const q = month ? `?month=${encodeURIComponent(month)}` : '';
+      return request(`/billing${q}`, { auth: true });
+    },
+    async updateBilling(barberId, data) {
+      return request(`/billing/${encodeURIComponent(barberId)}`, { method: 'PATCH', auth: true, body: data });
+    },
   };
 
   global.BH_API = api;
