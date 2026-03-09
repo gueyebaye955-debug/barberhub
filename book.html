@@ -105,7 +105,7 @@
     let deferredInstallPrompt = null;
 
     let step = 0;
-    let sel  = { service: null, date: todayStr(), slot: null, notes: '', recurring: 'once' };
+    let sel  = { service: null, date: todayStr(), slot: null, notes: '', recurring: 'once', paymentMethod: '', waveReceiptData: null };
     let calYear, calMonth;
     const now = new Date();
     calYear  = now.getFullYear();
@@ -399,7 +399,30 @@
             <textarea class="form-control" placeholder="${t('notes_ph')}" rows="3" id="notesInput" onchange="sel.notes=this.value">${sel.notes}</textarea>
           </div>
           <div id="bookAlert"></div>
-          <div class="rules-hint" style="margin-top:1.25rem;border-left:3px solid var(--primary)">
+
+          <!-- Payment Method -->
+          <div style="margin-top:1.5rem">
+            <p style="font-size:0.9rem;font-weight:600;margin-bottom:0.6rem">How would you like to pay?</p>
+            <div style="display:flex;gap:0.6rem;margin-bottom:1rem">
+              <button id="btnWave" onclick="selectPayment('wave')" class="btn btn-ghost" style="flex:1;border:2px solid ${sel.paymentMethod==='wave'?'#2563eb':'var(--border)'}">💙 Wave</button>
+              <button id="btnInPerson" onclick="selectPayment('in_person')" class="btn btn-ghost" style="flex:1;border:2px solid ${sel.paymentMethod==='in_person'?'var(--green)':'var(--border)'}">💵 Pay in Person</button>
+            </div>
+            <div id="waveSection" style="display:${sel.paymentMethod==='wave'?'block':'none'};background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem">
+              ${(() => {
+                const ph = (barber.phone || '').replace(/\D/g,'') || '3139896811';
+                return `<p style="margin-bottom:0.5rem;font-size:0.875rem">Send <strong>${fmtPrice(sel.service.price)}</strong> to this Wave number:</p>
+                <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.08em;color:#2563eb;margin-bottom:1rem">📱 ${ph}</div>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem">Then upload your payment screenshot below:</p>
+                <label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.875rem">
+                  📸 Upload Receipt
+                  <input type="file" accept="image/*" onchange="handleReceiptUpload(this)" style="display:none">
+                </label>
+                ${sel.waveReceiptData ? `<div style="margin-top:0.75rem"><img src="${sel.waveReceiptData}" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border)"><p style="color:var(--green);font-size:0.82rem;margin-top:0.4rem">✅ Receipt uploaded — you're good to confirm!</p></div>` : ''}`;
+              })()}
+            </div>
+          </div>
+
+          <div class="rules-hint" style="margin-top:0.75rem;border-left:3px solid var(--primary)">
             <strong style="display:block;margin-bottom:0.4rem">${t('booking_policy_title')}</strong>
             <ul style="margin:0;padding-left:1.2rem;line-height:1.7">
               <li>${t('booking_policy_arrive')}</li>
@@ -411,7 +434,9 @@
             <button class="btn btn-ghost" onclick="prevStep()">${t('btn_back')}</button>
             <div class="book-confirm-actions">
               <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Print confirmation"> ${t('btn_print') || 'Print'}</button>
-              <button class="btn btn-primary btn-lg" onclick="confirmBooking()">${t('btn_confirm')}</button>
+              <button class="btn btn-primary btn-lg" id="confirmBtn"
+                ${sel.paymentMethod === '' ? 'disabled style="opacity:0.5;cursor:not-allowed"' : sel.paymentMethod === 'wave' && !sel.waveReceiptData ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}
+                onclick="confirmBooking()">${t('btn_confirm')}</button>
             </div>
           </div>
           <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:0.6rem">${t('booking_policy_accept')}</p>`;
@@ -512,6 +537,23 @@
     }
     function prevStep() { if (step > 0) { step--; render(); } }
 
+    function selectPayment(method) {
+      sel.paymentMethod = method;
+      if (method === 'in_person') sel.waveReceiptData = null;
+      render();
+    }
+
+    function handleReceiptUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        sel.waveReceiptData = e.target.result;
+        render();
+      };
+      reader.readAsDataURL(file);
+    }
+
     async function confirmBooking() {
       // Re-check slot availability at submission time (prevents double-booking across tabs)
       const toMins = mn => { const [h,m] = mn.split(':').map(Number); return h*60+m; };
@@ -582,8 +624,9 @@
         return acc?.phone || '';
       })();
       const cleanPhone = barberPhone.replace(/\D/g, '');
+      const paidViaWave = sel.paymentMethod === 'wave' && sel.waveReceiptData;
       const waMsg = encodeURIComponent(
-        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via JOTMA`
+        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. My name is ${user.first_name} ${user.last_name}.${paidViaWave ? ' I already paid via Wave — sending you the receipt screenshot now.' : ' I will pay in person.'} Sent via JOTMA`
       );
       const manualWaLink = `https://wa.me/${cleanPhone || '3139896811'}?text=${waMsg}`;
       const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
@@ -604,18 +647,19 @@
           </div>
           ${providerWaLink ? `
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem">
+            ${paidViaWave ? `
+              <p style="font-size:0.875rem;margin-bottom:0.75rem;color:var(--text-muted)">Your Wave receipt — <strong>send this screenshot to the provider on WhatsApp:</strong></p>
+              <img src="${sel.waveReceiptData}" style="max-width:100%;max-height:180px;border-radius:8px;border:1px solid var(--border);margin-bottom:1rem;display:block">
+            ` : ''}
             <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem">
-              ${providerWaSent
-                ? 'Booking details were sent to provider WhatsApp.'
-                : 'Send booking details to provider WhatsApp:'}
+              ${providerWaSent ? 'Booking details were sent to provider WhatsApp.' : 'Send booking details to provider on WhatsApp:'}
             </p>
             <a href="${providerWaLink}" target="_blank" rel="noopener"
                style="display:inline-flex;align-items:center;gap:0.6rem;background:#25d366;color:white;padding:0.75rem 1.5rem;border-radius:var(--radius);font-weight:700;text-decoration:none;font-size:1rem">
-              ${providerWaSent ? 'Open WhatsApp chat' : 'Send on WhatsApp'}
+              ${providerWaSent ? 'Open WhatsApp chat' : '💬 Send on WhatsApp'}
             </a>
-            ${providerEmailSent
-              ? '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.8rem">Provider email notification was also sent.</p>'
-              : ''}
+            ${paidViaWave ? '<p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.6rem">After opening WhatsApp, attach the screenshot above to the message.</p>' : ''}
+            ${providerEmailSent ? '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.8rem">Provider email notification was also sent.</p>' : ''}
           </div>` : ''}
           ${renderPostBookingInstallOffer()}
           <a href="dashboard.html" style="color:var(--text-muted);font-size:0.875rem">
