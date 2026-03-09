@@ -410,7 +410,8 @@
             <div id="waveSection" style="display:${sel.paymentMethod==='wave'?'block':'none'};background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem">
               ${(() => {
                 const ph = (barber.phone || '').replace(/\D/g,'') || '3139896811';
-                return `<p style="margin-bottom:0.5rem;font-size:0.875rem">Send <strong>${fmtPrice(sel.service.price)}</strong> to this Wave number:</p>
+                const deposit = Math.ceil(sel.service.price * 0.10 * 100) / 100;
+                return `<p style="margin-bottom:0.5rem;font-size:0.875rem">Send a <strong>10% deposit of ${fmtPrice(deposit)}</strong> <span style="color:var(--text-muted);font-size:0.8rem">(total: ${fmtPrice(sel.service.price)})</span> to this Wave number:</p>
                 <div style="font-size:1.6rem;font-weight:800;letter-spacing:0.08em;color:#2563eb;margin-bottom:1rem">📱 ${ph}</div>
                 <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem">Then upload your payment screenshot below:</p>
                 <label style="cursor:pointer;display:inline-flex;align-items:center;gap:0.5rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem 1rem;font-size:0.875rem">
@@ -626,7 +627,7 @@
       const cleanPhone = barberPhone.replace(/\D/g, '');
       const paidViaWave = sel.paymentMethod === 'wave' && sel.waveReceiptData;
       const waMsg = encodeURIComponent(
-        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. My name is ${user.first_name} ${user.last_name}.${paidViaWave ? ' I already paid via Wave — sending you the receipt screenshot now.' : ' I will pay in person.'} Sent via JOTMA`
+        `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. My name is ${user.first_name} ${user.last_name}.${paidViaWave ? ` I already sent the 10% deposit via Wave — sending you the receipt now. I will pay the remaining balance in person.` : ' I will pay in full in person.'} Sent via JOTMA`
       );
       const manualWaLink = `https://wa.me/${cleanPhone || '3139896811'}?text=${waMsg}`;
       const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
