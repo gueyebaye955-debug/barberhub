@@ -585,7 +585,7 @@
       const waMsg = encodeURIComponent(
         `Hi ${barberName}! I just booked a ${sel.service.name} on ${sel.date} at ${sel.slot}. I'd like to pay via Wave or WhatsApp. My name is ${user.first_name} ${user.last_name}.  Sent via JOTMA`
       );
-      const manualWaLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${waMsg}` : '';
+      const manualWaLink = `https://wa.me/${cleanPhone || '3139896811'}?text=${waMsg}`;
       const providerWaLink = providerNotify?.whatsapp_link || manualWaLink;
       const providerWaSent = !!providerNotify?.whatsapp_sent;
       const providerEmailSent = !!providerNotify?.email_sent;
