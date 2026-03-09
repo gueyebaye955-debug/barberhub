@@ -366,7 +366,7 @@ async function loadApiBarbers(params = {}) {
 async function loadApiBarberById(id) {
   if (!window.BH_API) return null;
   try {
-    const row = await Promise.race([window.BH_API.getBarber(id), _apiTimeout(5000)]);
+    const row = await Promise.race([window.BH_API.getBarber(id), _apiTimeout(8000)]);
     const normalized = normalizeApiBarber(row);
     const idx = API_BARBERS.findIndex((b) => b.id === normalized.id);
     if (idx === -1) API_BARBERS.push(normalized);

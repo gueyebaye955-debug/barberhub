@@ -459,6 +459,14 @@
         return;
       }
 
+      // Safety net — never show spinner for more than 10 seconds
+      const loadingGuard = setTimeout(() => {
+        const main = document.getElementById('main');
+        if (main && main.querySelector('.spinner')) {
+          main.innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon">⚠️</div><h3>Took too long to load</h3><p style="color:var(--text-muted)">Check your connection and try again.</p><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
+        }
+      }, 10000);
+
       barber = getBarber(barberId);
       if (barber) {
         try {
@@ -485,6 +493,7 @@
         })(),
       ]);
 
+      clearTimeout(loadingGuard);
       barber = apiBarber || barber;
       if (!barber) {
         document.getElementById('main').innerHTML = `<div class="empty-state" style="padding:6rem"><div class="icon"></div><h3>Barber not found</h3><a href="barbers.html" class="btn btn-primary mt-2">${t('browse_barbers_btn')}</a></div>`;
