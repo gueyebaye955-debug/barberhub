@@ -356,6 +356,12 @@
     async deleteService(id) {
       return request(`/barbers/me/services/${id}`, { method: 'DELETE', auth: true });
     },
+    async adminGetUsers() {
+      return request('/users', { auth: true });
+    },
+    async adminApproveUser(id, approved) {
+      return request(`/users/${id}/approve`, { method: 'PATCH', body: { approved }, auth: true });
+    },
   };
 
   global.BH_API = api;

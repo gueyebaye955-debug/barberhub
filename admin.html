@@ -129,6 +129,18 @@
     let apiUptimeSummary = null;
     let apiRecentErrors = null;
     let apiMetricsLoading = false;
+    let apiAllUsers = null;
+
+    async function refreshApiUsers() {
+      if (!window.BH_API) return;
+      try {
+        const data = await window.BH_API.adminGetUsers();
+        if (Array.isArray(data)) {
+          apiAllUsers = data;
+          render();
+        }
+      } catch (_) {}
+    }
 
     async function refreshApiMetrics() {
       if (apiMetricsLoading || !window.BH_API || typeof window.BH_API.getFunnel !== 'function') return;
@@ -163,13 +175,13 @@
     }
 
     function render() {
-      const allAccounts = Auth.getAccounts();
+      const allAccounts = apiAllUsers || Auth.getAccounts();
       const allBookings = Bookings.getAll();
       const allBarbers  = getAllBarbers();
 
       const customers = allAccounts.filter(a => a.role === 'customer');
       const barbers   = allAccounts.filter(a => a.role === 'barber');
-      const pending   = barbers.filter(b => b.approved === false);
+      const pending   = barbers.filter(b => !b.approved);
       const totalRev  = allBookings.filter(b => b.status === 'completed').reduce((s,b) => s + parseFloat(b.price||0), 0);
       const registered = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
       const pBadge    = pending.length ? ` <span style="margin-left:auto;background:var(--primary);color:white;font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:10px">${pending.length}</span>` : '';
@@ -488,6 +500,24 @@
     }
 
     async function approveBarber(email, approve) {
+      // Try API first
+      const apiUser = apiAllUsers && apiAllUsers.find(a => a.email === email);
+      if (apiUser && window.BH_API) {
+        await window.BH_API.adminApproveUser(apiUser.id, approve);
+        await refreshApiUsers();
+        if (approve) {
+          const subject = '✅ Your JOTMA application is approved!';
+          const message = `Hi ${apiUser.first_name}!\n\nYour provider profile on JOTMA has been approved. You can now receive bookings.\n\nLog in to your dashboard to set up your services.\n\n– The JOTMA Team`;
+          const sent = await sendEmailJS(apiUser.email, apiUser.first_name, subject, message);
+          showNotifModal(
+            'Notify Provider ✅',
+            sent ? `✅ Email sent to ${apiUser.email}. Also notify via WhatsApp:` : `Notify ${apiUser.first_name} manually:`,
+            apiUser.phone, message
+          );
+        }
+        return;
+      }
+      // Fallback to localStorage
       const stored = JSON.parse(localStorage.getItem('bh_accounts') || '[]');
       const idx = stored.findIndex(a => a.email === email);
       if (idx !== -1) {
@@ -495,19 +525,11 @@
         if (approve) {
           stored[idx].approved = true;
           localStorage.setItem('bh_accounts', JSON.stringify(stored));
-          render(); // re-render first so the pending list updates
-
-          const subject = ' Your JOTMA application is approved!';
-          const message = `Hi ${account.first_name}!\n\nGreat news  your provider profile on JOTMA has been approved. You can now receive bookings from customers.\n\nLog in to your dashboard to set up your services, availability, and profile photo.\n\n The JOTMA Team`;
+          render();
+          const subject = '✅ Your JOTMA application is approved!';
+          const message = `Hi ${account.first_name}!\n\nYour provider profile on JOTMA has been approved.\n\n– The JOTMA Team`;
           const sent = await sendEmailJS(account.email, account.first_name, subject, message);
-          showNotifModal(
-            'Notify Barber ',
-            sent
-              ? ` Email sent to ${account.email}. Also notify via WhatsApp or email app:`
-              : `No EmailJS config yet. Notify ${account.first_name} manually:`,
-            account.phone,
-            message
-          );
+          showNotifModal('Notify Provider ✅', sent ? `✅ Email sent.` : `Notify manually:`, account.phone, message);
         } else {
           stored.splice(idx, 1);
           localStorage.setItem('bh_accounts', JSON.stringify(stored));
@@ -650,6 +672,7 @@
 
     render();
     refreshApiMetrics();
+    refreshApiUsers();
   </script>
 </body>
 </html>
